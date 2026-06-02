@@ -121,6 +121,12 @@ const SYMPTOMS_DATA = {
           'Dieta oral liberada', 'Dieta oral suspensa — risco de broncoaspiração', 'Dieta enteral em andamento', 'Dieta parenteral em andamento', 'Paciente em jejum', 'Jejum pré-operatório', 'Paciente com boa aceitação da dieta', 'Paciente com baixa aceitação da dieta', 'Nutrição parenteral total iniciada', 'Avaliação nutricional realizada pela equipe',
         ],
       },
+      {
+        label: 'Orientações de Enfermagem',
+        items: [
+          'Troca de curativo diária — com registro fotográfico', 'Troca de curativo em dias alternados', 'Curativo oclusivo — manter até nova avaliação', 'Controle de sinais vitais de 4/4h', 'Controle de sinais vitais de 6/6h', 'Controle de sinais vitais de 8/8h', 'Controle de sinais vitais contínuo (monitorização)', 'Controle rigoroso de diurese — medir e anotar', 'Balanço hídrico rigoroso', 'Controle de débito de drenos — anotar volume e aspecto', 'Deambulação assistida 2x ao dia', 'Deambulação livre liberada', 'Repouso relativo no leito', 'Repouso absoluto no leito', 'Mudança de decúbito de 2/2h — prevenção de UPP', 'Elevação do membro inferior para controle de edema', 'Cabeceira elevada a 30–45°', 'Higiene oral rigorosa — 3x ao dia', 'Cuidados com acesso venoso — observar sinais de flebite', 'Aspiração de vias aéreas superiores se necessário', 'Oxigenoterapia conforme saturação — alvo SpO₂ > 94%', 'Glicemia capilar de 6/6h', 'Glicemia capilar pré e pós-prandial', 'Controle de temperatura — antitérmico se T > 37,8°C', 'Comunicar equipe médica se PA < 90x60 ou > 180x110 mmHg', 'Comunicar equipe médica se FC < 50 ou > 120 bpm', 'Comunicar equipe médica se SpO₂ < 92%', 'Comunicar equipe médica se débito urinário < 0,5 mL/kg/h', 'Manter prescrição vigente — sem alterações', 'Administrar medicações conforme prescrição',
+        ],
+      },
     ],
   },
 };

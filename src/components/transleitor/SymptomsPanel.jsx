@@ -122,6 +122,24 @@ const SYMPTOMS_DATA = {
         ],
       },
       {
+        label: 'Solicitação de Exames Laboratoriais',
+        items: [
+          'Hemograma completo', 'PCR (proteína C reativa)', 'VHS', 'Procalcitonina', 'Lactato sérico', 'Hemocultura — 2 amostras coletadas', 'Urocultura com antibiograma', 'Cultura de secreção de ferida', 'Gasometria arterial', 'Gasometria venosa', 'Eletrólitos (Na, K, Cl, Mg, Ca, P)', 'Função renal (ureia e creatinina)', 'TFGe calculada', 'Função hepática (TGO, TGP, GGT, FA, bilirrubinas)', 'Coagulograma (TP, TTPA, INR)', 'Fibrinogênio', 'D-dímero', 'Troponina I / T', 'CK e CK-MB', 'BNP / NT-proBNP', 'TSH e T4 livre', 'Glicemia de jejum', 'HbA1c', 'Lipidograma completo', 'Ácido úrico', 'Albumina sérica', 'Proteínas totais e frações', 'Amilase e lipase', 'Urina rotina (EAS)', 'β-HCG sérico', 'Sorologias (HIV, HBsAg, HCV, VDRL)', 'Nível sérico de medicamento (digoxina, fenitoína, vancomicina)', 'Toxicológico sérico e urinário',
+        ],
+      },
+      {
+        label: 'Solicitação de Exames de Imagem',
+        items: [
+          'Radiografia de tórax PA e perfil', 'Radiografia de tórax portátil (AP)', 'Radiografia de abdome em pé e deitado', 'Radiografia de osso — especificar região', 'Ultrassonografia de abdome total', 'Ultrassonografia de vias urinárias', 'Ultrassonografia Doppler venoso de MMII', 'Ultrassonografia Doppler arterial', 'Ultrassonografia à beira do leito (POCUS)', 'Ecocardiograma transtorácico', 'Ecocardiograma transesofágico', 'TC de crânio sem contraste', 'TC de crânio com contraste', 'TC de tórax sem contraste', 'TC de tórax com contraste (angiotomografia)', 'TC de abdome e pelve com contraste', 'TC de coluna (cervical / torácica / lombar)', 'Angiotomografia de aorta', 'RM de crânio / encéfalo', 'RM de coluna', 'RM de abdome', 'Cintilografia óssea', 'PET-CT solicitado', 'ECG de 12 derivações', 'Holter 24h', 'MAPA 24h', 'Endoscopia digestiva alta (EDA)', 'Colonoscopia', 'Broncoscopia',
+        ],
+      },
+      {
+        label: 'Procedimentos Administrativos',
+        items: [
+          'Solicitação de transferência para hospital de referência', 'Inserção no sistema CROSS — solicitada', 'Inserção no CROSS — aguardando vaga', 'Vaga no CROSS confirmada — aguardando transporte', 'Solicitação de vaga em UTI', 'Solicitação de vaga em enfermaria especializada', 'Regulação médica acionada', 'Transporte médico solicitado (SAMU / regulação)', 'Guia de internação emitida', 'Resumo de alta / Declaração de internação elaborada', 'Solicitação de autorização de procedimento (OPME)', 'Solicitação de autorização de medicamento de alto custo', 'Solicitação de segunda opinião / telemetria', 'Comunicação com plano de saúde realizada', 'Declaração de óbito emitida', 'Comunicado ao NÚCLEO (NIS / Regulação interna)', 'Solicitação de cirurgia agendada / eletiva', 'Cirurgia de urgência agendada', 'Notificação compulsória realizada (SINAN)', 'Comunicação ao MP / conselho tutelar (vulnerabilidade)', 'Avaliação de Serviço Social solicitada', 'Alta a pedido — termo assinado', 'Recusa de procedimento — TCLE documentado',
+        ],
+      },
+      {
         label: 'Orientações de Enfermagem',
         items: [
           'Troca de curativo diária — com registro fotográfico', 'Troca de curativo em dias alternados', 'Curativo oclusivo — manter até nova avaliação', 'Controle de sinais vitais de 4/4h', 'Controle de sinais vitais de 6/6h', 'Controle de sinais vitais de 8/8h', 'Controle de sinais vitais contínuo (monitorização)', 'Controle rigoroso de diurese — medir e anotar', 'Balanço hídrico rigoroso', 'Controle de débito de drenos — anotar volume e aspecto', 'Deambulação assistida 2x ao dia', 'Deambulação livre liberada', 'Repouso relativo no leito', 'Repouso absoluto no leito', 'Mudança de decúbito de 2/2h — prevenção de UPP', 'Elevação do membro inferior para controle de edema', 'Cabeceira elevada a 30–45°', 'Higiene oral rigorosa — 3x ao dia', 'Cuidados com acesso venoso — observar sinais de flebite', 'Aspiração de vias aéreas superiores se necessário', 'Oxigenoterapia conforme saturação — alvo SpO₂ > 94%', 'Glicemia capilar de 6/6h', 'Glicemia capilar pré e pós-prandial', 'Controle de temperatura — antitérmico se T > 37,8°C', 'Comunicar equipe médica se PA < 90x60 ou > 180x110 mmHg', 'Comunicar equipe médica se FC < 50 ou > 120 bpm', 'Comunicar equipe médica se SpO₂ < 92%', 'Comunicar equipe médica se débito urinário < 0,5 mL/kg/h', 'Manter prescrição vigente — sem alterações', 'Administrar medicações conforme prescrição',

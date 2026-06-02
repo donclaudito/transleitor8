@@ -14,7 +14,8 @@ const DEFAULT_SECTORS = ["UTI Adulto", "UTI Pediátrica", "Enfermaria Clínica",
 const DEFAULT_COMORBIDITIES = ["HAS", "DM2", "Dislipidemia", "Tabagismo", "DRC", "ICC", "DPOC", "Obesidade"];
 
 const DEFAULT_FORM = {
-  sector: '', bed: '', patientInitials: '', comorbidities: '', labs: '', clinicalDescription: '', consultorioType: null, previousConsult: '',
+  sector: '', bed: '', patientInitials: '', comorbidities: '', labs: '', clinicalDescription: '',
+  consultorioType: null, previousConsult: '', previousEvolution: '', nursingEvolution: '',
 };
 
 export default function Transleitor() {
@@ -141,9 +142,11 @@ Dados do paciente:
 - Paciente: ${formData.patientInitials || '—'}
 - Leito: ${formData.bed || '—'} | Setor: ${formData.sector || '—'}
 - Comorbidades: ${formData.comorbidities || '—'}
-- Exames: ${formData.labs || '—'}
+- Exames complementares: ${formData.labs || '—'}
+${formData.previousEvolution?.trim() ? `\nEvolução médica anterior (use para comparar a progressão clínica):\n${formData.previousEvolution.trim()}` : ''}
+${formData.nursingEvolution?.trim() ? `\nEvolução de enfermagem (integre as informações ao contexto):\n${formData.nursingEvolution.trim()}` : ''}
 
-Descrição clínica:
+Descrição clínica atual:
 ${formData.clinicalDescription}
 
 Formato obrigatório:
@@ -152,7 +155,7 @@ Formato obrigatório:
 ## A — Avaliação
 ## P — Plano
 
-Use terminologia médica brasileira formal.`;
+Use terminologia médica brasileira formal. Compare com a evolução anterior quando disponível e destaque mudanças clínicas relevantes.`;
 
     const result = await base44.integrations.Core.InvokeLLM({ prompt, model: 'gemini_3_flash' });
 

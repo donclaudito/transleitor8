@@ -99,10 +99,32 @@ export default function FormView({
         </div>
       </div>
 
+      {/* Evolução Anterior */}
+      <div className="glass-card rounded-2xl p-5 space-y-3">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+          <span>📋</span> Evolução Médica Anterior
+        </h3>
+        <p className="text-[11px] text-muted-foreground -mt-1">Cole a evolução do dia anterior para a IA comparar a progressão.</p>
+        <textarea rows={4} placeholder="Cole aqui a evolução médica anterior..."
+          value={formData.previousEvolution || ''} onChange={e => setFormData({ ...formData, previousEvolution: e.target.value })}
+          className="w-full px-4 py-3 rounded-xl bg-muted border border-border text-sm resize-none focus:outline-none focus:border-primary/50 transition-all" />
+      </div>
+
+      {/* Evolução de Enfermagem */}
+      <div className="glass-card rounded-2xl p-5 space-y-3">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+          <span>🩺</span> Evolução de Enfermagem
+        </h3>
+        <p className="text-[11px] text-muted-foreground -mt-1">Cole as anotações de enfermagem para enriquecer o contexto clínico.</p>
+        <textarea rows={4} placeholder="Cole aqui a evolução de enfermagem..."
+          value={formData.nursingEvolution || ''} onChange={e => setFormData({ ...formData, nursingEvolution: e.target.value })}
+          className="w-full px-4 py-3 rounded-xl bg-muted border border-border text-sm resize-none focus:outline-none focus:border-primary/50 transition-all" />
+      </div>
+
       {/* Descrição Clínica */}
       <div className="glass-card rounded-2xl p-5 space-y-3">
         <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-          <Activity className="w-3.5 h-3.5" /> Descrição Clínica
+          <Activity className="w-3.5 h-3.5" /> Descrição Clínica Atual
         </h3>
         <textarea rows={6} placeholder="Descreva o quadro clínico livremente..."
           value={formData.clinicalDescription} onChange={e => setFormData({ ...formData, clinicalDescription: e.target.value })}

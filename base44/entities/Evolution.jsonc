@@ -1,0 +1,38 @@
+{
+  "name": "Evolution",
+  "type": "object",
+  "properties": {
+    "sector": {
+      "type": "string",
+      "description": "Hospital sector/unit"
+    },
+    "bed": {
+      "type": "string",
+      "description": "Patient bed number"
+    },
+    "patient_initials": {
+      "type": "string",
+      "description": "Patient initials"
+    },
+    "comorbidities": {
+      "type": "string",
+      "description": "Patient comorbidities"
+    },
+    "labs": {
+      "type": "string",
+      "description": "Lab results and complementary exams"
+    },
+    "clinical_description": {
+      "type": "string",
+      "description": "Free-form clinical description"
+    },
+    "soap_text": {
+      "type": "string",
+      "description": "AI-generated SOAP evolution text"
+    }
+  },
+  "required": [
+    "clinical_description",
+    "soap_text"
+  ]
+}

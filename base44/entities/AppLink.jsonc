@@ -1,0 +1,34 @@
+{
+  "name": "AppLink",
+  "type": "object",
+  "properties": {
+    "nome": {
+      "type": "string",
+      "description": "App link name"
+    },
+    "url": {
+      "type": "string",
+      "description": "App URL"
+    },
+    "icone": {
+      "type": "string",
+      "description": "Emoji icon"
+    },
+    "categoria": {
+      "type": "string",
+      "description": "Category"
+    },
+    "ativo": {
+      "type": "boolean",
+      "description": "Whether the link is active"
+    },
+    "ordem": {
+      "type": "number",
+      "description": "Display order"
+    }
+  },
+  "required": [
+    "nome",
+    "url"
+  ]
+}

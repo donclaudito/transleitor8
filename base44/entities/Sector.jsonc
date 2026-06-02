@@ -1,0 +1,13 @@
+{
+  "name": "Sector",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Sector name"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

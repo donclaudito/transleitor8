@@ -1,0 +1,25 @@
+{
+  "name": "PlanTemplate",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Template name"
+    },
+    "specialty": {
+      "type": "string",
+      "description": "Medical specialty"
+    },
+    "skeleton": {
+      "type": "string",
+      "description": "Template skeleton text for Plan section"
+    },
+    "is_default": {
+      "type": "boolean",
+      "description": "Whether this is a default template"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

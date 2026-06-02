@@ -1,0 +1,13 @@
+{
+  "name": "Patient",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Patient full name"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

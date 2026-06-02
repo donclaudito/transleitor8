@@ -1,0 +1,13 @@
+{
+  "name": "Comorbidity",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Comorbidity name"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

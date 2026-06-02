@@ -1,0 +1,47 @@
+{
+  "name": "Appointment",
+  "type": "object",
+  "properties": {
+    "patient_id": {
+      "type": "string",
+      "description": "Patient ID reference"
+    },
+    "patient_name": {
+      "type": "string",
+      "description": "Patient name (denormalized)"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "primeira_consulta",
+        "retorno"
+      ],
+      "description": "Appointment type"
+    },
+    "chief_complaint": {
+      "type": "string",
+      "description": "Chief complaint"
+    },
+    "evolution": {
+      "type": "string",
+      "description": "Evolution notes"
+    },
+    "conduct_change": {
+      "type": "string",
+      "description": "Conduct changes"
+    },
+    "exam_results": {
+      "type": "string",
+      "description": "Exam results"
+    },
+    "prescription": {
+      "type": "string",
+      "description": "Prescription text"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes"
+    }
+  },
+  "required": []
+}

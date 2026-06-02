@@ -1,13 +1,24 @@
 import React from 'react';
-import { Activity, Wand2, Settings2, FlaskConical, User, BedDouble } from 'lucide-react';
+import { Activity, Wand2, Settings2, FlaskConical, User } from 'lucide-react';
+import SymptomsPanel from './SymptomsPanel';
 
 export default function FormView({
   formData, setFormData, allSectors, allComorbidities, setView,
   toggleComorbidityInForm, generateSOAP, loading, customChips = [], theme = 'dark',
 }) {
+  const appendToClinical = (text) => {
+    setFormData(prev => ({
+      ...prev,
+      clinicalDescription: prev.clinicalDescription
+        ? `${prev.clinicalDescription.trimEnd()}\n${text}`
+        : text,
+    }));
+  };
   const isConsultorio = ['consultório', 'consultorio'].includes(formData.sector?.toLowerCase());
 
   return (
+    <>
+    <SymptomsPanel onAppend={appendToClinical} />
     <div className="space-y-6 p-4 md:p-6">
       {/* Identificação */}
       <div className="glass-card rounded-2xl p-5 space-y-4">
@@ -116,5 +127,6 @@ export default function FormView({
         )}
       </button>
     </div>
+    </>
   );
 }

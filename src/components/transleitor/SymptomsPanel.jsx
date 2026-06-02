@@ -60,6 +60,69 @@ const SYMPTOMS_DATA = {
       },
     ],
   },
+  observacoes: {
+    label: 'P — Observações de Visita',
+    color: 'text-amber-400',
+    bg: 'bg-amber-500/10',
+    border: 'border-amber-500/20',
+    ring: 'ring-amber-400/40',
+    groups: [
+      {
+        label: 'Drenos',
+        items: [
+          'Dreno em sítio cirúrgico — funcionante', 'Dreno com débito seroso', 'Dreno com débito serossanguinolento', 'Dreno com débito sanguinolento', 'Dreno com débito bilioso', 'Dreno com débito purulento', 'Dreno com débito reduzido', 'Dreno sem débito nas últimas 24h', 'Dreno retirado sem intercorrências', 'Dreno de tórax (dreno pleural) — funcionante', 'Dreno de tórax — borbulhamento presente', 'Dreno de tórax — sem borbulhamento', 'Dreno de tórax retirado — RX solicitado',
+        ],
+      },
+      {
+        label: 'Sondas',
+        items: [
+          'SVD (sonda vesical de demora) — pervie e funcionante', 'SVD com diurese clara', 'SVD com diurese turva', 'SVD com hematúria', 'SVD retirada', 'SNE (sonda nasoenteral) — em posição e funcionante', 'SNE com dieta em andamento', 'SNE com resíduo gástrico aumentado', 'SNE retirada', 'SNG (sonda nasogástrica) — em posição', 'SNG em drenagem', 'SNG com débito bilioso', 'SNG retirada',
+        ],
+      },
+      {
+        label: 'Curativos',
+        items: [
+          'Curativo realizado — ferida limpa e seca', 'Curativo realizado — ferida com secreção serosa', 'Curativo realizado — ferida com secreção purulenta', 'Curativo realizado — ferida com deiscência parcial', 'Curativo realizado — ferida com deiscência total', 'Curativo realizado — sinais flogísticos presentes', 'Ferida cirúrgica com bom aspecto', 'Ferida com necrose presente', 'Ferida com tecido de granulação', 'Ferida com epitelização em curso', 'Úlcera por pressão — avaliada e tratada', 'Curativo de acesso vascular periférico — sem sinais flogísticos', 'Curativo de CVC — sem sinais de infecção',
+        ],
+      },
+      {
+        label: 'Retirada de Pontos',
+        items: [
+          'Retirada de pontos realizada — ferida com boa cicatrização', 'Retirada de pontos parcial', 'Retirada de pontos adiada — ferida com deiscência', 'Retirada de pontos adiada — sinais flogísticos presentes', 'Retirada de grampos cirúrgicos realizada', 'Pontos mantidos por mais 48h', 'Pontos retirados sem intercorrências',
+        ],
+      },
+      {
+        label: 'Fisioterapia',
+        items: [
+          'Fisioterapia motora realizada', 'Fisioterapia respiratória realizada', 'Paciente em deambulação assistida', 'Paciente deambulando sem auxílio', 'Paciente em uso de bipap para fisioterapia', 'Paciente realizando exercícios ativos', 'Paciente realizando exercícios passivos', 'Sem condições de fisioterapia no momento', 'Fisioterapia suspensa por piora clínica', 'Transferência de leito realizada com auxílio',
+        ],
+      },
+      {
+        label: 'Interconsultas',
+        items: [
+          'Interconsulta com Cardiologia — solicitada', 'Interconsulta com Cardiologia — realizada', 'Interconsulta com Neurologia — solicitada', 'Interconsulta com Neurologia — realizada', 'Interconsulta com Nefrologia — solicitada', 'Interconsulta com Infectologia — solicitada', 'Interconsulta com Infectologia — realizada', 'Interconsulta com Cirurgia — solicitada', 'Interconsulta com Cirurgia — realizada', 'Interconsulta com Gastroenterologia — solicitada', 'Interconsulta com Psiquiatria — solicitada', 'Interconsulta com Nutrição — realizada', 'Interconsulta com Serviço Social — realizada', 'Aguardando retorno de interconsulta',
+        ],
+      },
+      {
+        label: 'Alta Hospitalar',
+        items: [
+          'Critérios de alta preenchidos', 'Alta prevista para hoje', 'Alta adiada — aguardando resultado de exame', 'Alta adiada — instabilidade clínica', 'Alta com encaminhamento para UBS', 'Alta com retorno ambulatorial agendado', 'Alta com prescrição domiciliar realizada', 'Orientações de alta fornecidas ao paciente e familiar', 'Paciente transferido para enfermaria', 'Paciente transferido para UTI', 'Paciente transferido para outro serviço', 'Solicitação de vaga em outro hospital em andamento',
+        ],
+      },
+      {
+        label: 'Acesso Vascular',
+        items: [
+          'AVP (acesso venoso periférico) — pérvio', 'AVP trocado por flebite', 'CVC (cateter venoso central) — em posição e pérvio', 'CVC com sinais de infecção — reavaliado', 'CVC retirado sem intercorrências', 'PICC em posição e funcionante', 'PAI (pressão arterial invasiva) — monitorando', 'PAI retirada', 'Acesso arterial — coletado gasometria',
+        ],
+      },
+      {
+        label: 'Dieta e Nutrição',
+        items: [
+          'Dieta oral liberada', 'Dieta oral suspensa — risco de broncoaspiração', 'Dieta enteral em andamento', 'Dieta parenteral em andamento', 'Paciente em jejum', 'Jejum pré-operatório', 'Paciente com boa aceitação da dieta', 'Paciente com baixa aceitação da dieta', 'Nutrição parenteral total iniciada', 'Avaliação nutricional realizada pela equipe',
+        ],
+      },
+    ],
+  },
 };
 
 function AccordionGroup({ group, selectedItems, onToggle, colorClasses }) {

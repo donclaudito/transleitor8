@@ -6,13 +6,15 @@ export default function FormView({
   formData, setFormData, allSectors, allComorbidities, setView,
   toggleComorbidityInForm, generateSOAP, loading, customChips = [], theme = 'dark',
 }) {
-  const appendToClinical = (text) => {
-    setFormData(prev => ({
-      ...prev,
-      clinicalDescription: prev.clinicalDescription
-        ? `${prev.clinicalDescription.trimEnd()}\n${text}`
-        : text,
-    }));
+  const appendToClinical = (item) => {
+    setFormData(prev => {
+      const current = prev.clinicalDescription.trimEnd();
+      // Se já termina com vírgula/ponto ou está vazio, adiciona adequadamente
+      if (!current) return { ...prev, clinicalDescription: item };
+      const lastChar = current.slice(-1);
+      const separator = ['.', ';', '\n'].includes(lastChar) ? ' ' : ', ';
+      return { ...prev, clinicalDescription: current + separator + item };
+    });
   };
   const isConsultorio = ['consultório', 'consultorio'].includes(formData.sector?.toLowerCase());
 

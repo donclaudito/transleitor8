@@ -137,22 +137,14 @@ export default function SymptomsPanel({ onAppend }) {
   const [selected, setSelected] = useState([]);
 
   const handleToggle = (item) => {
-    setSelected(prev => prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item]);
+    const isRemoving = selected.includes(item);
+    setSelected(prev => isRemoving ? prev.filter(i => i !== item) : [...prev, item]);
+    if (!isRemoving) {
+      onAppend(item);
+    }
   };
 
-  const handleAppend = () => {
-    if (selected.length === 0) return;
-    const subj = selected.filter(i =>
-      SYMPTOMS_DATA.subjetivo.groups.flatMap(g => g.items).includes(i)
-    );
-    const obj = selected.filter(i =>
-      SYMPTOMS_DATA.objetivo.groups.flatMap(g => g.items).includes(i)
-    );
-
-    let text = '';
-    if (subj.length > 0) text += `Subjetivo: ${subj.join(', ')}. `;
-    if (obj.length > 0) text += `Objetivo: ${obj.join(', ')}.`;
-    onAppend(text.trim());
+  const handleClearAll = () => {
     setSelected([]);
   };
 
@@ -200,18 +192,31 @@ export default function SymptomsPanel({ onAppend }) {
             ))}
           </div>
 
-          {/* Footer action */}
-          <div className="p-3 border-t border-border flex-shrink-0">
-            {selected.length > 0 && (
-              <p className="text-xs text-muted-foreground mb-2 text-center">
-                {selected.length} item(s) selecionado(s)
+          {/* Footer */}
+          <div className="p-3 border-t border-border flex-shrink-0 space-y-2">
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">
+                {selected.length > 0
+                  ? <><span className="font-bold text-primary">{selected.length}</span> item(s) inserido(s)</>
+                  : 'Clique nos itens para inserir'}
               </p>
+              {selected.length > 0 && (
+                <button onClick={handleClearAll}
+                  className="text-xs text-muted-foreground hover:text-destructive transition-colors font-semibold">
+                  Limpar seleção
+                </button>
+              )}
+            </div>
+            {selected.length > 0 && (
+              <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto">
+                {selected.map(item => (
+                  <span key={item} onClick={() => handleToggle(item)}
+                    className="cursor-pointer px-2 py-0.5 rounded-full text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/20 transition-all">
+                    {item} ×
+                  </span>
+                ))}
+              </div>
             )}
-            <button onClick={handleAppend} disabled={selected.length === 0}
-              className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-bold text-sm disabled:opacity-40 flex items-center justify-center gap-2 transition-all btn-press">
-              <Plus className="w-4 h-4" />
-              Inserir na Descrição Clínica
-            </button>
           </div>
         </div>
       </div>

@@ -91,28 +91,41 @@ export default function InterpretacaoExames() {
                 </button>
               </div>
 
-              <div className="space-y-2">
-                {results.map((r, i) => (
-                  <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-                    className={`flex items-center justify-between px-4 py-3 rounded-xl border ${
-                      r.status === 'normal' ? 'border-green-500/20 bg-green-500/5' :
-                      r.status === 'high' ? 'border-red-500/20 bg-red-500/5' : 'border-blue-500/20 bg-blue-500/5'
-                    }`}>
-                    <div>
-                      <span className="text-sm font-bold">{r.ptName}</span>
-                      <span className="text-xs text-muted-foreground ml-2">Ref: {r.ref.min}–{r.ref.max} {r.ref.unit}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-sm">{r.value}</span>
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                        r.status === 'normal' ? 'bg-green-500/20 text-green-500' :
-                        r.status === 'high' ? 'bg-red-500/20 text-red-500' : 'bg-blue-500/20 text-blue-500'
-                      }`}>
-                        {r.status === 'normal' ? '✓' : r.status === 'high' ? '↑' : '↓'}
-                      </span>
-                    </div>
-                  </motion.div>
-                ))}
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm border-collapse">
+                  <thead>
+                    <tr className="border-b-2 border-border">
+                      <th className="text-left py-2.5 px-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Exame</th>
+                      <th className="text-right py-2.5 px-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Valor</th>
+                      <th className="text-right py-2.5 px-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Referência</th>
+                      <th className="text-center py-2.5 px-3 text-xs font-bold text-muted-foreground uppercase tracking-wider w-16">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {results.map((r, i) => (
+                      <motion.tr key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
+                        className={`border-b border-border/50 ${
+                          r.status === 'normal' ? 'hover:bg-green-500/5' :
+                          r.status === 'high' ? 'hover:bg-red-500/5' : 'hover:bg-blue-500/5'
+                        }`}>
+                        <td className="py-2.5 px-3 font-semibold">{r.ptName}</td>
+                        <td className={`py-2.5 px-3 text-right font-mono font-bold ${
+                          r.status === 'normal' ? 'text-foreground' :
+                          r.status === 'high' ? 'text-red-500' : 'text-blue-500'
+                        }`}>{r.value} <span className="text-xs font-normal text-muted-foreground">{r.ref.unit}</span></td>
+                        <td className="py-2.5 px-3 text-right text-muted-foreground text-xs">{r.ref.min} – {r.ref.max}</td>
+                        <td className="py-2.5 px-3 text-center">
+                          <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold ${
+                            r.status === 'normal' ? 'bg-green-500/15 text-green-500' :
+                            r.status === 'high' ? 'bg-red-500/15 text-red-500' : 'bg-blue-500/15 text-blue-500'
+                          }`}>
+                            {r.status === 'normal' ? '✓' : r.status === 'high' ? '↑' : '↓'}
+                          </span>
+                        </td>
+                      </motion.tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
 
               {report && (

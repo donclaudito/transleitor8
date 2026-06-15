@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ChevronDown, ChevronRight, PanelRight, PanelRightClose, Plus } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { ChevronDown, ChevronRight, PanelRight, PanelRightClose, Search, Sparkles } from 'lucide-react';
 
 const SYMPTOMS_DATA = {
   subjetivo: {
@@ -149,9 +149,60 @@ const SYMPTOMS_DATA = {
   },
 };
 
-function AccordionGroup({ group, selectedItems, onToggle, colorClasses }) {
+function fuzzyMatch(text, query) {
+  if (!query) return true;
+  const q = query.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const t = text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  // Verifica se todas as letras da query aparecem em ordem no texto
+  let qi = 0;
+  for (let ti = 0; ti < t.length && qi < q.length; ti++) {
+    if (t[ti] === q[qi]) qi++;
+  }
+  return qi === q.length;
+}
+
+// Mapeamento de palavras-chave para itens do painel
+const KEYWORD_MAP = {
+  febre: ['Febre', 'Febril', 'Afebril', 'Calafrios', 'Temperatura', 'Hipotermia', 'antitérmico'],
+  dor: ['Dor', 'EVA', 'analgesia', 'Álgico', 'Dolorosa'],
+  tosse: ['Tosse', 'Expectoração', 'Hemoptise', 'Broncoespasmo', 'Sibilos'],
+  dispneia: ['Dispneia', 'Taquipneia', 'Bradipneia', 'Eupneico', 'Oxigenoterapia', 'O₂', 'SpO₂', 'Saturação', 'Gasometria'],
+  edema: ['Edema', 'MMII', 'Ascite', 'Anasarca'],
+  dreno: ['Dreno', 'Drenagem', 'Débito'],
+  sonda: ['Sonda', 'SVD', 'SNE', 'SNG', 'Vesical', 'Nasoenteral', 'Nasogástrica'],
+  curativo: ['Curativo', 'Ferida', 'Cicatrização', 'Deiscência', 'Necrose', 'Granulação'],
+  dieta: ['Dieta', 'Jejum', 'Nutrição', 'Aceitação'],
+  infecção: ['Infecciosa', 'Séptico', 'Sepse', 'Antibiótico', 'Cultura', 'Hemocultura', 'PCR', 'Procalcitonina'],
+  sangramento: ['Hemorragia', 'Sangramento', 'Hematúria', 'Hematêmese', 'Hematoquezia', 'Melena', 'Equimose'],
+  síncope: ['Síncope', 'Desmaio', 'Lipitimia', 'Pré-síncope'],
+  palidez: ['Palidez', 'Cianose', 'Sudorese', 'Perfusão'],
+  náusea: ['Náusea', 'Vômito', 'Êmese', 'Hematêmese'],
+  exame: ['Radiografia', 'Tomografia', 'Ultrassonografia', 'Hemograma', 'Gasometria', 'Ecocardiograma', 'TC', 'RM', 'RX'],
+  cirurgia: ['Cirúrgico', 'Cirurgia', 'Pós-operatório', 'PO', 'Laparotomia', 'Colecistectomia', 'Apendicectomia'],
+  transferência: ['Transferência', 'CROSS', 'Vaga', 'Regulação', 'SAMU', 'Transporte'],
+  alta: ['Alta', 'Transferido', 'Encaminhamento', 'Ambulatorial'],
+  glicemia: ['Glicemia', 'Glicose', 'HGT', 'Dextro', 'Hipoglicemia', 'Hiperglicemia'],
+  antibiótico: ['Antibiótico', 'Ceftriaxona', 'Vancomicina', 'Meropenem', 'Cultura', 'Hemocultura'],
+};
+
+function getSuggestedItems(clinicalText) {
+  if (!clinicalText) return new Set();
+  const text = clinicalText.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const suggestions = new Set();
+  Object.entries(KEYWORD_MAP).forEach(([keyword, relatedTerms]) => {
+    if (text.includes(keyword)) {
+      relatedTerms.forEach(term => suggestions.add(term));
+    }
+  });
+  return suggestions;
+}
+
+function AccordionGroup({ group, selectedItems, onToggle, colorClasses, searchTerm, suggestedItems }) {
   const [open, setOpen] = useState(false);
   const selectedCount = group.items.filter(i => selectedItems.includes(i)).length;
+
+  const filteredItems = group.items.filter(item => fuzzyMatch(item, searchTerm));
+  if (filteredItems.length === 0) return null;
 
   return (
     <div className="border border-border rounded-xl overflow-hidden">
@@ -169,16 +220,20 @@ function AccordionGroup({ group, selectedItems, onToggle, colorClasses }) {
       </button>
       {open && (
         <div className="px-3 pb-3 pt-1 flex flex-wrap gap-1.5 border-t border-border bg-muted/20">
-          {group.items.map(item => {
+          {filteredItems.map(item => {
             const active = selectedItems.includes(item);
+            const suggested = !active && suggestedItems.has(item);
             return (
               <button key={item} onClick={() => onToggle(item)}
                 className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border transition-all ${
                   active
                     ? `${colorClasses.bg} ${colorClasses.border} ${colorClasses.color} ring-1 ${colorClasses.ring}`
-                    : 'border-border text-muted-foreground hover:border-muted-foreground/40 hover:text-foreground'
+                    : suggested
+                      ? 'border-amber-400/60 text-amber-600 bg-amber-500/10 ring-1 ring-amber-400/30 animate-pulse'
+                      : 'border-border text-muted-foreground hover:border-muted-foreground/40 hover:text-foreground'
                 }`}>
                 {active && <span className="mr-1">✓</span>}
+                {suggested && !active && <Sparkles className="w-3 h-3 inline mr-1 text-amber-400" />}
                 {item}
               </button>
             );
@@ -189,13 +244,20 @@ function AccordionGroup({ group, selectedItems, onToggle, colorClasses }) {
   );
 }
 
-function SectionAccordion({ sectionKey, section, selectedItems, onToggle }) {
-  const [open, setOpen] = useState(sectionKey === 'subjetivo');
+function SectionAccordion({ sectionKey, section, selectedItems, onToggle, searchTerm, suggestedItems, defaultOpen }) {
+  const [open, setOpen] = useState(defaultOpen || sectionKey === 'subjetivo');
   const totalSelected = section.groups.flatMap(g => g.items).filter(i => selectedItems.includes(i)).length;
+
+  // Se tem busca ativa, expande automaticamente se houver matches
+  const hasMatches = searchTerm && section.groups.some(g => g.items.some(i => fuzzyMatch(i, searchTerm)));
+  const isOpen = open || (searchTerm && hasMatches);
+
+  // Auto-open when search finds matches
+  const effectiveOpen = searchTerm ? (hasMatches || open) : open;
 
   return (
     <div className={`rounded-xl border ${section.border} overflow-hidden`}>
-      <button onClick={() => setOpen(!open)}
+      <button onClick={() => setOpen(!effectiveOpen)}
         className={`w-full flex items-center justify-between px-4 py-3 text-left ${section.bg} transition-colors`}>
         <span className={`text-xs font-extrabold uppercase tracking-wider ${section.color}`}>{section.label}</span>
         <div className="flex items-center gap-2">
@@ -204,14 +266,15 @@ function SectionAccordion({ sectionKey, section, selectedItems, onToggle }) {
               {totalSelected} selecionado{totalSelected !== 1 ? 's' : ''}
             </span>
           )}
-          {open ? <ChevronDown className={`w-4 h-4 ${section.color}`} /> : <ChevronRight className={`w-4 h-4 ${section.color}`} />}
+          {effectiveOpen ? <ChevronDown className={`w-4 h-4 ${section.color}`} /> : <ChevronRight className={`w-4 h-4 ${section.color}`} />}
         </div>
       </button>
-      {open && (
+      {effectiveOpen && (
         <div className="p-2 space-y-1.5 bg-card/40">
           {section.groups.map(g => (
             <AccordionGroup key={g.label} group={g} selectedItems={selectedItems} onToggle={onToggle}
-              colorClasses={{ bg: section.bg, border: section.border, color: section.color, ring: section.ring }} />
+              colorClasses={{ bg: section.bg, border: section.border, color: section.color, ring: section.ring }}
+              searchTerm={searchTerm} suggestedItems={suggestedItems} />
           ))}
         </div>
       )}
@@ -219,9 +282,12 @@ function SectionAccordion({ sectionKey, section, selectedItems, onToggle }) {
   );
 }
 
-export default function SymptomsPanel({ onAppend }) {
+export default function SymptomsPanel({ onAppend, clinicalDescription = '' }) {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const suggestedItems = useMemo(() => getSuggestedItems(clinicalDescription), [clinicalDescription]);
 
   const handleToggle = (item) => {
     const isRemoving = selected.includes(item);
@@ -233,6 +299,7 @@ export default function SymptomsPanel({ onAppend }) {
 
   const handleClearAll = () => {
     setSelected([]);
+    setSearchTerm('');
   };
 
   return (
@@ -256,14 +323,40 @@ export default function SymptomsPanel({ onAppend }) {
       }`} style={{ width: '320px' }}>
         <div className="h-full flex flex-col bg-card border-l border-border shadow-2xl mt-[64px]">
           {/* Header */}
-          <div className="px-4 py-3 border-b border-border flex items-center justify-between flex-shrink-0">
-            <div>
-              <h2 className="text-sm font-extrabold">Sinais & Sintomas</h2>
-              <p className="text-xs text-muted-foreground">Selecione para inserir na descrição</p>
+          <div className="px-4 py-3 border-b border-border flex-shrink-0 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-extrabold">Sinais & Sintomas</h2>
+                <p className="text-xs text-muted-foreground">Selecione para inserir na descrição</p>
+              </div>
+              <button onClick={() => setOpen(false)} className="p-1.5 rounded-lg hover:bg-accent transition-colors text-muted-foreground">
+                <PanelRightClose className="w-4 h-4" />
+              </button>
             </div>
-            <button onClick={() => setOpen(false)} className="p-1.5 rounded-lg hover:bg-accent transition-colors text-muted-foreground">
-              <PanelRightClose className="w-4 h-4" />
-            </button>
+            {/* Busca inteligente */}
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Buscar sintomas..."
+                className="w-full pl-8 pr-8 py-2 rounded-lg bg-muted border border-border text-xs focus:outline-none focus:border-primary/50 transition-all"
+              />
+              {searchTerm && (
+                <button onClick={() => setSearchTerm('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  ×
+                </button>
+              )}
+            </div>
+            {/* Indicador de sugestões contextuais */}
+            {suggestedItems.size > 0 && !searchTerm && (
+              <div className="flex items-center gap-1.5 text-[10px] text-amber-500">
+                <Sparkles className="w-3 h-3" />
+                <span>{suggestedItems.size} sugestões detectadas no texto clínico</span>
+              </div>
+            )}
           </div>
 
           {/* Scrollable content */}
@@ -275,6 +368,8 @@ export default function SymptomsPanel({ onAppend }) {
                 section={section}
                 selectedItems={selected}
                 onToggle={handleToggle}
+                searchTerm={searchTerm}
+                suggestedItems={suggestedItems}
               />
             ))}
           </div>

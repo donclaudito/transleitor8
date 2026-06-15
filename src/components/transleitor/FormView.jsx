@@ -20,7 +20,7 @@ export default function FormView({
 
   return (
     <>
-    <SymptomsPanel onAppend={appendToClinical} />
+    <SymptomsPanel onAppend={appendToClinical} clinicalDescription={formData.clinicalDescription} />
     <div className="space-y-6 p-4 md:p-6">
       {/* Identificação */}
       <div className="glass-card rounded-2xl p-5 space-y-4">

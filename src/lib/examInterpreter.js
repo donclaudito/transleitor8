@@ -43,16 +43,28 @@ export const REFERENCE_RANGES = {
   "C-Reactive Protein": { min: 0, max: 5, unit: "mg/L", ptName: "PCR" },
 };
 
+function normalize(s) {
+  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
 function parseLine(line) {
   const cleaned = line.trim().replace(/\s+/g, ' ');
   const match = cleaned.match(/^(.+?)[\s:]+(\d+[\.,]?\d*)\s*(.*)?$/);
   if (!match) return null;
-  const name = match[1].trim().toLowerCase();
+  const rawName = match[1].trim();
   const value = parseFloat(match[2].replace(',', '.'));
   const unit = match[3]?.trim() || '';
-  const mapped = TEST_NAME_MAP[name];
+
+  // Busca com normalização (remove acentos)
+  const normalizedInput = normalize(rawName);
+  let mapped = TEST_NAME_MAP[rawName.toLowerCase()];
+  if (!mapped) {
+    for (const [key, val] of Object.entries(TEST_NAME_MAP)) {
+      if (normalize(key) === normalizedInput) { mapped = val; break; }
+    }
+  }
   if (!mapped) return null;
-  return { name: mapped, value, unit, originalName: match[1].trim() };
+  return { name: mapped, value, unit, originalName: rawName };
 }
 
 function getStatus(value, ref) {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Stethoscope, History, Plus, Settings, Calculator, Wrench, Sun, Moon, BookOpen, ChevronDown, ExternalLink } from 'lucide-react';
+import { Stethoscope, History, Plus, Settings, Calculator, Wrench, Sun, Moon, BookOpen, ChevronDown, ExternalLink, Microscope } from 'lucide-react';
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
@@ -60,6 +60,11 @@ export default function Header({ view, setView, theme, setTheme, onNewEvolution 
       >
         {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
       </button>
+
+      <Link to="/exames" title="Interpretação de Exames"
+        className="p-2.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
+        <Microscope className="w-4 h-4" />
+      </Link>
 
       {/* Apps dropdown */}
       <div className="relative">

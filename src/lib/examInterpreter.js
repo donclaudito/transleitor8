@@ -87,28 +87,89 @@ export const REFERENCE_RANGES = {
   "Procalcitonin": { min: 0, max: 0.5, unit: "ng/mL", ptName: "Procalcitonina" },
 };
 
+// Section headers → expected tests in order
+const SECTION_TESTS = {
+  'eritrograma': ['Red Blood Cell Count', 'Hemoglobin', 'Hematocrit'],
+  'leucograma': ['White Blood Cell Count', 'Segmented Neutrophils', 'Band Neutrophils', 'Lymphocytes', 'Monocytes', 'Eosinophils', 'Basophils'],
+  'plaquetas': ['Platelet Count'],
+};
+
 function normalize(s) {
   return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
-function parseLine(line) {
-  const cleaned = line.trim().replace(/\s+/g, ' ');
-  const match = cleaned.match(/^(.+?)[\s:]+(\d+[\.,]?\d*)\s*(.*)?$/);
-  if (!match) return null;
-  const rawName = match[1].trim();
-  const value = parseFloat(match[2].replace(',', '.'));
-  const unit = match[3]?.trim() || '';
-
-  // Busca com normalização (remove acentos)
-  const normalizedInput = normalize(rawName);
-  let mapped = TEST_NAME_MAP[rawName.toLowerCase()];
-  if (!mapped) {
-    for (const [key, val] of Object.entries(TEST_NAME_MAP)) {
-      if (normalize(key) === normalizedInput) { mapped = val; break; }
-    }
+function lookupTestName(rawName) {
+  const key = rawName.toLowerCase().trim();
+  if (TEST_NAME_MAP[key]) return TEST_NAME_MAP[key];
+  const norm = normalize(rawName);
+  // Try exact match on normalized key
+  for (const [k, v] of Object.entries(TEST_NAME_MAP)) {
+    const nk = normalize(k);
+    if (nk === norm || nk.includes(norm) || norm.includes(nk)) return v;
   }
-  if (!mapped) return null;
-  return { name: mapped, value, unit, originalName: rawName };
+  return null;
+}
+
+// Parse a single line for name + value
+function parseLine(line) {
+  const cleaned = line
+    .trim()
+    .replace(/\s+/g, ' ')          // normalize whitespace
+    .replace(/\.{3,}/g, ' ')       // dot-separators → spaces
+    .replace(/[•·⋅]/g, ' ')        // bullet points → spaces
+    .replace(/[\t]+/g, ' ');       // tabs → spaces
+
+  // Skip lines that are purely numeric/symbolic (no letters)
+  if (!/[a-zA-ZÀ-ÿ]/.test(cleaned)) return null;
+
+  const patterns = [
+    // "Name: Value Unit" or "Name Value Unit"
+    /^([^\d]+?)[\s:]+(\d+[\.,]?\d*)\s*(.*?)$/,
+  ];
+
+  for (const pattern of patterns) {
+    const match = cleaned.match(pattern);
+    if (!match) continue;
+    const rawName = match[1].trim();
+    const value = parseFloat(match[2].replace(',', '.'));
+    if (isNaN(value) || rawName.length < 2) continue;
+
+    const unit = match[3]?.trim() || '';
+    const mapped = lookupTestName(rawName);
+    if (!mapped) continue;
+    return { name: mapped, value, unit, originalName: rawName };
+  }
+  return null;
+}
+
+// Extract all positive numbers from a line
+function extractNumbers(text) {
+  const cleaned = text.replace(/[^\d,\.\s-]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!cleaned) return [];
+  const parts = cleaned.split(/\s+/);
+  const numbers = [];
+  for (const part of parts) {
+    const num = parseFloat(part.replace(',', '.'));
+    if (!isNaN(num) && num >= 0) numbers.push(num);
+  }
+  return numbers;
+}
+
+// Check if a number looks like a reference-range pair member
+// (consecutive numbers where the second > first, typical ref range pattern)
+function isRefRangeNumber(numbers, index) {
+  // If it's part of a pair of numbers where they could be min-max
+  if (index > 0) {
+    const prev = numbers[index - 1];
+    const curr = numbers[index];
+    if (prev > 0 && curr > prev && curr <= 500) return true; // curr looks like a max
+  }
+  if (index < numbers.length - 1) {
+    const curr = numbers[index];
+    const next = numbers[index + 1];
+    if (next > 0 && next > curr && next <= 500) return true; // curr looks like a min
+  }
+  return false;
 }
 
 function getStatus(value, ref) {
@@ -118,21 +179,162 @@ function getStatus(value, ref) {
 }
 
 export function interpretExams(text) {
-  const lines = text.split('\n').filter(l => l.trim());
+  const lines = text.split('\n');
   const results = [];
+  const seenTests = new Set(); // prevent duplicates
+
+  // ----- PASS 1: Line-by-line parsing (structured input) -----
   for (const line of lines) {
     const parsed = parseLine(line);
     if (!parsed) continue;
     const ref = REFERENCE_RANGES[parsed.name];
     if (!ref) continue;
-    const status = getStatus(parsed.value, ref);
+    const key = parsed.name;
+    if (seenTests.has(key)) continue;
+    seenTests.add(key);
     results.push({
       ...parsed,
       ptName: ref.ptName,
       ref,
-      status,
+      status: getStatus(parsed.value, ref),
     });
   }
+
+  // ----- PASS 2: Section-based extraction (unstructured paste) -----
+  // Only if we got few results from structured parsing
+  if (results.length < 2) {
+    const allLines = lines.map((l, i) => ({ text: l.trim(), index: i }));
+
+    for (let i = 0; i < allLines.length; i++) {
+      const lineText = allLines[i].text;
+      const normLine = normalize(lineText);
+
+      // Check for known section headers (also match partial like "ERITROGRAMA" in any text)
+      let sectionKey = null;
+      for (const [key] of Object.entries(SECTION_TESTS)) {
+        if (normLine === key || normLine.includes(key)) {
+          sectionKey = key;
+          break;
+        }
+      }
+      if (!sectionKey) continue;
+
+      const expectedTests = SECTION_TESTS[sectionKey];
+
+      // Collect all numbers from subsequent lines, tracking positions
+      const rawValues = []; // { value, index }
+      for (let j = i + 1; j < allLines.length; j++) {
+        const nextText = allLines[j].text;
+        const nextNorm = normalize(nextText);
+
+        // Stop at next section header
+        let isNextSection = false;
+        for (const key of Object.keys(SECTION_TESTS)) {
+          if (nextNorm === key || nextNorm.includes(key)) { isNextSection = true; break; }
+        }
+        if (isNextSection) break;
+
+        const nums = extractNumbers(nextText);
+        // Lines with exactly 1 number → candidate values
+        // Lines with 2+ numbers → likely reference ranges (skip)
+        if (nums.length === 1) {
+          const n = nums[0];
+          if (n > 0 && n < 100000) rawValues.push({ value: n, index: j });
+        }
+      }
+
+      // Filter out reference-range pairs: if two consecutive single-number lines
+      // form an ascending pair (a < b), skip both as they're likely ref min/max
+      const candidates = [];
+      let skipNext = false;
+      for (let v = 0; v < rawValues.length; v++) {
+        if (skipNext) { skipNext = false; continue; }
+        const curr = rawValues[v];
+        const next = rawValues[v + 1];
+        // Check if curr and next form a plausible ref range (ascending, both reasonable)
+        if (next && curr.value > 0 && next.value > curr.value && next.value <= 500 && next.index === curr.index + 1) {
+          skipNext = true;
+          continue;
+        }
+        candidates.push(curr.value);
+      }
+
+      // Smart matching: pair each candidate with the test whose reference range
+      // it falls closest to (handles varying lab report column orders)
+      const availableTests = expectedTests.filter(t => !seenTests.has(t) && REFERENCE_RANGES[t]);
+      const usedCandidates = new Set();
+
+      for (const testName of availableTests) {
+        const ref = REFERENCE_RANGES[testName];
+        if (!ref) continue;
+        // Find the candidate value closest to this test's reference range midpoint
+        const refMid = (ref.min + ref.max) / 2;
+        let bestIdx = -1;
+        let bestDist = Infinity;
+        for (let c = 0; c < candidates.length; c++) {
+          if (usedCandidates.has(c)) continue;
+          const dist = Math.abs(candidates[c] - refMid);
+          // Prefer values that are within or near the reference range
+          if (dist < bestDist) {
+            bestDist = dist;
+            bestIdx = c;
+          }
+        }
+        if (bestIdx >= 0) {
+          usedCandidates.add(bestIdx);
+          seenTests.add(testName);
+          results.push({
+            name: testName,
+            value: candidates[bestIdx],
+            unit: ref.unit,
+            originalName: ref.ptName,
+            ptName: ref.ptName,
+            ref,
+            status: getStatus(candidates[bestIdx], ref),
+          });
+        }
+      }
+    }
+  }
+
+  // ----- PASS 3: Keyword-based extraction (text has test names but not on the same line as values) -----
+  if (results.length < 2) {
+    // Find all known test name occurrences and nearby numbers
+    const allText = text;
+    const normText = normalize(allText);
+
+    for (const [rawKey, mappedName] of Object.entries(TEST_NAME_MAP)) {
+      if (seenTests.has(mappedName)) continue;
+      const ref = REFERENCE_RANGES[mappedName];
+      if (!ref) continue;
+
+      // Find the keyword position in the normalized text
+      const normKey = normalize(rawKey);
+      const idx = normText.indexOf(normKey);
+      if (idx < 0) continue;
+
+      // Search for a number within ~100 chars after the keyword
+      const searchWindow = allText.substring(idx, idx + 200);
+      const nums = extractNumbers(searchWindow);
+      if (nums.length === 0) continue;
+
+      // Take the first plausible number
+      const value = nums[0];
+      if (value <= 0 || value > 100000) continue;
+
+      seenTests.add(mappedName);
+      results.push({
+        name: mappedName,
+        value,
+        unit: ref.unit,
+        originalName: ref.ptName,
+        ptName: ref.ptName,
+        ref,
+        status: getStatus(value, ref),
+      });
+    }
+  }
+
   return results;
 }
 

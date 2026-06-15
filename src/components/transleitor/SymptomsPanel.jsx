@@ -373,7 +373,7 @@ export default function SymptomsPanel({ onAppend, clinicalDescription = '' }) {
         <>
           <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={() => setOpen(false)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="w-full max-w-lg max-h-[85vh] flex flex-col bg-card rounded-2xl border border-border shadow-2xl overflow-hidden">
+            <div className="w-full max-w-4xl max-h-[92vh] flex flex-col bg-card rounded-2xl border border-border shadow-2xl overflow-hidden">
               {/* Header */}
               <div className="px-5 py-4 border-b border-border flex-shrink-0 space-y-3">
                 <div className="flex items-center justify-between">

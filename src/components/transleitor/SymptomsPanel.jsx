@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { ChevronDown, ChevronRight, PanelRight, PanelRightClose, Search, Sparkles } from 'lucide-react';
+import { ChevronDown, ChevronRight, PanelRight, Search, Sparkles } from 'lucide-react';
 
 const SYMPTOMS_DATA = {
   subjetivo: {
@@ -305,106 +305,104 @@ export default function SymptomsPanel({ onAppend, clinicalDescription = '' }) {
   return (
     <>
       {/* Toggle button */}
-      <button onClick={() => setOpen(!open)}
-        title={open ? 'Fechar painel de sintomas' : 'Sinais e Sintomas'}
-        className={`fixed right-0 top-1/2 -translate-y-1/2 z-30 flex items-center gap-1.5 px-2 py-4 rounded-l-xl border border-r-0 border-border shadow-lg transition-all duration-300 ${
-          open ? 'bg-primary text-primary-foreground border-primary' : 'bg-card text-muted-foreground hover:text-foreground hover:bg-accent'
-        }`}>
+      <button onClick={() => setOpen(true)}
+        title="Sinais e Sintomas"
+        className="fixed right-0 top-1/2 -translate-y-1/2 z-30 flex items-center gap-1.5 px-2 py-4 rounded-l-xl border border-r-0 border-border shadow-lg bg-card text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
         <span className="writing-mode-vertical text-[10px] font-bold tracking-wider uppercase"
           style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
           Sintomas
         </span>
-        {open ? <PanelRightClose className="w-4 h-4" /> : <PanelRight className="w-4 h-4" />}
+        <PanelRight className="w-4 h-4" />
       </button>
 
-      {/* Panel */}
-      <div className={`fixed right-0 top-0 h-full z-20 flex flex-col transition-all duration-300 ease-in-out ${
-        open ? 'translate-x-0' : 'translate-x-full'
-      }`} style={{ width: '320px' }}>
-        <div className="h-full flex flex-col bg-card border-l border-border shadow-2xl mt-[64px]">
-          {/* Header */}
-          <div className="px-4 py-3 border-b border-border flex-shrink-0 space-y-2.5">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-sm font-extrabold">Sinais & Sintomas</h2>
-                <p className="text-xs text-muted-foreground">Selecione para inserir na descrição</p>
+      {/* Popover */}
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={() => setOpen(false)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="w-full max-w-lg max-h-[85vh] flex flex-col bg-card rounded-2xl border border-border shadow-2xl overflow-hidden">
+              {/* Header */}
+              <div className="px-5 py-4 border-b border-border flex-shrink-0 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-sm font-extrabold">Sinais & Sintomas</h2>
+                    <p className="text-xs text-muted-foreground">Selecione para inserir na descrição</p>
+                  </div>
+                  <button onClick={() => setOpen(false)} className="p-1.5 rounded-lg hover:bg-accent transition-colors text-muted-foreground">
+                    ×
+                  </button>
+                </div>
+                {/* Busca inteligente */}
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Buscar sintomas..."
+                    className="w-full pl-8 pr-8 py-2 rounded-lg bg-muted border border-border text-xs focus:outline-none focus:border-primary/50 transition-all"
+                  />
+                  {searchTerm && (
+                    <button onClick={() => setSearchTerm('')}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                      ×
+                    </button>
+                  )}
+                </div>
+                {/* Indicador de sugestões contextuais */}
+                {suggestedItems.size > 0 && !searchTerm && (
+                  <div className="flex items-center gap-1.5 text-[10px] text-amber-500">
+                    <Sparkles className="w-3 h-3" />
+                    <span>{suggestedItems.size} sugestões detectadas no texto clínico</span>
+                  </div>
+                )}
               </div>
-              <button onClick={() => setOpen(false)} className="p-1.5 rounded-lg hover:bg-accent transition-colors text-muted-foreground">
-                <PanelRightClose className="w-4 h-4" />
-              </button>
-            </div>
-            {/* Busca inteligente */}
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Buscar sintomas..."
-                className="w-full pl-8 pr-8 py-2 rounded-lg bg-muted border border-border text-xs focus:outline-none focus:border-primary/50 transition-all"
-              />
-              {searchTerm && (
-                <button onClick={() => setSearchTerm('')}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                  ×
-                </button>
-              )}
-            </div>
-            {/* Indicador de sugestões contextuais */}
-            {suggestedItems.size > 0 && !searchTerm && (
-              <div className="flex items-center gap-1.5 text-[10px] text-amber-500">
-                <Sparkles className="w-3 h-3" />
-                <span>{suggestedItems.size} sugestões detectadas no texto clínico</span>
-              </div>
-            )}
-          </div>
 
-          {/* Scrollable content */}
-          <div className="flex-1 overflow-y-auto p-3 space-y-2">
-            {Object.entries(SYMPTOMS_DATA).map(([key, section]) => (
-              <SectionAccordion
-                key={key}
-                sectionKey={key}
-                section={section}
-                selectedItems={selected}
-                onToggle={handleToggle}
-                searchTerm={searchTerm}
-                suggestedItems={suggestedItems}
-              />
-            ))}
-          </div>
-
-          {/* Footer */}
-          <div className="p-3 border-t border-border flex-shrink-0 space-y-2">
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-muted-foreground">
-                {selected.length > 0
-                  ? <><span className="font-bold text-primary">{selected.length}</span> item(s) inserido(s)</>
-                  : 'Clique nos itens para inserir'}
-              </p>
-              {selected.length > 0 && (
-                <button onClick={handleClearAll}
-                  className="text-xs text-muted-foreground hover:text-destructive transition-colors font-semibold">
-                  Limpar seleção
-                </button>
-              )}
-            </div>
-            {selected.length > 0 && (
-              <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto">
-                {selected.map(item => (
-                  <span key={item} onClick={() => handleToggle(item)}
-                    className="cursor-pointer px-2 py-0.5 rounded-full text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/20 transition-all">
-                    {item} ×
-                  </span>
+              {/* Scrollable content */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                {Object.entries(SYMPTOMS_DATA).map(([key, section]) => (
+                  <SectionAccordion
+                    key={key}
+                    sectionKey={key}
+                    section={section}
+                    selectedItems={selected}
+                    onToggle={handleToggle}
+                    searchTerm={searchTerm}
+                    suggestedItems={suggestedItems}
+                  />
                 ))}
               </div>
-            )}
-          </div>
-        </div>
-      </div>
 
-      {/* Overlay */}
-      {open && <div className="fixed inset-0 z-10 bg-black/20 backdrop-blur-sm" onClick={() => setOpen(false)} />}
+              {/* Footer */}
+              <div className="p-4 border-t border-border flex-shrink-0 space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">
+                    {selected.length > 0
+                      ? <><span className="font-bold text-primary">{selected.length}</span> item(s) inserido(s)</>
+                      : 'Clique nos itens para inserir'}
+                  </p>
+                  {selected.length > 0 && (
+                    <button onClick={handleClearAll}
+                      className="text-xs text-muted-foreground hover:text-destructive transition-colors font-semibold">
+                      Limpar seleção
+                    </button>
+                  )}
+                </div>
+                {selected.length > 0 && (
+                  <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto">
+                    {selected.map(item => (
+                      <span key={item} onClick={() => handleToggle(item)}
+                        className="cursor-pointer px-2 py-0.5 rounded-full text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/20 transition-all">
+                        {item} ×
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </>
   );
 }

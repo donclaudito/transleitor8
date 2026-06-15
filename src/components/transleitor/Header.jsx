@@ -1,15 +1,22 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Stethoscope, History, Plus, Settings, Calculator, Wrench, Sun, Moon, BookOpen } from 'lucide-react';
+import { Stethoscope, History, Plus, Settings, Calculator, Wrench, Sun, Moon, BookOpen, ChevronDown, ExternalLink } from 'lucide-react';
+import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 
 export default function Header({ view, setView, theme, setTheme, onNewEvolution }) {
+  const [appsOpen, setAppsOpen] = useState(false);
   const { data: user } = useQuery({
     queryKey: ['me'],
     queryFn: () => base44.auth.me(),
   });
+  const { data: appLinks = [] } = useQuery({
+    queryKey: ['applinks-header'],
+    queryFn: () => base44.entities?.AppLink ? base44.entities.AppLink.filter({ ativo: true }, 'ordem', 50) : Promise.resolve([]),
+  });
   const isAdmin = user?.role === 'admin';
+  const activeApps = appLinks.filter(l => l.ativo !== false);
 
   const navButtons = [
     { id: 'history', icon: History, label: 'Histórico' },
@@ -54,11 +61,54 @@ export default function Header({ view, setView, theme, setTheme, onNewEvolution 
         {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
       </button>
 
-      {isAdmin && (
-        <Link to="/gerenciar-apps" className="p-2.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent transition-all" title="Gerenciar Apps">
+      {/* Apps dropdown */}
+      <div className="relative">
+        <button
+          onClick={() => setAppsOpen(!appsOpen)}
+          title="Apps"
+          className={`p-2.5 rounded-xl transition-all duration-200 flex items-center gap-1 ${
+            appsOpen ? 'bg-primary text-primary-foreground shadow-lg' : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+          }`}
+        >
           <BookOpen className="w-4 h-4" />
-        </Link>
-      )}
+          <ChevronDown className={`w-3 h-3 transition-transform ${appsOpen ? 'rotate-180' : ''}`} />
+        </button>
+        {appsOpen && (
+          <>
+            <div className="fixed inset-0 z-30" onClick={() => setAppsOpen(false)} />
+            <div className="absolute right-0 top-full mt-2 w-56 bg-card rounded-xl border border-border shadow-2xl overflow-hidden z-40">
+              {activeApps.length > 0 && (
+                <div className="py-1">
+                  {activeApps.map(app => (
+                    <a
+                      key={app.id}
+                      href={app.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => setAppsOpen(false)}
+                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-accent transition-colors"
+                    >
+                      <span className="text-base">{app.icone || '🔗'}</span>
+                      <span className="flex-1 truncate font-medium">{app.nome}</span>
+                      <ExternalLink className="w-3 h-3 text-muted-foreground opacity-50" />
+                    </a>
+                  ))}
+                </div>
+              )}
+              {isAdmin && (
+                <Link
+                  to="/gerenciar-apps"
+                  onClick={() => setAppsOpen(false)}
+                  className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-primary hover:bg-accent transition-colors ${activeApps.length > 0 ? 'border-t border-border' : ''}`}
+                >
+                  <span>⚙️</span>
+                  Gerenciar Apps
+                </Link>
+              )}
+            </div>
+          </>
+        )}
+      </div>
     </header>
   );
 }

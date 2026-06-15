@@ -149,16 +149,62 @@ const SYMPTOMS_DATA = {
   },
 };
 
+function normalize(s) {
+  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
 function fuzzyMatch(text, query) {
   if (!query) return true;
-  const q = query.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  const t = text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  // Verifica se todas as letras da query aparecem em ordem no texto
+  const q = normalize(query);
+  const t = normalize(text);
   let qi = 0;
   for (let ti = 0; ti < t.length && qi < q.length; ti++) {
     if (t[ti] === q[qi]) qi++;
   }
   return qi === q.length;
+}
+
+// Sinônimos: termos leigos → termos médicos
+const SYNONYM_MAP = {
+  'coracao': ['cardíaco', 'cardiovascular', 'cardio', 'cardíaca', 'sopro', 'FC', 'RCR', 'B3', 'B4', 'jugular', 'pulso', 'perfusão', 'edema', 'ECG', 'Holter', 'MAPA', 'ecocardiograma', 'troponina', 'CK', 'BNP'],
+  'corazón': ['cardíaco', 'cardiovascular', 'cardio', 'cardíaca', 'sopro', 'FC', 'RCR', 'B3', 'B4', 'jugular', 'pulso', 'perfusão', 'edema', 'ECG', 'Holter', 'MAPA', 'ecocardiograma', 'troponina', 'CK', 'BNP'],
+  'cabeça': ['cefaleia', 'crânio', 'encefálico', 'Glasgow', 'pupila', 'anisocoria', 'consciência', 'desorientação', 'neurológico', 'TC de crânio', 'RM de crânio'],
+  'cabeza': ['cefaleia', 'crânio', 'encefálico', 'Glasgow', 'pupila', 'anisocoria', 'consciência', 'desorientação', 'neurológico', 'TC de crânio', 'RM de crânio'],
+  'respirar': ['dispneia', 'taquipneia', 'bradipneia', 'eupneico', 'tosse', 'expectoração', 'sibilo', 'crepitante', 'MV', 'FTV', 'oxigenoterapia', 'SpO₂', 'saturação', 'gasometria', 'FR', 'tiragem', 'broncoscopia'],
+  'barriga': ['abdome', 'abdominal', 'RHA', 'FID', 'epigástrio', 'Blumberg', 'Murphy', 'hepatomegalia', 'esplenomegalia', 'ascite', 'náusea', 'vômito', 'diarreia', 'constipação', 'dieta', 'jejum', 'nutrição', 'endoscopia', 'colonoscopia', 'USG'],
+  'panza': ['abdome', 'abdominal', 'RHA', 'FID', 'epigástrio', 'Blumberg', 'Murphy', 'hepatomegalia', 'esplenomegalia', 'ascite', 'náusea', 'vômito', 'diarreia', 'constipação', 'dieta', 'jejum', 'nutrição', 'endoscopia', 'colonoscopia'],
+  'rim': ['renal', 'nefrologia', 'DRC', 'creatinina', 'ureia', 'TFGe', 'diurese', 'SVD', 'hematúria', 'disúria', 'EAS', 'poliúria', 'eletrólitos', 'Na', 'K', 'dialítico'],
+  'riñón': ['renal', 'nefrologia', 'DRC', 'creatinina', 'ureia', 'TFGe', 'diurese', 'SVD', 'hematúria', 'disúria', 'EAS', 'poliúria', 'eletrólitos', 'Na', 'K', 'dialítico'],
+  'figado': ['hepático', 'TGO', 'TGP', 'GGT', 'FA', 'bilirrubina', 'icterícia', 'hepatomegalia', 'cirrose', 'albumina', 'ascite', 'coagulograma', 'INR', 'TP'],
+  'hígado': ['hepático', 'TGO', 'TGP', 'GGT', 'FA', 'bilirrubina', 'icterícia', 'hepatomegalia', 'cirrose', 'albumina', 'ascite', 'coagulograma', 'INR', 'TP'],
+  'pulmao': ['pulmonar', 'dispneia', 'tosse', 'expectoração', 'MV', 'crepitante', 'sibilo', 'derrame pleural', 'dreno de tórax', 'gasometria', 'SpO₂', 'broncoscopia', 'TC de tórax', 'RX tórax'],
+  'pulmón': ['pulmonar', 'dispneia', 'tosse', 'expectoração', 'MV', 'crepitante', 'sibilo', 'derrame pleural', 'dreno de tórax', 'gasometria', 'SpO₂', 'broncoscopia', 'TC de tórax', 'RX tórax'],
+  'pressao': ['PA', 'hipotenso', 'normotenso', 'hipertenso', 'PAI', 'MAPA', 'sinais vitais'],
+  'presión': ['PA', 'hipotenso', 'normotenso', 'hipertenso', 'PAI', 'MAPA', 'sinais vitais'],
+  'açucar': ['glicemia', 'glicose', 'HGT', 'dextro', 'hipoglicemia', 'hiperglicemia', 'HbA1c', 'DM', 'diabetes', 'polidipsia', 'poliúria'],
+  'azúcar': ['glicemia', 'glicose', 'HGT', 'dextro', 'hipoglicemia', 'hiperglicemia', 'HbA1c', 'DM', 'diabetes', 'polidipsia', 'poliúria'],
+  'sangue': ['hemograma', 'hematêmese', 'hematoquezia', 'melena', 'hemoptise', 'hemorrágico', 'sangramento', 'equimose', 'anemia', 'coagulograma', 'INR', 'TP', 'TTPA', 'plaqueta', 'hemocultura'],
+  'sangre': ['hemograma', 'hematêmese', 'hematoquezia', 'melena', 'hemoptise', 'hemorrágico', 'sangramento', 'equimose', 'anemia', 'coagulograma', 'INR', 'TP', 'TTPA', 'plaqueta', 'hemocultura'],
+  'pele': ['rash', 'icterícia', 'palidez', 'cianose', 'prurido', 'ferida', 'curativo', 'deiscência', 'necrose', 'granulação', 'úlcera', 'UPP'],
+  'piel': ['rash', 'icterícia', 'palidez', 'cianose', 'prurido', 'ferida', 'curativo', 'deiscência', 'necrose', 'granulação', 'úlcera', 'UPP'],
+  'remedio': ['medicação', 'prescrição', 'adesão medicamentosa', 'antibiótico', 'ceftriaxona', 'vancomicina', 'meropenem', 'nível sérico'],
+  'perna': ['MMII', 'edema', 'deambulação', 'panturrilha', 'TVP', 'Doppler'],
+  'pierna': ['MMII', 'edema', 'deambulação', 'panturrilha', 'TVP', 'Doppler'],
+  'cancer': ['oncológico', 'tumor', 'neoplasia', 'quimioterapia', 'radioterapia', 'metástase', 'cuidados paliativos', 'PET-CT', 'biópsia'],
+  'cáncer': ['oncológico', 'tumor', 'neoplasia', 'quimioterapia', 'radioterapia', 'metástase', 'cuidados paliativos', 'PET-CT', 'biópsia'],
+  'visita': ['dreno', 'sonda', 'curativo', 'fisioterapia', 'interconsulta', 'alta', 'dieta', 'acesso vascular', 'CVC', 'AVP', 'enfermagem'],
+};
+
+function expandSearchTerm(term) {
+  if (!term) return [];
+  const n = normalize(term);
+  // Busca exata no mapa
+  if (SYNONYM_MAP[n]) return SYNONYM_MAP[n];
+  // Busca parcial: se o termo digitado é substring de alguma chave
+  for (const [key, synonyms] of Object.entries(SYNONYM_MAP)) {
+    if (key.includes(n) || n.includes(key)) return synonyms;
+  }
+  return [];
 }
 
 // Mapeamento de palavras-chave para itens do painel
@@ -201,7 +247,12 @@ function AccordionGroup({ group, selectedItems, onToggle, colorClasses, searchTe
   const [open, setOpen] = useState(false);
   const selectedCount = group.items.filter(i => selectedItems.includes(i)).length;
 
-  const filteredItems = group.items.filter(item => fuzzyMatch(item, searchTerm));
+  const synonyms = expandSearchTerm(searchTerm);
+  const filteredItems = group.items.filter(item => {
+    if (fuzzyMatch(item, searchTerm)) return true;
+    if (synonyms.length > 0) return synonyms.some(syn => fuzzyMatch(item, syn));
+    return false;
+  });
   if (filteredItems.length === 0) return null;
 
   return (
@@ -248,8 +299,10 @@ function SectionAccordion({ sectionKey, section, selectedItems, onToggle, search
   const [open, setOpen] = useState(defaultOpen || sectionKey === 'subjetivo');
   const totalSelected = section.groups.flatMap(g => g.items).filter(i => selectedItems.includes(i)).length;
 
-  // Se tem busca ativa, expande automaticamente se houver matches
-  const hasMatches = searchTerm && section.groups.some(g => g.items.some(i => fuzzyMatch(i, searchTerm)));
+  // Se tem busca ativa, expande automaticamente se houver matches (com sinônimos)
+  const searchSynonyms = expandSearchTerm(searchTerm);
+  const matchesItem = (item) => fuzzyMatch(item, searchTerm) || searchSynonyms.some(syn => fuzzyMatch(item, syn));
+  const hasMatches = searchTerm && section.groups.some(g => g.items.some(matchesItem));
   const isOpen = open || (searchTerm && hasMatches);
 
   // Auto-open when search finds matches

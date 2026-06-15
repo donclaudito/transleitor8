@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { interpretExams, generateMarkdownReport } from '@/lib/examInterpreter';
+import { interpretExams, generateMarkdownReport, generateFullTableReport } from '@/lib/examInterpreter';
 import ReactMarkdown from 'react-markdown';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FlaskConical, Play, Copy, RefreshCw, Check, ArrowLeft } from 'lucide-react';
@@ -24,7 +24,8 @@ export default function InterpretacaoExames() {
   };
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(report);
+    const fullReport = generateFullTableReport(results);
+    navigator.clipboard.writeText(fullReport);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -129,8 +130,10 @@ export default function InterpretacaoExames() {
               </div>
 
               {report && (
-                <div className="mt-4 prose prose-sm dark:prose-invert max-w-none">
-                  <ReactMarkdown>{report}</ReactMarkdown>
+                <div className="mt-5 p-4 rounded-xl border border-border bg-muted/30">
+                  <div className="prose prose-sm dark:prose-invert max-w-none">
+                    <ReactMarkdown>{report}</ReactMarkdown>
+                  </div>
                 </div>
               )}
             </>

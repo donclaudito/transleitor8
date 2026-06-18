@@ -35,8 +35,14 @@ Deno.serve(async (req) => {
       return Response.json({ error: `Chave API não configurada: ${llm.api_key_env_var}` }, { status: 500 });
     }
 
+    // Garante que a URL termine com /chat/completions
+    let apiUrl = llm.api_url;
+    if (!apiUrl.endsWith('/chat/completions')) {
+      apiUrl = apiUrl.replace(/\/+$/, '') + '/chat/completions';
+    }
+
     // Chamada genérica à API externa (formato OpenAI-compatible)
-    const response = await fetch(llm.api_url, {
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,

@@ -34,7 +34,7 @@ export default function ResultView({ currentSOAP, setView }) {
         </div>
       </div>
 
-      <div className="prose prose-sm dark:prose-invert max-w-none">
+      <div className="prose prose-sm dark:prose-invert max-w-none [&_code]:bg-amber-500/10 [&_code]:text-amber-600 [&_code]:dark:text-amber-400 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:font-mono [&_code]:text-xs [&_code]:font-bold [&_code]:before:content-none [&_code]:after:content-none">
         <ReactMarkdown>{currentSOAP.soap_text}</ReactMarkdown>
       </div>
 

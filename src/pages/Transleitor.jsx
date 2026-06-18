@@ -168,6 +168,12 @@ Formato obrigatório:
 ## A — Avaliação
 ## P — Plano
 
+CID-10 sugerido: Na seção Avaliação, após a análise clínica, sugira o código CID-10 mais provável com base no quadro descrito, no formato:
+\`\`\`
+**CID-10 sugerido:** X00.0 — Nome resumido da condição
+\`\`\`
+Se houver mais de uma hipótese, liste até 3 códigos por ordem de probabilidade.
+
 Use terminologia médica brasileira formal. Compare com a evolução anterior quando disponível e destaque mudanças clínicas relevantes.`;
 
       let result;

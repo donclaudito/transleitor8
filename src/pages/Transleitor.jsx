@@ -139,13 +139,14 @@ export default function Transleitor() {
     setStreamingText('');
     setCurrentSOAP(null);
 
-    const sectorHint = getSectorHint(formData.sector);
-    const isConsultorio = ['consultório', 'consultorio'].includes(formData.sector?.toLowerCase());
-    const consultorioLine = isConsultorio && formData.consultorioType
-      ? `Contexto: consulta ambulatorial (${formData.consultorioType === 'retorno' ? 'retorno' : 'primeira consulta'}).${formData.consultorioType === 'retorno' && formData.previousConsult?.trim() ? `\nConsulta anterior:\n${formData.previousConsult.trim()}` : ''}`
-      : '';
+    try {
+      const sectorHint = getSectorHint(formData.sector);
+      const isConsultorio = ['consultório', 'consultorio'].includes(formData.sector?.toLowerCase());
+      const consultorioLine = isConsultorio && formData.consultorioType
+        ? `Contexto: consulta ambulatorial (${formData.consultorioType === 'retorno' ? 'retorno' : 'primeira consulta'}).${formData.consultorioType === 'retorno' && formData.previousConsult?.trim() ? `\nConsulta anterior:\n${formData.previousConsult.trim()}` : ''}`
+        : '';
 
-    const prompt = `Você é um assistente médico especialista em documentação clínica brasileira.
+      const prompt = `Você é um assistente médico especialista em documentação clínica brasileira.
 Gere uma evolução SOAP em Markdown, técnica, precisa, pronta para prontuário. NÃO invente dados. Comece diretamente com ## S — Subjetivo.
 ${sectorHint ? `\nFoco de setor: ${sectorHint}` : ''}${consultorioLine ? `\n${consultorioLine}` : ''}
 
@@ -169,33 +170,36 @@ Formato obrigatório:
 
 Use terminologia médica brasileira formal. Compare com a evolução anterior quando disponível e destaque mudanças clínicas relevantes.`;
 
-    // Usa backend function se provedor externo selecionado, senão usa InvokeLLM padrão
-    let result;
-    if (selectedLLMId) {
-      const res = await base44.functions.invoke('generateSOAP', { prompt, llm_config_id: selectedLLMId });
-      if (res.data?.error) throw new Error(res.data.error);
-      result = res.data.text;
-    } else {
-      result = await base44.integrations.Core.InvokeLLM({ prompt, model: 'gemini_3_flash' });
-    }
-
-    const evolutionData = {
-      sector: formData.sector, bed: formData.bed, patient_initials: formData.patientInitials,
-      comorbidities: formData.comorbidities, labs: formData.labs, prescription: formData.prescription,
-      clinical_description: formData.clinicalDescription, soap_text: result,
-    };
-
-    const createdPromise = createEvolutionMutation.mutateAsync(evolutionData);
-    setLoading(false);
-
-    simulateStream(result,
-      (chunk) => setStreamingText(chunk),
-      async (final) => {
-        const created = await createdPromise;
-        setStreamingText('');
-        setCurrentSOAP({ ...evolutionData, id: created.id, created_date: new Date().toISOString() });
+      let result;
+      if (selectedLLMId) {
+        const res = await base44.functions.invoke('generateSOAP', { prompt, llm_config_id: selectedLLMId });
+        if (res.data?.error) throw new Error(res.data.error);
+        result = res.data.text;
+      } else {
+        result = await base44.integrations.Core.InvokeLLM({ prompt, model: 'gemini_3_flash' });
       }
-    );
+
+      const evolutionData = {
+        sector: formData.sector, bed: formData.bed, patient_initials: formData.patientInitials,
+        comorbidities: formData.comorbidities, labs: formData.labs, prescription: formData.prescription,
+        clinical_description: formData.clinicalDescription, soap_text: result,
+      };
+
+      const createdPromise = createEvolutionMutation.mutateAsync(evolutionData);
+      setLoading(false);
+
+      simulateStream(result,
+        (chunk) => setStreamingText(chunk),
+        async (final) => {
+          const created = await createdPromise;
+          setStreamingText('');
+          setCurrentSOAP({ ...evolutionData, id: created.id, created_date: new Date().toISOString() });
+        }
+      );
+    } catch (err) {
+      setLoading(false);
+      alert('Erro ao gerar evolução: ' + (err?.response?.data?.error || err.message || 'Erro desconhecido'));
+    }
   };
 
   const handleNewEvolution = () => {

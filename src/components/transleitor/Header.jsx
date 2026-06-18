@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Stethoscope, History, Plus, Settings, Calculator, Wrench, Sun, Moon, BookOpen, ChevronDown, ExternalLink, Microscope } from 'lucide-react';
+import { Stethoscope, History, Plus, Settings, Calculator, Wrench, Sun, Moon, BookOpen, ChevronDown, ExternalLink, Microscope, Cpu } from 'lucide-react';
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
@@ -66,6 +66,13 @@ export default function Header({ view, setView, theme, setTheme, onNewEvolution 
         <Microscope className="w-4 h-4" />
       </Link>
 
+      {isAdmin && (
+        <Link to="/admin-llms" title="Provedores de IA"
+          className="p-2.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
+          <Cpu className="w-4 h-4" />
+        </Link>
+      )}
+
       {/* Apps dropdown */}
       <div className="relative">
         <button
@@ -101,14 +108,23 @@ export default function Header({ view, setView, theme, setTheme, onNewEvolution 
                 </div>
               )}
               {isAdmin && (
-                <Link
-                  to="/gerenciar-apps"
-                  onClick={() => setAppsOpen(false)}
-                  className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-primary hover:bg-accent transition-colors ${activeApps.length > 0 ? 'border-t border-border' : ''}`}
-                >
-                  <span>⚙️</span>
-                  Gerenciar Apps
-                </Link>
+                <>
+                  <Link
+                    to="/gerenciar-apps"
+                    onClick={() => setAppsOpen(false)}
+                    className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-primary hover:bg-accent transition-colors ${activeApps.length > 0 ? 'border-t border-border' : ''}`}
+                  >
+                    <span>⚙️</span>
+                    Gerenciar Apps
+                  </Link>
+                  <Link
+                    to="/admin-llms"
+                    onClick={() => setAppsOpen(false)}
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-primary hover:bg-accent transition-colors"
+                  >
+                    <Cpu className="w-4 h-4" /> Provedores de IA
+                  </Link>
+                </>
               )}
             </div>
           </>

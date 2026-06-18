@@ -16,6 +16,7 @@ import InterpretacaoExames from '@/pages/InterpretacaoExames';
 import TemplatesSOAP from '@/pages/TemplatesSOAP';
 import GerenciarApps from '@/pages/GerenciarApps';
 import DevDocs from '@/pages/DevDocs';
+import AdminLLMs from '@/pages/AdminLLMs';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -50,6 +51,7 @@ const AuthenticatedApp = () => {
         <Route path="/templates" element={<TemplatesSOAP />} />
         <Route path="/gerenciar-apps" element={<GerenciarApps />} />
         <Route path="/dev-docs" element={<DevDocs />} />
+        <Route path="/admin-llms" element={<AdminLLMs />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

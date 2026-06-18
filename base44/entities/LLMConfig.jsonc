@@ -1,0 +1,32 @@
+{
+  "name": "LLMConfig",
+  "type": "object",
+  "properties": {
+    "provider_name": {
+      "type": "string",
+      "description": "Nome exibido do provedor (ex: Magistral, OpenAI, DeepSeek)"
+    },
+    "api_url": {
+      "type": "string",
+      "description": "URL base da API de chat completions"
+    },
+    "api_key_env_var": {
+      "type": "string",
+      "description": "Nome da vari\u00e1vel de ambiente no dashboard onde a chave API est\u00e1 armazenada"
+    },
+    "model_name": {
+      "type": "string",
+      "description": "Nome do modelo a ser usado (ex: gpt-4o, magistral-v1)"
+    },
+    "is_active": {
+      "type": "boolean",
+      "description": "Se o provedor est\u00e1 ativo para uso"
+    }
+  },
+  "required": [
+    "provider_name",
+    "api_url",
+    "api_key_env_var",
+    "model_name"
+  ]
+}

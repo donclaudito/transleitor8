@@ -44,6 +44,13 @@ export default function Transleitor() {
     queryFn: () => base44.entities.Comorbidity.list(),
   });
 
+  const { data: llmProviders = [] } = useQuery({
+    queryKey: ['llm-configs'],
+    queryFn: () => base44.entities.LLMConfig.filter({ is_active: true }, 'provider_name', 20),
+  });
+
+  const [selectedLLMId, setSelectedLLMId] = useState('');
+
   const allSectors = [...new Set([...DEFAULT_SECTORS, ...customSectors.map(s => s.name)])];
   const allComorbidities = [...new Set([...DEFAULT_COMORBIDITIES, ...customComorbidities.map(c => c.name)])];
 
@@ -157,7 +164,15 @@ Formato obrigatório:
 
 Use terminologia médica brasileira formal. Compare com a evolução anterior quando disponível e destaque mudanças clínicas relevantes.`;
 
-    const result = await base44.integrations.Core.InvokeLLM({ prompt, model: 'gemini_3_flash' });
+    // Usa backend function se provedor externo selecionado, senão usa InvokeLLM padrão
+    let result;
+    if (selectedLLMId) {
+      const res = await base44.functions.invoke('generateSOAP', { prompt, llm_config_id: selectedLLMId });
+      if (res.data?.error) throw new Error(res.data.error);
+      result = res.data.text;
+    } else {
+      result = await base44.integrations.Core.InvokeLLM({ prompt, model: 'gemini_3_flash' });
+    }
 
     const evolutionData = {
       sector: formData.sector, bed: formData.bed, patient_initials: formData.patientInitials,
@@ -228,6 +243,7 @@ Use terminologia médica brasileira formal. Compare com a evolução anterior qu
             setView={setView} toggleComorbidityInForm={toggleComorbidityInForm}
             generateSOAP={generateSOAP} loading={loading}
             customChips={settings.customChips} theme={settings.theme}
+            llmProviders={llmProviders} selectedLLMId={selectedLLMId} setSelectedLLMId={setSelectedLLMId}
           />
         </div>
         <div className="overflow-y-auto p-4 md:p-6">

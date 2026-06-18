@@ -1,10 +1,11 @@
 import React from 'react';
-import { Activity, Wand2, Settings2, FlaskConical, User } from 'lucide-react';
+import { Activity, Wand2, Settings2, FlaskConical, User, Cpu } from 'lucide-react';
 import SymptomsPanel from './SymptomsPanel';
 
 export default function FormView({
   formData, setFormData, allSectors, allComorbidities, setView,
   toggleComorbidityInForm, generateSOAP, loading, customChips = [], theme = 'dark',
+  llmProviders = [], selectedLLMId = '', setSelectedLLMId = () => {},
 }) {
   const appendToClinical = (item) => {
     setFormData(prev => {
@@ -140,6 +141,25 @@ export default function FormView({
           value={formData.labs} onChange={e => setFormData({ ...formData, labs: e.target.value })}
           className="w-full px-4 py-3 rounded-xl bg-muted border border-border text-sm resize-none focus:outline-none focus:border-primary/50 transition-all" />
       </div>
+
+      {/* Seletor de IA (visível quando há provedores cadastrados) */}
+      {llmProviders.length > 0 && (
+        <div className="glass-card rounded-2xl p-4 space-y-2">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+            <Cpu className="w-3.5 h-3.5" /> Modelo de IA
+          </h3>
+          <select
+            value={selectedLLMId}
+            onChange={e => setSelectedLLMId(e.target.value)}
+            className="w-full px-4 py-2.5 rounded-xl bg-muted border border-border text-sm focus:outline-none focus:border-primary/50 transition-all"
+          >
+            <option value="">Padrão (Gemini Flash)</option>
+            {llmProviders.map(p => (
+              <option key={p.id} value={p.id}>{p.provider_name} — {p.model_name}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* Gerar */}
       <button onClick={generateSOAP} disabled={loading || !formData.clinicalDescription}

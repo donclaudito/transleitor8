@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 
-export default function Header({ view, setView, theme, setTheme, onNewEvolution }) {
+export default function Header({ view, setView, theme, setTheme, onNewEvolution, activeLLMName }) {
   const [appsOpen, setAppsOpen] = useState(false);
   const { data: user } = useQuery({
     queryKey: ['me'],
@@ -32,6 +32,10 @@ export default function Header({ view, setView, theme, setTheme, onNewEvolution 
         <Stethoscope className="w-5 h-5 text-primary" />
         <h1 className="text-lg font-extrabold tracking-tight">Transleitor<span className="text-primary opacity-60 text-xs ml-1">7</span></h1>
       </Link>
+
+      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center gap-1 flex-shrink-0">
+        <Cpu className="w-3 h-3" /> {activeLLMName || 'Gemini Flash'}
+      </span>
 
       <nav className="flex items-center gap-1">
         {navButtons.map(({ id, icon: Icon, label, action }) => {

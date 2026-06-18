@@ -51,6 +51,10 @@ export default function Transleitor() {
 
   const [selectedLLMId, setSelectedLLMId] = useState('');
 
+  const activeLLMName = selectedLLMId
+    ? llmProviders.find(p => p.id === selectedLLMId)?.provider_name || 'Desconhecido'
+    : 'Gemini Flash';
+
   const allSectors = [...new Set([...DEFAULT_SECTORS, ...customSectors.map(s => s.name)])];
   const allComorbidities = [...new Set([...DEFAULT_COMORBIDITIES, ...customComorbidities.map(c => c.name)])];
 
@@ -277,7 +281,7 @@ Use terminologia médica brasileira formal. Compare com a evolução anterior qu
 
   return (
     <div className="min-h-screen bg-background">
-      <Header view={view} setView={setView} theme={settings.theme} setTheme={setTheme} onNewEvolution={handleNewEvolution} />
+      <Header view={view} setView={setView} theme={settings.theme} setTheme={setTheme} onNewEvolution={handleNewEvolution} activeLLMName={activeLLMName} />
       {renderContent()}
     </div>
   );

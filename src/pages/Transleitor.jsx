@@ -281,7 +281,7 @@ Use terminologia médica brasileira formal. Compare com a evolução anterior qu
 
   return (
     <div className="min-h-screen bg-background">
-      <Header view={view} setView={setView} theme={settings.theme} setTheme={setTheme} onNewEvolution={handleNewEvolution} activeLLMName={activeLLMName} />
+      <Header view={view} setView={setView} theme={settings.theme} setTheme={setTheme} onNewEvolution={handleNewEvolution} activeLLMName={activeLLMName} llmProviders={llmProviders} selectedLLMId={selectedLLMId} setSelectedLLMId={setSelectedLLMId} />
       {renderContent()}
     </div>
   );

@@ -22,6 +22,10 @@
       "type": "string",
       "description": "Lab results and complementary exams"
     },
+    "prescription": {
+      "type": "string",
+      "description": "Current prescription text"
+    },
     "clinical_description": {
       "type": "string",
       "description": "Free-form clinical description"

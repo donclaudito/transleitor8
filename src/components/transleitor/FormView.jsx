@@ -142,6 +142,17 @@ export default function FormView({
           className="w-full px-4 py-3 rounded-xl bg-muted border border-border text-sm resize-none focus:outline-none focus:border-primary/50 transition-all" />
       </div>
 
+      {/* Prescrição */}
+      <div className="glass-card rounded-2xl p-5 space-y-3">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+          <span>💊</span> Prescrição Atual
+        </h3>
+        <p className="text-[11px] text-muted-foreground -mt-1">Cole a prescrição vigente do paciente para a IA integrar ao contexto.</p>
+        <textarea rows={4} placeholder="Cole aqui a prescrição atual..."
+          value={formData.prescription || ''} onChange={e => setFormData({ ...formData, prescription: e.target.value })}
+          className="w-full px-4 py-3 rounded-xl bg-muted border border-border text-sm resize-none focus:outline-none focus:border-primary/50 transition-all" />
+      </div>
+
       {/* Seletor de IA (visível quando há provedores cadastrados) */}
       {llmProviders.length > 0 && (
         <div className="glass-card rounded-2xl p-4 space-y-2">

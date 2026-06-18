@@ -15,7 +15,7 @@ const DEFAULT_COMORBIDITIES = ["HAS", "DM2", "Dislipidemia", "Tabagismo", "DRC",
 
 const DEFAULT_FORM = {
   sector: '', bed: '', patientInitials: '', comorbidities: '', labs: '', clinicalDescription: '',
-  consultorioType: null, previousConsult: '', previousEvolution: '', nursingEvolution: '',
+  consultorioType: null, previousConsult: '', previousEvolution: '', nursingEvolution: '', prescription: '',
 };
 
 export default function Transleitor() {
@@ -156,6 +156,7 @@ Dados do paciente:
 - Exames complementares: ${formData.labs || '—'}
 ${formData.previousEvolution?.trim() ? `\nEvolução médica anterior (use para comparar a progressão clínica):\n${formData.previousEvolution.trim()}` : ''}
 ${formData.nursingEvolution?.trim() ? `\nEvolução de enfermagem (integre as informações ao contexto):\n${formData.nursingEvolution.trim()}` : ''}
+${formData.prescription?.trim() ? `\nPrescrição atual do paciente (integre ao contexto clínico e ao plano):\n${formData.prescription.trim()}` : ''}
 
 Descrição clínica atual:
 ${formData.clinicalDescription}
@@ -180,7 +181,7 @@ Use terminologia médica brasileira formal. Compare com a evolução anterior qu
 
     const evolutionData = {
       sector: formData.sector, bed: formData.bed, patient_initials: formData.patientInitials,
-      comorbidities: formData.comorbidities, labs: formData.labs,
+      comorbidities: formData.comorbidities, labs: formData.labs, prescription: formData.prescription,
       clinical_description: formData.clinicalDescription, soap_text: result,
     };
 

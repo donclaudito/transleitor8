@@ -38,6 +38,13 @@ export default function ResultView({ currentSOAP, setView }) {
         <ReactMarkdown>{currentSOAP.soap_text}</ReactMarkdown>
       </div>
 
+      {currentSOAP.prescription && (
+        <div className="mt-4 pt-4 border-t border-border">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">💊 Prescrição</h4>
+          <pre className="text-sm whitespace-pre-wrap font-mono bg-muted/50 rounded-xl p-3">{currentSOAP.prescription}</pre>
+        </div>
+      )}
+
       <div className="flex gap-3 pt-4">
         <button onClick={() => setView('form')} className="flex-1 py-3 text-muted-foreground font-bold hover:text-primary transition-colors rounded-2xl border border-border text-sm">
           ← Voltar

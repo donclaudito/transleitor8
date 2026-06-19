@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Copy, Printer, CheckCircle2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { format } from 'date-fns';
@@ -6,9 +6,18 @@ import { ptBR } from 'date-fns/locale';
 
 export default function ResultView({ currentSOAP, setView }) {
   const [copied, setCopied] = useState(false);
+  const contentRef = useRef(null);
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(currentSOAP.soap_text);
+  const copyToClipboard = async () => {
+    const html = contentRef.current?.innerHTML || '';
+    const blob = new Blob([html], { type: 'text/html' });
+    const data = [new ClipboardItem({ 'text/html': blob, 'text/plain': new Blob([currentSOAP.soap_text], { type: 'text/plain' }) })];
+    try {
+      await navigator.clipboard.write(data);
+    } catch {
+      // fallback: plain text
+      await navigator.clipboard.writeText(currentSOAP.soap_text);
+    }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -34,7 +43,7 @@ export default function ResultView({ currentSOAP, setView }) {
         </div>
       </div>
 
-      <div className="prose prose-sm dark:prose-invert max-w-none [&_code]:bg-amber-500/10 [&_code]:text-amber-600 [&_code]:dark:text-amber-400 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:font-mono [&_code]:text-xs [&_code]:font-bold [&_code]:before:content-none [&_code]:after:content-none">
+      <div ref={contentRef} className="prose prose-sm dark:prose-invert max-w-none [&_code]:bg-amber-500/10 [&_code]:text-amber-600 [&_code]:dark:text-amber-400 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:font-mono [&_code]:text-xs [&_code]:font-bold [&_code]:before:content-none [&_code]:after:content-none">
         <ReactMarkdown>{currentSOAP.soap_text}</ReactMarkdown>
       </div>
 

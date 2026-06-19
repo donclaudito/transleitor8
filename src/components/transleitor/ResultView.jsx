@@ -8,19 +8,36 @@ export default function ResultView({ currentSOAP, setView }) {
   const [copied, setCopied] = useState(false);
   const contentRef = useRef(null);
 
-  const copyToClipboard = async () => {
+  const copyToClipboard = () => {
     const raw = contentRef.current?.innerHTML || '';
     // Limpa classes do Tailwind e mantém apenas HTML semântico puro
     const cleanHtml = raw
       .replace(/\sclass="[^"]*"/g, '')
       .replace(/\sstyle="[^"]*"/g, '');
-    const blob = new Blob([cleanHtml], { type: 'text/html' });
-    const data = [new ClipboardItem({ 'text/html': blob, 'text/plain': new Blob([currentSOAP.soap_text], { type: 'text/plain' }) })];
+
+    // Cria elemento temporário fora da tela para copiar HTML formatado
+    const tmp = document.createElement('div');
+    tmp.innerHTML = cleanHtml;
+    tmp.style.position = 'fixed';
+    tmp.style.left = '-9999px';
+    tmp.style.top = '0';
+    document.body.appendChild(tmp);
+
+    const range = document.createRange();
+    range.selectNodeContents(tmp);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+
     try {
-      await navigator.clipboard.write(data);
+      document.execCommand('copy');
     } catch {
-      await navigator.clipboard.writeText(currentSOAP.soap_text);
+      // fallback via clipboard API
+      navigator.clipboard?.writeText(currentSOAP.soap_text);
     }
+
+    sel.removeAllRanges();
+    document.body.removeChild(tmp);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };

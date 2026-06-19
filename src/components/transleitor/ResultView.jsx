@@ -1,6 +1,5 @@
 import React, { useState, useRef } from 'react';
 import { Copy, Printer, CheckCircle2 } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -63,9 +62,7 @@ export default function ResultView({ currentSOAP, setView }) {
         </div>
       </div>
 
-      <div ref={contentRef} className="prose prose-sm dark:prose-invert max-w-none [&_code]:bg-amber-500/10 [&_code]:text-amber-600 [&_code]:dark:text-amber-400 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:font-mono [&_code]:text-xs [&_code]:font-bold [&_code]:before:content-none [&_code]:after:content-none">
-        <ReactMarkdown>{currentSOAP.soap_text}</ReactMarkdown>
-      </div>
+      <div ref={contentRef} className="prose prose-sm dark:prose-invert max-w-none [&_code]:bg-amber-500/10 [&_code]:text-amber-600 [&_code]:dark:text-amber-400 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:font-mono [&_code]:text-xs [&_code]:font-bold [&_code]:before:content-none [&_code]:after:content-none" dangerouslySetInnerHTML={{ __html: currentSOAP.soap_text }} />
 
       {currentSOAP.prescription && (
         <div className="mt-4 pt-4 border-t border-border">

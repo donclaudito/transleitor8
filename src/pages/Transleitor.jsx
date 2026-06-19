@@ -8,7 +8,6 @@ import HistoryView from '@/components/transleitor/HistoryView';
 import ManagementView from '@/components/transleitor/ManagementView';
 import SettingsPanel from '@/components/transleitor/SettingsPanel';
 import { useSettings } from '@/hooks/useSettings';
-import ReactMarkdown from 'react-markdown';
 
 const DEFAULT_SECTORS = ["UTI Adulto", "UTI Pediátrica", "Enfermaria Clínica", "Enfermaria Cirúrgica", "Pronto Socorro", "Consultório"];
 const DEFAULT_COMORBIDITIES = ["HAS", "DM2", "Dislipidemia", "Tabagismo", "DRC", "ICC", "DPOC", "Obesidade"];
@@ -147,7 +146,7 @@ export default function Transleitor() {
         : '';
 
       const prompt = `Você é um assistente médico especialista em documentação clínica brasileira.
-Gere uma evolução SOAP em Markdown, técnica, precisa, pronta para prontuário. NÃO invente dados. Comece diretamente com ## S — Subjetivo.
+Gere uma evolução SOAP em formato HTML (tags semânticas), técnica, precisa, pronta para prontuário. NÃO invente dados.
 ${sectorHint ? `\nFoco de setor: ${sectorHint}` : ''}${consultorioLine ? `\n${consultorioLine}` : ''}
 
 Dados do paciente:
@@ -162,19 +161,22 @@ ${formData.prescription?.trim() ? `\nPrescrição atual do paciente (integre ao 
 Descrição clínica atual:
 ${formData.clinicalDescription}
 
-Formato obrigatório:
-## S — Subjetivo
-## O — Objetivo
-## A — Avaliação
-## P — Plano
+Formato obrigatório (use APENAS tags HTML, sem Markdown):
+<h2>S — Subjetivo</h2>
+<p>...</p>
+<h2>O — Objetivo</h2>
+<p>...</p>
+<h2>A — Avaliação</h2>
+<p>...</p>
+<h2>P — Plano</h2>
+<p>...</p>
 
 CID-10 sugerido: Na seção Avaliação, após a análise clínica, sugira o código CID-10 mais provável com base no quadro descrito, no formato:
-\`\`\`
-**CID-10 sugerido:** X00.0 — Nome resumido da condição
-\`\`\`
+<code><strong>CID-10 sugerido:</strong> X00.0 — Nome resumido da condição</code>
 Se houver mais de uma hipótese, liste até 3 códigos por ordem de probabilidade.
 
-Use terminologia médica brasileira formal. Compare com a evolução anterior quando disponível e destaque mudanças clínicas relevantes.`;
+Use terminologia médica brasileira formal. Compare com a evolução anterior quando disponível e destaque mudanças clínicas relevantes.
+Use <p> para parágrafos, <strong> para negrito, <ul>/<li> para listas, <br> para quebras. NÃO use Markdown (sem ##, **, -, \`\`\`).`;
 
       let result;
       if (selectedLLMId) {
@@ -270,9 +272,7 @@ Use terminologia médica brasileira formal. Compare com a evolução anterior qu
           ) : streamingText ? (
             <div className="glass-card rounded-2xl p-6">
               <span className="text-xs font-bold text-primary mb-3 block">Gerando...</span>
-              <div className="prose prose-sm dark:prose-invert max-w-none">
-                <ReactMarkdown>{streamingText}</ReactMarkdown>
-              </div>
+              <div className="prose prose-sm dark:prose-invert max-w-none [&_code]:bg-amber-500/10 [&_code]:text-amber-600 [&_code]:dark:text-amber-400 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:font-mono [&_code]:text-xs [&_code]:font-bold" dangerouslySetInnerHTML={{ __html: streamingText }} />
             </div>
           ) : currentSOAP ? (
             <ResultView currentSOAP={currentSOAP} setView={setView} />

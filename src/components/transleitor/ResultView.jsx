@@ -9,13 +9,16 @@ export default function ResultView({ currentSOAP, setView }) {
   const contentRef = useRef(null);
 
   const copyToClipboard = async () => {
-    const html = contentRef.current?.innerHTML || '';
-    const blob = new Blob([html], { type: 'text/html' });
+    const raw = contentRef.current?.innerHTML || '';
+    // Limpa classes do Tailwind e mantém apenas HTML semântico puro
+    const cleanHtml = raw
+      .replace(/\sclass="[^"]*"/g, '')
+      .replace(/\sstyle="[^"]*"/g, '');
+    const blob = new Blob([cleanHtml], { type: 'text/html' });
     const data = [new ClipboardItem({ 'text/html': blob, 'text/plain': new Blob([currentSOAP.soap_text], { type: 'text/plain' }) })];
     try {
       await navigator.clipboard.write(data);
     } catch {
-      // fallback: plain text
       await navigator.clipboard.writeText(currentSOAP.soap_text);
     }
     setCopied(true);

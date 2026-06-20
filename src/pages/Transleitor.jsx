@@ -25,6 +25,7 @@ export default function Transleitor() {
   const [currentSOAP, setCurrentSOAP] = useState(null);
   const [newSectorName, setNewSectorName] = useState('');
   const [newComorbidityName, setNewComorbidityName] = useState('');
+  const [newComorbidityMeds, setNewComorbidityMeds] = useState('');
   const [formData, setFormData] = useState(DEFAULT_FORM);
   const { settings, setTheme, addCustomChip, removeCustomChip } = useSettings();
   const queryClient = useQueryClient();
@@ -136,7 +137,15 @@ export default function Transleitor() {
     e.preventDefault();
     if (!newComorbidityName.trim()) return;
     await addComorbidityMutation.mutateAsync({ name: newComorbidityName.trim() });
+    if (newComorbidityMeds.trim()) {
+      await base44.entities.ComorbidityMedication.create({
+        comorbidity_name: newComorbidityName.trim(),
+        medications: newComorbidityMeds.trim(),
+      });
+      queryClient.invalidateQueries({ queryKey: ['comorbidity-meds'] });
+    }
     setNewComorbidityName('');
+    setNewComorbidityMeds('');
   };
 
   const getSectorHint = (sector) => {
@@ -269,7 +278,9 @@ Use <p> para parágrafos, <strong> para negrito, <ul>/<li> para listas, <br> par
       return <ManagementView title="Gerenciar Comorbidades" placeholder="Nome da comorbidade"
         value={newComorbidityName} onChange={e => setNewComorbidityName(e.target.value)}
         onAdd={handleAddComorbidity} items={customComorbidities} onDelete={(id) => deleteComorbidityMutation.mutate(id)}
-        onBack={() => setView('form')} />;
+        onBack={() => setView('form')}
+        extraPlaceholder="Medicamentos crônicos (separados por vírgula)..."
+        extraValue={newComorbidityMeds} onExtraChange={e => setNewComorbidityMeds(e.target.value)} />;
     }
     if (view === 'scores' || view === 'tools') {
       return (

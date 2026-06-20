@@ -231,23 +231,31 @@ Use terminologia médica brasileira formal. Compare com a evolução anterior qu
 Use <p> para parágrafos, <strong> para negrito, <ul>/<li> para listas, <br> para quebras. NÃO use Markdown (sem ##, **, -, \`\`\`).`;
 
       const freePrompt = `Você é um assistente médico especialista em documentação clínica brasileira.
-Gere uma evolução clínica em formato HTML (tags semânticas), narrativa, concisa e profissional, pronta para prontuário. NÃO invente dados.
+Gere uma evolução clínica em formato HTML (tags semânticas) NARRATIVA, concisa e profissional, pronta para prontuário. NÃO invente dados.
 ${sectorHint ? `\nFoco de setor: ${sectorHint}` : ''}${consultorioLine ? `\n${consultorioLine}` : ''}
 
 ${patientData}
 
-Escreva uma evolução clínica livre e narrativa, sem seguir a estrutura SOAP. Estruture naturalmente com:
-- Um parágrafo inicial descrevendo o quadro clínico e as queixas do paciente.
-- Um parágrafo descrevendo achados objetivos (exame físico, sinais vitais, exames).
-- Um parágrafo com a avaliação/impressão clínica e conduta/procedimentos realizados.
-- Um parágrafo final com o plano terapêutico e próximos passos.
+Estruture a evolução clínica OBRIGATORIAMENTE nesta ordem exata (use APENAS tags HTML, sem Markdown):
 
-Não use cabeçalhos de seção (h2). Use apenas <p> para parágrafos, <strong> para negrito, <ul>/<li> para listas, <br> para quebras.
-CID-10 sugerido: Ao final, inclua uma linha com o código CID-10 mais provável no formato:
+<p><strong>Hipótese(s) Diagnóstica(s):</strong> ...</p>
 <code><strong>CID-10 sugerido:</strong> X00.0 — Nome resumido da condição</code>
-Se houver mais de uma hipótese, liste até 3 códigos por ordem de probabilidade.
+(se houver mais de uma hipótese, liste até 3 códigos CID-10 por ordem de probabilidade)
 
-Use terminologia médica brasileira formal. Texto corrido, profissional, como uma evolução de prontuário real.
+<p><strong>HPP (História Patológica Pregressa) / Comorbidades:</strong> (liste as comorbidades do paciente e seu impacto no quadro atual) ...</p>
+
+<p><strong>Uso de Medicação Contínua:</strong> (descreva os medicamentos de uso crônico do paciente e sua relação com o quadro atual) ...</p>
+
+<p><strong>Alergias:</strong> (liste as alergias conhecidas do paciente) ...</p>
+
+<p><strong>Exames Complementares:</strong> (descreva e analise os exames laboratoriais e de imagem disponíveis, correlacionando com o quadro clínico) ...</p>
+
+<p><strong>Conduta:</strong> (descreva a conduta médica adotada — procedimentos realizados, interconsultas solicitadas, ajustes terapêuticos) ...</p>
+
+<p><strong>Plano Terapêutico:</strong> (descreva o plano de tratamento e os próximos passos planejados) ...</p>
+
+Use terminologia médica brasileira formal. Compare com a evolução anterior quando disponível e destaque mudanças clínicas relevantes.
+Use <p> para parágrafos, <strong> para negrito, <ul>/<li> para listas dentro dos parágrafos, <br> para quebras. NÃO use <h2> ou cabeçalhos. Texto corrido, profissional, como uma evolução de prontuário real.
 NÃO use Markdown (sem ##, **, -, \`\`\`).`;
 
       const finalPrompt = evolutionMode === 'free' ? freePrompt : soapPrompt;

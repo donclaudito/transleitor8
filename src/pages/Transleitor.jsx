@@ -7,10 +7,11 @@ import ResultView from '@/components/transleitor/ResultView';
 import HistoryView from '@/components/transleitor/HistoryView';
 import ManagementView from '@/components/transleitor/ManagementView';
 import SettingsPanel from '@/components/transleitor/SettingsPanel';
+import AllergyPopover from '@/components/transleitor/AllergyPopover';
 import { useSettings } from '@/hooks/useSettings';
 
 const DEFAULT_SECTORS = ["UTI Adulto", "UTI Pediátrica", "Enfermaria Clínica", "Enfermaria Cirúrgica", "Pronto Socorro", "Consultório"];
-const DEFAULT_COMORBIDITIES = ["HAS", "DM2", "Dislipidemia", "Tabagismo", "DRC", "ICC", "DPOC", "Obesidade"];
+const DEFAULT_COMORBIDITIES = ["HAS", "DM2", "Dislipidemia", "Tabagismo", "DRC", "ICC", "DPOC", "Obesidade", "Alergia"];
 
 const DEFAULT_FORM = {
   sector: '', bed: '', patientInitials: '', comorbidities: '', labs: '', clinicalDescription: '',
@@ -50,6 +51,7 @@ export default function Transleitor() {
 
   const [selectedLLMId, setSelectedLLMId] = useState('');
   const [activeComorbidity, setActiveComorbidity] = useState(null);
+  const [showAllergyPopover, setShowAllergyPopover] = useState(false);
 
   const activeLLMName = selectedLLMId
     ? llmProviders.find(p => p.id === selectedLLMId)?.provider_name || 'Desconhecido'
@@ -99,11 +101,22 @@ export default function Transleitor() {
       setFormData(prev => ({ ...prev, comorbidities: current.filter(s => s !== name).join(', ') }));
     } else {
       setFormData(prev => ({ ...prev, comorbidities: [...current, name].join(', ') }));
-      // Abre popover com medicamentos da comorbidade recém-selecionada
-      const med = comorbidityMeds.find(m => m.comorbidity_name === name);
-      if (med) setActiveComorbidity(med);
+      if (name === 'Alergia') {
+        setShowAllergyPopover(true);
+      } else {
+        const med = comorbidityMeds.find(m => m.comorbidity_name === name);
+        if (med) setActiveComorbidity(med);
+      }
     }
   }, [formData.comorbidities, comorbidityMeds]);
+
+  const addAllergiesToComorbidities = useCallback((allergyText) => {
+    setFormData(prev => {
+      const current = prev.comorbidities.split(',').map(s => s.trim()).filter(s => s !== '' && s !== 'Alergia');
+      return { ...prev, comorbidities: [...current, `Alergia: ${allergyText}`].join(', ') };
+    });
+    setShowAllergyPopover(false);
+  }, []);
 
   const addToPrescription = useCallback((text) => {
     setFormData(prev => ({
@@ -268,42 +281,50 @@ Use <p> para parágrafos, <strong> para negrito, <ul>/<li> para listas, <br> par
 
     // Default: split form + result
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[calc(100vh-64px)]">
-        <div className="overflow-y-auto border-r border-border">
-          <FormView
-            formData={formData} setFormData={setFormData}
-            allSectors={allSectors} allComorbidities={allComorbidities}
-            setView={setView} toggleComorbidityInForm={toggleComorbidityInForm}
-            generateSOAP={generateSOAP} loading={loading}
-            customChips={settings.customChips} theme={settings.theme}
-            llmProviders={llmProviders} selectedLLMId={selectedLLMId} setSelectedLLMId={setSelectedLLMId}
-            activeComorbidity={activeComorbidity} onCloseComorbidity={() => setActiveComorbidity(null)} onAddToPrescription={addToPrescription}
+      <>
+        {showAllergyPopover && (
+          <AllergyPopover
+            onAdd={addAllergiesToComorbidities}
+            onClose={() => setShowAllergyPopover(false)}
           />
-        </div>
-        <div className="overflow-y-auto p-4 md:p-6">
-          {loading ? (
-            <div className="flex flex-col items-center justify-center h-full gap-4">
-              <div className="w-10 h-10 border-3 border-primary/20 border-t-primary rounded-full animate-spin" />
-              <p className="text-sm text-muted-foreground">Gerando evolução SOAP...</p>
-            </div>
-          ) : streamingText ? (
-            <div className="glass-card rounded-2xl p-6">
-              <span className="text-xs font-bold text-primary mb-3 block">Gerando...</span>
-              <div className="prose prose-sm dark:prose-invert max-w-none [&_code]:bg-amber-500/10 [&_code]:text-amber-600 [&_code]:dark:text-amber-400 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:font-mono [&_code]:text-xs [&_code]:font-bold" dangerouslySetInnerHTML={{ __html: streamingText }} />
-            </div>
-          ) : currentSOAP ? (
-            <ResultView currentSOAP={currentSOAP} setView={setView} />
-          ) : (
-            <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
-              <div className="w-16 h-16 rounded-2xl bg-primary/5 flex items-center justify-center mb-4">
-                <span className="text-2xl">📋</span>
+        )}
+        <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[calc(100vh-64px)]">
+          <div className="overflow-y-auto border-r border-border">
+            <FormView
+              formData={formData} setFormData={setFormData}
+              allSectors={allSectors} allComorbidities={allComorbidities}
+              setView={setView} toggleComorbidityInForm={toggleComorbidityInForm}
+              generateSOAP={generateSOAP} loading={loading}
+              customChips={settings.customChips} theme={settings.theme}
+              llmProviders={llmProviders} selectedLLMId={selectedLLMId} setSelectedLLMId={setSelectedLLMId}
+              activeComorbidity={activeComorbidity} onCloseComorbidity={() => setActiveComorbidity(null)} onAddToPrescription={addToPrescription}
+            />
+          </div>
+          <div className="overflow-y-auto p-4 md:p-6">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center h-full gap-4">
+                <div className="w-10 h-10 border-3 border-primary/20 border-t-primary rounded-full animate-spin" />
+                <p className="text-sm text-muted-foreground">Gerando evolução SOAP...</p>
               </div>
-              <h3 className="font-bold mb-1">Evolução SOAP</h3>
-              <p className="text-sm max-w-xs">Preencha os dados clínicos e clique em <strong className="text-primary">Gerar Evolução SOAP</strong></p>
-            </div>
-          )}
+            ) : streamingText ? (
+              <div className="glass-card rounded-2xl p-6">
+                <span className="text-xs font-bold text-primary mb-3 block">Gerando...</span>
+                <div className="prose prose-sm dark:prose-invert max-w-none [&_code]:bg-amber-500/10 [&_code]:text-amber-600 [&_code]:dark:text-amber-400 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:font-mono [&_code]:text-xs [&_code]:font-bold" dangerouslySetInnerHTML={{ __html: streamingText }} />
+              </div>
+            ) : currentSOAP ? (
+              <ResultView currentSOAP={currentSOAP} setView={setView} />
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
+                <div className="w-16 h-16 rounded-2xl bg-primary/5 flex items-center justify-center mb-4">
+                  <span className="text-2xl">📋</span>
+                </div>
+                <h3 className="font-bold mb-1">Evolução SOAP</h3>
+                <p className="text-sm max-w-xs">Preencha os dados clínicos e clique em <strong className="text-primary">Gerar Evolução SOAP</strong></p>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      </>
     );
   };
 

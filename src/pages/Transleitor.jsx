@@ -49,10 +49,16 @@ export default function Transleitor() {
   });
 
   const [selectedLLMId, setSelectedLLMId] = useState('');
+  const [activeComorbidity, setActiveComorbidity] = useState(null);
 
   const activeLLMName = selectedLLMId
     ? llmProviders.find(p => p.id === selectedLLMId)?.provider_name || 'Desconhecido'
     : 'Gemini Flash';
+
+  const { data: comorbidityMeds = [] } = useQuery({
+    queryKey: ['comorbidity-meds'],
+    queryFn: () => base44.entities.ComorbidityMedication.list(),
+  });
 
   const allSectors = [...new Set([...DEFAULT_SECTORS, ...customSectors.map(s => s.name)])];
   const allComorbidities = [...new Set([...DEFAULT_COMORBIDITIES, ...customComorbidities.map(c => c.name)])];
@@ -93,8 +99,18 @@ export default function Transleitor() {
       setFormData(prev => ({ ...prev, comorbidities: current.filter(s => s !== name).join(', ') }));
     } else {
       setFormData(prev => ({ ...prev, comorbidities: [...current, name].join(', ') }));
+      // Abre popover com medicamentos da comorbidade recém-selecionada
+      const med = comorbidityMeds.find(m => m.comorbidity_name === name);
+      if (med) setActiveComorbidity(med);
     }
-  }, [formData.comorbidities]);
+  }, [formData.comorbidities, comorbidityMeds]);
+
+  const addToPrescription = useCallback((text) => {
+    setFormData(prev => ({
+      ...prev,
+      prescription: prev.prescription ? prev.prescription + '\n' + text : text,
+    }));
+  }, []);
 
   const handleAddSector = async (e) => {
     e.preventDefault();
@@ -261,6 +277,7 @@ Use <p> para parágrafos, <strong> para negrito, <ul>/<li> para listas, <br> par
             generateSOAP={generateSOAP} loading={loading}
             customChips={settings.customChips} theme={settings.theme}
             llmProviders={llmProviders} selectedLLMId={selectedLLMId} setSelectedLLMId={setSelectedLLMId}
+            activeComorbidity={activeComorbidity} onCloseComorbidity={() => setActiveComorbidity(null)} onAddToPrescription={addToPrescription}
           />
         </div>
         <div className="overflow-y-auto p-4 md:p-6">

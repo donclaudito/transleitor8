@@ -1,11 +1,13 @@
 import React from 'react';
 import { Activity, Wand2, Settings2, FlaskConical, User, Cpu } from 'lucide-react';
 import SymptomsPanel from './SymptomsPanel';
+import ComorbidityPopover from './ComorbidityPopover';
 
 export default function FormView({
   formData, setFormData, allSectors, allComorbidities, setView,
   toggleComorbidityInForm, generateSOAP, loading, customChips = [], theme = 'dark',
   llmProviders = [], selectedLLMId = '', setSelectedLLMId = () => {},
+  activeComorbidity = null, onCloseComorbidity = () => {}, onAddToPrescription = () => {},
 }) {
   const appendToClinical = (item) => {
     setFormData(prev => {
@@ -22,6 +24,14 @@ export default function FormView({
   return (
     <>
     <SymptomsPanel onAppend={appendToClinical} clinicalDescription={formData.clinicalDescription} />
+    {activeComorbidity && (
+      <ComorbidityPopover
+        comorbidityName={activeComorbidity.comorbidity_name}
+        medications={activeComorbidity.medications}
+        onAddToPrescription={(text) => { onAddToPrescription(text); onCloseComorbidity(); }}
+        onClose={onCloseComorbidity}
+      />
+    )}
     <div className="space-y-6 p-4 md:p-6">
       {/* Identificação */}
       <div className="glass-card rounded-2xl p-5 space-y-4">

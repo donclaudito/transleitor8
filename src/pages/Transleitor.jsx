@@ -228,6 +228,7 @@ CID-10 sugerido: Na seção Avaliação, após a análise clínica, sugira o có
 Se houver mais de uma hipótese, liste até 3 códigos por ordem de probabilidade.
 
 Use terminologia médica brasileira formal. Compare com a evolução anterior quando disponível e destaque mudanças clínicas relevantes.
+IMPORTANTE: Na seção P — Plano, NÃO inclua medicamentos de uso contínuo (já descritos em HPP/Comorbidades). Inclua apenas ajustes agudos da prescrição atual e novas condutas planejadas.
 Use <p> para parágrafos, <strong> para negrito, <ul>/<li> para listas, <br> para quebras. NÃO use Markdown (sem ##, **, -, \`\`\`).`;
 
       const freePrompt = `Você é um assistente médico especialista em documentação clínica brasileira.
@@ -244,9 +245,9 @@ Estruture a evolução clínica OBRIGATORIAMENTE nesta ordem exata (use APENAS t
 
 <p><strong>HPP (História Patológica Pregressa) / Comorbidades:</strong> (liste as comorbidades do paciente e seu impacto no quadro atual) ...</p>
 
-<p><strong>Uso de Medicação Contínua:</strong> (descreva os medicamentos de uso crônico do paciente e sua relação com o quadro atual) ...</p>
+<p><strong>Uso de Medicação Contínua:</strong> (liste cada medicamento de uso crônico em <strong>negrito</strong>, descrevendo posologia e relação com o quadro atual. Ex: <strong>Losartana 50mg/dia</strong>, <strong>Metformina XR 1g/dia</strong>) ...</p>
 
-<p><strong>Alergias:</strong> (liste as alergias conhecidas do paciente) ...</p>
+<p><strong>Alergias:</strong> (liste as alergias conhecidas do paciente. Se houver alguma alergia cadastrada, inclua um alerta no formato: ⚠️ <strong>ALERTA:</strong> Paciente alérgico a [substância]. Atenção redobrada na prescrição.) ...</p>
 
 <p><strong>Exames Complementares:</strong> (descreva e analise os exames laboratoriais e de imagem disponíveis, correlacionando com o quadro clínico) ...</p>
 
@@ -255,6 +256,7 @@ Estruture a evolução clínica OBRIGATORIAMENTE nesta ordem exata (use APENAS t
 <p><strong>Plano Terapêutico:</strong> (descreva o plano de tratamento e os próximos passos planejados) ...</p>
 
 Use terminologia médica brasileira formal. Compare com a evolução anterior quando disponível e destaque mudanças clínicas relevantes.
+IMPORTANTE: Na seção de Conduta/Plano Terapêutico, NÃO inclua medicamentos de uso contínuo (já descritos em seção própria). Inclua apenas ajustes agudos da prescrição atual e novas condutas. Os medicamentos contínuos não devem aparecer no plano, apenas na seção "Uso de Medicação Contínua".
 Use <p> para parágrafos, <strong> para negrito, <ul>/<li> para listas dentro dos parágrafos, <br> para quebras. NÃO use <h2> ou cabeçalhos. Texto corrido, profissional, como uma evolução de prontuário real.
 NÃO use Markdown (sem ##, **, -, \`\`\`).`;
 

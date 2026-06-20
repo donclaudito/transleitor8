@@ -97,6 +97,17 @@ export default function Transleitor() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['evolutions'] }),
   });
 
+  const updateEvolutionMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Evolution.update(id, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['evolutions'] }),
+  });
+
+  const updateEvolution = async (id, data) => {
+    const updated = await updateEvolutionMutation.mutateAsync({ id, data });
+    setCurrentSOAP(prev => prev?.id === id ? { ...prev, ...data } : prev);
+    return updated;
+  };
+
   const toggleComorbidityInForm = useCallback((name) => {
     const current = formData.comorbidities.split(',').map(s => s.trim()).filter(s => s !== '');
     if (current.includes(name)) {
@@ -287,7 +298,7 @@ NÃO use Markdown (sem ##, **, -, \`\`\`).`;
         onDelete={(id) => deleteEvolutionMutation.mutate(id)} />;
     }
     if (view === 'result') {
-      return <ResultView currentSOAP={currentSOAP} setView={setView} />;
+      return <ResultView currentSOAP={currentSOAP} onUpdate={updateEvolution} />;
     }
     if (view === 'settings') {
       return <SettingsPanel settings={settings} setTheme={setTheme}
@@ -349,7 +360,7 @@ NÃO use Markdown (sem ##, **, -, \`\`\`).`;
                 <div className="prose prose-sm dark:prose-invert max-w-none [&_code]:bg-amber-500/10 [&_code]:text-amber-600 [&_code]:dark:text-amber-400 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:font-mono [&_code]:text-xs [&_code]:font-bold" dangerouslySetInnerHTML={{ __html: streamingText }} />
               </div>
             ) : currentSOAP ? (
-              <ResultView currentSOAP={currentSOAP} setView={setView} />
+              <ResultView currentSOAP={currentSOAP} onUpdate={updateEvolution} />
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
                 <div className="w-16 h-16 rounded-2xl bg-primary/5 flex items-center justify-center mb-4">

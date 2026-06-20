@@ -1,10 +1,20 @@
-import React from 'react';
-import { Pill, X } from 'lucide-react';
+import React, { useState } from 'react';
+import { Pill, X, Plus } from 'lucide-react';
 
 export default function ComorbidityPopover({ comorbidityName, medications, onAddToPrescription, onClose }) {
+  const [customMed, setCustomMed] = useState('');
+
   if (!comorbidityName || !medications) return null;
 
   const meds = medications.split(',').map(m => m.trim()).filter(Boolean);
+
+  const addCustom = () => {
+    const trimmed = customMed.trim();
+    if (trimmed) {
+      onAddToPrescription(trimmed);
+      setCustomMed('');
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
@@ -30,6 +40,19 @@ export default function ComorbidityPopover({ comorbidityName, medications, onAdd
               <span className="text-[10px] text-primary font-bold opacity-0 group-hover:opacity-100 transition-opacity">+ Adicionar</span>
             </button>
           ))}
+        </div>
+
+        <div className="flex gap-2">
+          <input
+            value={customMed}
+            onChange={e => setCustomMed(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && addCustom()}
+            placeholder="Outro medicamento..."
+            className="flex-1 px-3 py-2 rounded-xl bg-muted border border-border text-sm focus:outline-none focus:border-primary/50 transition-all"
+          />
+          <button onClick={addCustom} className="p-2 rounded-xl bg-accent text-accent-foreground hover:opacity-80 transition-all">
+            <Plus className="w-4 h-4" />
+          </button>
         </div>
 
         <button

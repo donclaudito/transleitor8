@@ -53,6 +53,7 @@ export default function Transleitor() {
   const [selectedLLMId, setSelectedLLMId] = useState('');
   const [activeComorbidity, setActiveComorbidity] = useState(null);
   const [showAllergyPopover, setShowAllergyPopover] = useState(false);
+  const [evolutionMode, setEvolutionMode] = useState('soap'); // 'soap' | 'free'
 
   const activeLLMName = selectedLLMId
     ? llmProviders.find(p => p.id === selectedLLMId)?.provider_name || 'Desconhecido'
@@ -183,11 +184,7 @@ export default function Transleitor() {
         ? `Contexto: consulta ambulatorial (${formData.consultorioType === 'retorno' ? 'retorno' : 'primeira consulta'}).${formData.consultorioType === 'retorno' && formData.previousConsult?.trim() ? `\nConsulta anterior:\n${formData.previousConsult.trim()}` : ''}`
         : '';
 
-      const prompt = `Você é um assistente médico especialista em documentação clínica brasileira.
-Gere uma evolução SOAP em formato HTML (tags semânticas), técnica, precisa, pronta para prontuário. NÃO invente dados.
-${sectorHint ? `\nFoco de setor: ${sectorHint}` : ''}${consultorioLine ? `\n${consultorioLine}` : ''}
-
-Dados do paciente:
+      const patientData = `Dados do paciente:
 - Paciente: ${formData.patientInitials || '—'}
 - Leito: ${formData.bed || '—'} | Setor: ${formData.sector || '—'}
 - Comorbidades: ${formData.comorbidities || '—'}
@@ -197,7 +194,13 @@ ${formData.nursingEvolution?.trim() ? `\nEvolução de enfermagem (integre as in
 ${formData.prescription?.trim() ? `\nPrescrição atual do paciente (integre ao contexto clínico e ao plano):\n${formData.prescription.trim()}` : ''}
 
 Descrição clínica atual:
-${formData.clinicalDescription}
+${formData.clinicalDescription}`;
+
+      const soapPrompt = `Você é um assistente médico especialista em documentação clínica brasileira.
+Gere uma evolução SOAP em formato HTML (tags semânticas), técnica, precisa, pronta para prontuário. NÃO invente dados.
+${sectorHint ? `\nFoco de setor: ${sectorHint}` : ''}${consultorioLine ? `\n${consultorioLine}` : ''}
+
+${patientData}
 
 Formato obrigatório (use APENAS tags HTML, sem Markdown):
 <h2>S — Subjetivo</h2>
@@ -216,13 +219,35 @@ Se houver mais de uma hipótese, liste até 3 códigos por ordem de probabilidad
 Use terminologia médica brasileira formal. Compare com a evolução anterior quando disponível e destaque mudanças clínicas relevantes.
 Use <p> para parágrafos, <strong> para negrito, <ul>/<li> para listas, <br> para quebras. NÃO use Markdown (sem ##, **, -, \`\`\`).`;
 
+      const freePrompt = `Você é um assistente médico especialista em documentação clínica brasileira.
+Gere uma evolução clínica em formato HTML (tags semânticas), narrativa, concisa e profissional, pronta para prontuário. NÃO invente dados.
+${sectorHint ? `\nFoco de setor: ${sectorHint}` : ''}${consultorioLine ? `\n${consultorioLine}` : ''}
+
+${patientData}
+
+Escreva uma evolução clínica livre e narrativa, sem seguir a estrutura SOAP. Estruture naturalmente com:
+- Um parágrafo inicial descrevendo o quadro clínico e as queixas do paciente.
+- Um parágrafo descrevendo achados objetivos (exame físico, sinais vitais, exames).
+- Um parágrafo com a avaliação/impressão clínica e conduta/procedimentos realizados.
+- Um parágrafo final com o plano terapêutico e próximos passos.
+
+Não use cabeçalhos de seção (h2). Use apenas <p> para parágrafos, <strong> para negrito, <ul>/<li> para listas, <br> para quebras.
+CID-10 sugerido: Ao final, inclua uma linha com o código CID-10 mais provável no formato:
+<code><strong>CID-10 sugerido:</strong> X00.0 — Nome resumido da condição</code>
+Se houver mais de uma hipótese, liste até 3 códigos por ordem de probabilidade.
+
+Use terminologia médica brasileira formal. Texto corrido, profissional, como uma evolução de prontuário real.
+NÃO use Markdown (sem ##, **, -, \`\`\`).`;
+
+      const finalPrompt = evolutionMode === 'free' ? freePrompt : soapPrompt;
+
       let result;
       if (selectedLLMId) {
-        const res = await base44.functions.invoke('generateSOAP', { prompt, llm_config_id: selectedLLMId });
+        const res = await base44.functions.invoke('generateSOAP', { prompt: finalPrompt, llm_config_id: selectedLLMId });
         if (res.data?.error) throw new Error(res.data.error);
         result = res.data.text;
       } else {
-        result = await base44.integrations.Core.InvokeLLM({ prompt, model: 'gemini_3_flash' });
+        result = await base44.integrations.Core.InvokeLLM({ prompt: finalPrompt, model: 'gemini_3_flash' });
       }
 
       const evolutionData = {
@@ -309,13 +334,14 @@ Use <p> para parágrafos, <strong> para negrito, <ul>/<li> para listas, <br> par
               customChips={settings.customChips} theme={settings.theme}
               llmProviders={llmProviders} selectedLLMId={selectedLLMId} setSelectedLLMId={setSelectedLLMId}
               activeComorbidity={activeComorbidity} onCloseComorbidity={() => setActiveComorbidity(null)} onAddToPrescription={addToPrescription}
+              evolutionMode={evolutionMode} setEvolutionMode={setEvolutionMode}
             />
           </div>
           <div className="overflow-y-auto p-4 md:p-6">
             {loading ? (
               <div className="flex flex-col items-center justify-center h-full gap-4">
                 <div className="w-10 h-10 border-3 border-primary/20 border-t-primary rounded-full animate-spin" />
-                <p className="text-sm text-muted-foreground">Gerando evolução SOAP...</p>
+                <p className="text-sm text-muted-foreground">Gerando evolução{evolutionMode === 'free' ? ' livre' : ' SOAP'}...</p>
               </div>
             ) : streamingText ? (
               <div className="glass-card rounded-2xl p-6">
@@ -329,8 +355,8 @@ Use <p> para parágrafos, <strong> para negrito, <ul>/<li> para listas, <br> par
                 <div className="w-16 h-16 rounded-2xl bg-primary/5 flex items-center justify-center mb-4">
                   <span className="text-2xl">📋</span>
                 </div>
-                <h3 className="font-bold mb-1">Evolução SOAP</h3>
-                <p className="text-sm max-w-xs">Preencha os dados clínicos e clique em <strong className="text-primary">Gerar Evolução SOAP</strong></p>
+                <h3 className="font-bold mb-1">Evolução{evolutionMode === 'free' ? ' Livre' : ' SOAP'}</h3>
+                <p className="text-sm max-w-xs">Preencha os dados clínicos e clique em <strong className="text-primary">Gerar Evolução{evolutionMode === 'free' ? ' Livre' : ' SOAP'}</strong></p>
               </div>
             )}
           </div>

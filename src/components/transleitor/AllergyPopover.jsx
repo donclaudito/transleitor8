@@ -1,25 +1,37 @@
 import React, { useState } from 'react';
+import { base44 } from '@/api/base44Client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, X, Plus, Trash2 } from 'lucide-react';
-
-const COMMON_ALLERGIES = [
-  'Penicilina', 'Sulfa', 'AINEs', 'Dipirona', 'Iodo', 'Látex',
-  'Contraste iodado', 'Cefalosporinas', 'Quinolonas', 'Aspirina',
-];
 
 export default function AllergyPopover({ onAdd, onClose }) {
   const [custom, setCustom] = useState('');
   const [selected, setSelected] = useState([]);
+  const queryClient = useQueryClient();
+
+  const { data: dbAllergies = [] } = useQuery({
+    queryKey: ['allergies'],
+    queryFn: () => base44.entities.Allergy.list('name', 100),
+  });
+
+  const createAllergyMutation = useMutation({
+    mutationFn: (data) => base44.entities.Allergy.create(data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['allergies'] }),
+  });
 
   const toggle = (item) => {
     setSelected(prev => prev.includes(item) ? prev.filter(s => s !== item) : [...prev, item]);
   };
 
-  const addCustom = () => {
+  const addCustom = async () => {
     const trimmed = custom.trim();
-    if (trimmed && !selected.includes(trimmed)) {
-      setSelected(prev => [...prev, trimmed]);
-    }
+    if (!trimmed || selected.includes(trimmed)) return;
+    setSelected(prev => [...prev, trimmed]);
     setCustom('');
+    // Salva no banco se for nova
+    const exists = dbAllergies.some(a => a.name.toLowerCase() === trimmed.toLowerCase());
+    if (!exists) {
+      await createAllergyMutation.mutateAsync({ name: trimmed });
+    }
   };
 
   const handleConfirm = () => {
@@ -44,18 +56,18 @@ export default function AllergyPopover({ onAdd, onClose }) {
 
         <div className="space-y-2">
           <p className="text-[11px] text-muted-foreground">Selecione as alergias conhecidas:</p>
-          <div className="flex flex-wrap gap-1.5">
-            {COMMON_ALLERGIES.map(item => (
+          <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto">
+            {dbAllergies.map(a => (
               <button
-                key={item}
-                onClick={() => toggle(item)}
+                key={a.id || a.name}
+                onClick={() => toggle(a.name)}
                 className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
-                  selected.includes(item)
+                  selected.includes(a.name)
                     ? 'bg-red-500/15 border-red-400/40 text-red-600 dark:text-red-400'
                     : 'border-border text-muted-foreground hover:border-red-300/50'
                 }`}
               >
-                {selected.includes(item) ? `✓ ${item}` : item}
+                {selected.includes(a.name) ? `✓ ${a.name}` : a.name}
               </button>
             ))}
           </div>
@@ -66,7 +78,7 @@ export default function AllergyPopover({ onAdd, onClose }) {
             value={custom}
             onChange={e => setCustom(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && addCustom()}
-            placeholder="Outra alergia..."
+            placeholder="Nova alergia..."
             className="flex-1 px-3 py-2 rounded-xl bg-muted border border-border text-sm focus:outline-none focus:border-primary/50 transition-all"
           />
           <button onClick={addCustom} className="p-2 rounded-xl bg-accent text-accent-foreground hover:opacity-80 transition-all">

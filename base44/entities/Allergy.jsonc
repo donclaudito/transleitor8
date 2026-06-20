@@ -1,0 +1,13 @@
+{
+  "name": "Allergy",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome da alergia (ex: Penicilina, Sulfa, Dipirona)"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

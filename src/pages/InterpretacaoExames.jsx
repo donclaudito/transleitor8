@@ -37,47 +37,48 @@ export default function InterpretacaoExames() {
     setResults(null);
     setReport('');
     try {
-      const prompt = `Você é um bioquímico clínico. Extraia os exames do laudo abaixo com precisão absoluta.
+      // Pré-processamento: remove blocos administrativos repetidos (cabeçalho/rodapé de cada página)
+      const cleanedText = inputText
+        .replace(/Casa de Saúde[\s\S]*?Contato:\s*\([\d\s\)]+\)\s*\n/g, '')
+        .replace(/Paciente\s+Data Nasc\.[\s\S]*?Material\s*\n/g, '')
+        .replace(/Responsável Técnico[\s\S]*?interpretar corretamente\s*estes resultados\.?/g, '')
+        .replace(/Página\s+\d+/g, '')
+        .replace(/Aprovado por:[\s\S]*?\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}/g, '')
+        .replace(/Liberado por:[\s\S]*?\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}/g, '')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
 
-REGRAS CRÍTICAS — VIOLAR QUALQUER UMA GERA RESULTADO INÚTIL:
+      const prompt = `Você é um bioquímico clínico. Extraia os exames laboratoriais do texto abaixo.
 
-1. NÃO INVENTE EXAMES. Só extraia exames que aparecem LITERALMENTE no texto com "Resultado:" ou em tabela de hemograma. Se "Sódio" não está no texto, NÃO inclua Sódio. Se "Triglicerídeos" não está, NÃO inclua.
+REGRAS ABSOLUTAS:
 
-2. HEMOGRAMA — COLUNAS RELATIVO vs ABSOLUTO:
-   O hemograma tem o formato: "Nome  Valor%  ValorAbsoluto  Referência"
-   Exemplo real: "Segmentados 62,0 % 3.162 40 a 80% | 2.000 a 7.000/mm³"
-   → Extraia APENAS o valor PERCENTUAL: name="Segmentados", value=62.0, unit="%", ref_min=40, ref_max=80
-   → NUNCA extraia o valor absoluto (3.162) como resultado. Ele é derivado, não medido.
-   → O mesmo para Bastonetes, Eosinófilos, Basófilos, Linfócitos, Monócitos: sempre o % (primeira coluna numérica após o nome).
+1. SÓ EXTRAIA O QUE EXISTE NO TEXTO. Se um exame não aparece com valor numérico, NÃO o crie. Zero alucinação.
 
-3. LEUCÓCITOS — DISTINGA SANGUE DE URINA:
-   - "Leucócitos 5,100 X 10³/mm³" no hemograma = sangue → value=5.1, unit="10³/mm³", ref 4.0-11.0
-   - "Leucócitos 32.000" na ROTINA DE URINA = urina → NÃO confunda com sangue. Se for urina, use name="Leucócitos (Urina)".
-   - São exames DIFERENTES. Nunca misture.
+2. HEMOGRAMA — formato "Nome  %  Absoluto  Referência":
+   Ex: "Segmentados 62,0 % 3.162 40 a 80%"
+   → value=62.0, unit="%", ref_min=40, ref_max=80 (SEMPRE o %, nunca o absoluto)
+   → NÃO extraia exames com valor 0% que são sempre zero: Blastos, Promielócitos, Mielócitos, Metamielócitos, Linfócitos Reativos, Células Atípicas.
 
-4. URINA — só extraia valores QUANTITATIVOS com referência numérica:
-   - pH, Densidade, Leucócitos/mL, Hemácias/mL têm referência numérica → extraia
-   - Cor, Aspecto, Proteínas, Glicose, Nitrito, Bilirrubina, Bactérias, Cristais, Cilindros = QUALITATIVOS → IGNORE
+3. URINA vs SANGUE: "Leucócitos" no hemograma = sangue (5.1 10³/mm³). "Leucócitos 32.000" na urina = name "Leucócitos (Urina)", unit "/mL". São exames diferentes.
 
-5. CREATININA com múltiplas faixas etárias → use SEMPRE a faixa "Adulto".
+4. URINA: só pH, Densidade, Leucócitos/mL, Hemácias/mL. Ignore Cor, Aspecto, Proteínas, Glicose, Nitrito, Bactérias, Cristais (qualitativos).
 
-6. Cada exame aparece UMA ÚNICA VEZ. Se repetir no texto (cabeçalho/rodapé duplicado), ignore a repetição.
+5. CREATININA: use a faixa "Adulto" (0.30-1.30).
 
-7. Ignore TODO o texto administrativo: Casa de Saúde, CNPJ, CNES, paciente, médico, convênio, datas, assinaturas, CRBM, "Responsável Técnico", "Página X", avisos legais.
+6. Vírgula = decimal brasileiro: "30,0"→30.0, "2,00"→2.0. Ponto = milhar: "3.162"→3162.
 
-8. Valores decimal brasileiros usam vírgula: "30,0" → 30.0, "2,00" → 2.0, "1.530" → 1530 (ponto = separador de milhar).
+7. Cada exame UMA vez só.
 
-Formato de saída para cada exame:
-- name, value (número), unit, ref_min (número), ref_max (número)
+Retorne name, value, unit, ref_min, ref_max para cada exame.
 
-Texto do laudo:
+Texto:
 """
-${inputText}
+${cleanedText}
 """`;
 
       const res = await base44.integrations.Core.InvokeLLM({
         prompt,
-        model: 'gemini_3_flash',
+        model: 'claude_sonnet_4_6',
         response_json_schema: {
           type: 'object',
           properties: {
@@ -110,13 +111,16 @@ ${inputText}
           return true;
         })
         .filter(e => {
-          // Rede de segurança: descarta valores absurdos (plausibilidade fisiológica)
-          const v = e.value;
+          // Excluir exames do hemograma que são sempre zero (não informativos)
           const n = normalize(e.name);
+          const alwaysZero = ['blastos', 'promielocito', 'mielocito', 'metamielocito', 'linfocitos reativos', 'celulas atipicas'];
+          if (alwaysZero.some(z => n.includes(z))) return false;
+          // Rede de segurança: descarta valores absurdos
+          const v = e.value;
           if (n.includes('sodio') || n.includes('sodium')) return v >= 100 && v <= 170;
           if (n.includes('potassio') || n.includes('potassium')) return v >= 2 && v <= 8;
-          if (n.includes('segmentad') || n.includes('bast') || n.includes('eosinofil') || n.includes('basofil') || n.includes('linfocit') || n.includes('monocit')) {
-            if (e.unit && e.unit.includes('%')) return v >= 0 && v <= 100;
+          if ((n.includes('segmentad') || n.includes('bastonet') || n.includes('bast') || n.includes('eosinofil') || n.includes('basofil') || n.includes('linfocit') || n.includes('monocit')) && e.unit && e.unit.includes('%')) {
+            return v >= 0 && v <= 100;
           }
           if (n.includes('leucocito') && !n.includes('urina')) return v >= 0 && v <= 50;
           if (n.includes('hemacias') && !n.includes('urina')) return v >= 1 && v <= 10;

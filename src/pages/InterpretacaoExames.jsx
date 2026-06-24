@@ -37,23 +37,29 @@ export default function InterpretacaoExames() {
     setResults(null);
     setReport('');
     try {
-      const prompt = `Você é um especialista em análise de laudos laboratoriais brasileiros.
-Abaixo está o texto bruto de um laudo laboratorial (possivelmente colado de PDF, com cabeçalhos, rodapés e ruído).
-Extraia TODOS os exames quantitativos encontrados, ignorando cabeçalhos administrativos, nomes de pacientes, datas, CNPJ, páginas e texto de responsável técnico.
+      const prompt = `Você é um bioquímico clínico especialista. Analise o laudo laboratorial abaixo de forma OBJETIVA e RIGOROSA.
 
-Para cada exame, retorne:
-- name: nome do exame (em português, limpo)
-- value: valor numérico do resultado (use ponto como separador decimal)
-- unit: unidade do resultado
-- ref_min: valor mínimo de referência (número)
-- ref_max: valor máximo de referência (número)
+PRINCÍPIOS FUNDAMENTAIS:
+1. Cada exame deve aparecer UMA ÚNICA VEZ. Se o mesmo exame aparecer várias vezes no texto, retorne apenas a PRIMEIRA ocorrência real (ignorando repetições de cabeçalho/rodapé).
+2. Extraia APENAS o que está literalmente no texto. NÃO calcule, NÃO derive, NÃO infira valores.
+3. NÃO misture valores absolutos com percentuais. Se o laudo traz "Segmentados 62%" e também "Segmentados 3162/mm³", são a MESMA linha — retorne apenas o valor percentual (62%) se a unidade for %, ou apenas o absoluto se a unidade for /mm³. Nunca retorne ambos.
+4. Valide plausibilidade fisiológica. Se um valor for biologicamente impossível (ex: Sódio 6 mEq/L, Sódio 4000 mEq/L, Leucócitos 32000 com %, Segmentados 3162%), é ERRO de extração — NÃO o inclua. Valores reais de Sódio ficam entre 120-160 mEq/L.
+5. Ignore cabeçalhos, rodapés, nomes, datas, CNPJ, assinaturas, logos, números de página e texto administrativo.
+6. Ignore exames qualitativos sem valor numérico (Cor, Aspecto, Coleta, etc).
 
-Regras:
-- Se o valor de referência for "Até X", use ref_min = 0 e ref_max = X.
-- Se houver faixas diferentes para homens/mulheres, use a faixa masculina.
-- Ignore exames qualitativos sem valor numérico (ex: "Cor: Amarelo", "Aspecto: Límpido").
-- Não invente exames que não estejam no texto.
-- Para o hemograma, cada linha (Hemácias, Hemoglobina, Hematócrito, Plaquetas, Leucócitos, Segmentados, etc.) é um exame separado.
+Para cada exame válido, retorne:
+- name: nome do exame em português (limpo, sem abreviação de unidade)
+- value: valor numérico do resultado (ponto decimal)
+- unit: unidade (ex: mg/dL, %, 10³/µL, mEq/L, fL, pg)
+- ref_min: limite inferior de referência (número)
+- ref_max: limite superior de referência (número)
+
+Regras de referência:
+- "Até X" → ref_min=0, ref_max=X
+- Faixas por sexo → use a masculina
+- Se não houver referência no texto, use 0 para ambos (o sistema aplicará padrão)
+
+Seja cirúrgico: menos exames corretos > muitos exames com lixo. Em caso de dúvida sobre um valor, NÃO o inclua.
 
 Texto do laudo:
 """
@@ -85,8 +91,15 @@ ${inputText}
       });
 
       const exams = res?.exams || [];
+      const seen = new Set();
       const parsed = exams
         .filter(e => typeof e.value === 'number' && typeof e.ref_min === 'number' && typeof e.ref_max === 'number')
+        .filter(e => {
+          const key = normalize(e.name);
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        })
         .map(e => {
           const known = matchKnownTest(e.name);
           const ref = known?.ref || { min: e.ref_min, max: e.ref_max, unit: e.unit || '', ptName: e.name };

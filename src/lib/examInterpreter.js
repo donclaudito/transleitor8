@@ -172,7 +172,7 @@ function isRefRangeNumber(numbers, index) {
   return false;
 }
 
-function getStatus(value, ref) {
+export function getStatus(value, ref) {
   if (value < ref.min) return 'low';
   if (value > ref.max) return 'high';
   return 'normal';

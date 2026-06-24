@@ -37,29 +37,38 @@ export default function InterpretacaoExames() {
     setResults(null);
     setReport('');
     try {
-      const prompt = `Você é um bioquímico clínico especialista. Analise o laudo laboratorial abaixo de forma OBJETIVA e RIGOROSA.
+      const prompt = `Você é um bioquímico clínico. Extraia os exames do laudo abaixo com precisão absoluta.
 
-PRINCÍPIOS FUNDAMENTAIS:
-1. Cada exame deve aparecer UMA ÚNICA VEZ. Se o mesmo exame aparecer várias vezes no texto, retorne apenas a PRIMEIRA ocorrência real (ignorando repetições de cabeçalho/rodapé).
-2. Extraia APENAS o que está literalmente no texto. NÃO calcule, NÃO derive, NÃO infira valores.
-3. NÃO misture valores absolutos com percentuais. Se o laudo traz "Segmentados 62%" e também "Segmentados 3162/mm³", são a MESMA linha — retorne apenas o valor percentual (62%) se a unidade for %, ou apenas o absoluto se a unidade for /mm³. Nunca retorne ambos.
-4. Valide plausibilidade fisiológica. Se um valor for biologicamente impossível (ex: Sódio 6 mEq/L, Sódio 4000 mEq/L, Leucócitos 32000 com %, Segmentados 3162%), é ERRO de extração — NÃO o inclua. Valores reais de Sódio ficam entre 120-160 mEq/L.
-5. Ignore cabeçalhos, rodapés, nomes, datas, CNPJ, assinaturas, logos, números de página e texto administrativo.
-6. Ignore exames qualitativos sem valor numérico (Cor, Aspecto, Coleta, etc).
+REGRAS CRÍTICAS — VIOLAR QUALQUER UMA GERA RESULTADO INÚTIL:
 
-Para cada exame válido, retorne:
-- name: nome do exame em português (limpo, sem abreviação de unidade)
-- value: valor numérico do resultado (ponto decimal)
-- unit: unidade (ex: mg/dL, %, 10³/µL, mEq/L, fL, pg)
-- ref_min: limite inferior de referência (número)
-- ref_max: limite superior de referência (número)
+1. NÃO INVENTE EXAMES. Só extraia exames que aparecem LITERALMENTE no texto com "Resultado:" ou em tabela de hemograma. Se "Sódio" não está no texto, NÃO inclua Sódio. Se "Triglicerídeos" não está, NÃO inclua.
 
-Regras de referência:
-- "Até X" → ref_min=0, ref_max=X
-- Faixas por sexo → use a masculina
-- Se não houver referência no texto, use 0 para ambos (o sistema aplicará padrão)
+2. HEMOGRAMA — COLUNAS RELATIVO vs ABSOLUTO:
+   O hemograma tem o formato: "Nome  Valor%  ValorAbsoluto  Referência"
+   Exemplo real: "Segmentados 62,0 % 3.162 40 a 80% | 2.000 a 7.000/mm³"
+   → Extraia APENAS o valor PERCENTUAL: name="Segmentados", value=62.0, unit="%", ref_min=40, ref_max=80
+   → NUNCA extraia o valor absoluto (3.162) como resultado. Ele é derivado, não medido.
+   → O mesmo para Bastonetes, Eosinófilos, Basófilos, Linfócitos, Monócitos: sempre o % (primeira coluna numérica após o nome).
 
-Seja cirúrgico: menos exames corretos > muitos exames com lixo. Em caso de dúvida sobre um valor, NÃO o inclua.
+3. LEUCÓCITOS — DISTINGA SANGUE DE URINA:
+   - "Leucócitos 5,100 X 10³/mm³" no hemograma = sangue → value=5.1, unit="10³/mm³", ref 4.0-11.0
+   - "Leucócitos 32.000" na ROTINA DE URINA = urina → NÃO confunda com sangue. Se for urina, use name="Leucócitos (Urina)".
+   - São exames DIFERENTES. Nunca misture.
+
+4. URINA — só extraia valores QUANTITATIVOS com referência numérica:
+   - pH, Densidade, Leucócitos/mL, Hemácias/mL têm referência numérica → extraia
+   - Cor, Aspecto, Proteínas, Glicose, Nitrito, Bilirrubina, Bactérias, Cristais, Cilindros = QUALITATIVOS → IGNORE
+
+5. CREATININA com múltiplas faixas etárias → use SEMPRE a faixa "Adulto".
+
+6. Cada exame aparece UMA ÚNICA VEZ. Se repetir no texto (cabeçalho/rodapé duplicado), ignore a repetição.
+
+7. Ignore TODO o texto administrativo: Casa de Saúde, CNPJ, CNES, paciente, médico, convênio, datas, assinaturas, CRBM, "Responsável Técnico", "Página X", avisos legais.
+
+8. Valores decimal brasileiros usam vírgula: "30,0" → 30.0, "2,00" → 2.0, "1.530" → 1530 (ponto = separador de milhar).
+
+Formato de saída para cada exame:
+- name, value (número), unit, ref_min (número), ref_max (número)
 
 Texto do laudo:
 """
@@ -98,6 +107,20 @@ ${inputText}
           const key = normalize(e.name);
           if (seen.has(key)) return false;
           seen.add(key);
+          return true;
+        })
+        .filter(e => {
+          // Rede de segurança: descarta valores absurdos (plausibilidade fisiológica)
+          const v = e.value;
+          const n = normalize(e.name);
+          if (n.includes('sodio') || n.includes('sodium')) return v >= 100 && v <= 170;
+          if (n.includes('potassio') || n.includes('potassium')) return v >= 2 && v <= 8;
+          if (n.includes('segmentad') || n.includes('bast') || n.includes('eosinofil') || n.includes('basofil') || n.includes('linfocit') || n.includes('monocit')) {
+            if (e.unit && e.unit.includes('%')) return v >= 0 && v <= 100;
+          }
+          if (n.includes('leucocito') && !n.includes('urina')) return v >= 0 && v <= 50;
+          if (n.includes('hemacias') && !n.includes('urina')) return v >= 1 && v <= 10;
+          if (n.includes('plaquetas')) return v >= 10 && v <= 1000;
           return true;
         })
         .map(e => {

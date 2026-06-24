@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { TEST_NAME_MAP, REFERENCE_RANGES, getStatus } from '@/lib/examInterpreter';
-import { generateMarkdownReport, generateFullTableReport } from '@/lib/examInterpreter';
+import { generateMarkdownReport, generateHtmlReport } from '@/lib/examInterpreter';
 import { base44 } from '@/api/base44Client';
 import ReactMarkdown from 'react-markdown';
 import { motion } from 'framer-motion';
@@ -113,8 +113,21 @@ ${inputText}
   };
 
   const handleCopy = () => {
-    const fullReport = generateFullTableReport(results);
-    navigator.clipboard.writeText(fullReport);
+    const html = generateHtmlReport(results);
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    tmp.style.position = 'fixed';
+    tmp.style.left = '-9999px';
+    tmp.style.top = '0';
+    document.body.appendChild(tmp);
+    const range = document.createRange();
+    range.selectNodeContents(tmp);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    try { document.execCommand('copy'); } catch { navigator.clipboard?.writeText(html); }
+    sel.removeAllRanges();
+    document.body.removeChild(tmp);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };

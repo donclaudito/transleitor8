@@ -359,6 +359,33 @@ export function generateMarkdownReport(results) {
   return md;
 }
 
+export function generateHtmlReport(results) {
+  if (!results || results.length === 0) return '';
+  const rows = results.map(r => {
+    const statusLabel = r.status === 'normal' ? '✅ Normal' : r.status === 'high' ? '🔴 Alto' : '🔵 Baixo';
+    return `<tr>
+  <td><strong>${r.ptName}</strong></td>
+  <td>${r.value} ${r.ref.unit}</td>
+  <td>${r.ref.min} – ${r.ref.max}</td>
+  <td>${statusLabel}</td>
+</tr>`;
+  }).join('\n');
+  const abnormal = results.filter(r => r.status !== 'normal');
+  const findings = abnormal.length > 0
+    ? `<h3>Achados Relevantes</h3><ul>${abnormal.map(r => `<li><strong>${r.ptName}:</strong> ${r.value} ${r.ref.unit} (${r.status === 'high' ? 'acima' : 'abaixo'} do normal: ${r.ref.min}–${r.ref.max})</li>`).join('')}</ul>`
+    : '';
+  return `<h2>Relatório de Exames Laboratoriais</h2>
+<table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;">
+<thead>
+<tr><th>Exame</th><th>Valor</th><th>Referência</th><th>Status</th></tr>
+</thead>
+<tbody>
+${rows}
+</tbody>
+</table>
+${findings}`;
+}
+
 export function generateFullTableReport(results) {
   if (!results || results.length === 0) return '';
   let md = '# Relatório de Exames Laboratoriais\n\n';

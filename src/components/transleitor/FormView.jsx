@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Activity, Wand2, Settings2, FlaskConical, User, Cpu } from 'lucide-react';
 import SymptomsPanel from './SymptomsPanel';
 import ComorbidityPopover from './ComorbidityPopover';
@@ -8,8 +8,13 @@ export default function FormView({
   toggleComorbidityInForm, generateSOAP, loading, customChips = [], theme = 'dark',
   llmProviders = [], selectedLLMId = '', setSelectedLLMId = () => {},
   activeComorbidity = null, onCloseComorbidity = () => {}, onAddToPrescription = () => {},
-  evolutionMode = 'soap', setEvolutionMode = () => {},
+  evolutionMode = 'free', setEvolutionMode = () => {},
 }) {
+  const [sectorError, setSectorError] = useState(false);
+  const handleGenerate = () => {
+    if (!formData.sector) { setSectorError(true); return; }
+    generateSOAP();
+  };
   const appendToClinical = (item) => {
     setFormData(prev => {
       const current = prev.clinicalDescription.trimEnd();
@@ -42,8 +47,8 @@ export default function FormView({
         <div className="flex gap-3">
           <select
             value={formData.sector}
-            onChange={e => setFormData({ ...formData, sector: e.target.value, consultorioType: null })}
-            className="flex-1 px-4 py-3 rounded-xl bg-muted border border-border text-sm focus:outline-none focus:border-primary/50 transition-all"
+            onChange={e => { setFormData({ ...formData, sector: e.target.value, consultorioType: null }); setSectorError(false); }}
+            className={`flex-1 px-4 py-3 rounded-xl bg-muted border text-sm focus:outline-none transition-all ${sectorError ? 'border-red-500' : 'border-border focus:border-primary/50'}`}
           >
             <option value="">Setor / Unidade...</option>
             {allSectors.map(s => <option key={s} value={s}>{s}</option>)}
@@ -52,6 +57,7 @@ export default function FormView({
             <Settings2 className="w-4 h-4" />
           </button>
         </div>
+        {sectorError && <p className="text-red-500 text-xs">Setor obrigatório</p>}
 
         {isConsultorio && (
           <div className="flex gap-2">
@@ -202,7 +208,7 @@ export default function FormView({
       </div>
 
       {/* Gerar */}
-      <button onClick={generateSOAP} disabled={loading || !formData.clinicalDescription}
+      <button onClick={handleGenerate} disabled={loading || !formData.clinicalDescription}
         className="w-full py-4 rounded-2xl font-bold text-sm bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-40 transition-all flex items-center justify-center gap-2 shadow-lg btn-press">
         {loading ? (
           <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

@@ -53,7 +53,7 @@ export default function Transleitor() {
   const [selectedLLMId, setSelectedLLMId] = useState('');
   const [activeComorbidity, setActiveComorbidity] = useState(null);
   const [showAllergyPopover, setShowAllergyPopover] = useState(false);
-  const [evolutionMode, setEvolutionMode] = useState('soap'); // 'soap' | 'free'
+  const [evolutionMode, setEvolutionMode] = useState('free'); // 'soap' | 'free'
 
   const activeLLMName = selectedLLMId
     ? llmProviders.find(p => p.id === selectedLLMId)?.provider_name || 'Desconhecido'
@@ -207,11 +207,16 @@ ${formData.prescription?.trim() ? `\nPrescrição atual do paciente (integre ao 
 Descrição clínica atual:
 ${formData.clinicalDescription}`;
 
+      const correlationBlock = formData.previousEvolution?.trim() ? `\n\nÂNCORA DE CORRELAÇÃO CRUZADA (use a Evolução Médica Anterior como referência obrigatória):
+1. Compare a progressão clínica atual vs. o dia anterior — destaque melhora ou piora de sintomas, sinais vitais e estado geral.
+2. Cruze com a Evolução de Enfermagem: identifique divergências ou confirmações relevantes. Se houver divergência entre o relato médico anterior e a evolução de enfermagem, SINALE explicitamente no texto gerado (ex: "Divergência identificada: enfermagem relata febre às 02h, não mencionada na evolução médica anterior.").
+3. Correlacione com os Exames Complementares para identificar tendências laboratoriais (ex: PCR caindo, leucocitose melhorando) e com a Prescrição Atual para avaliar a resposta terapêutica.` : '';
+
       const soapPrompt = `Você é um assistente médico especialista em documentação clínica brasileira.
 Gere uma evolução SOAP em formato HTML (tags semânticas), técnica, precisa, pronta para prontuário. NÃO invente dados.
 ${sectorHint ? `\nFoco de setor: ${sectorHint}` : ''}${consultorioLine ? `\n${consultorioLine}` : ''}
 
-${patientData}
+${patientData}${correlationBlock}
 
 Formato obrigatório (use APENAS tags HTML, sem Markdown):
 <h2>S — Subjetivo</h2>
@@ -235,7 +240,7 @@ Use <p> para parágrafos, <strong> para negrito, <ul>/<li> para listas, <br> par
 Gere uma evolução clínica em formato HTML (tags semânticas) NARRATIVA, concisa e profissional, pronta para prontuário. NÃO invente dados.
 ${sectorHint ? `\nFoco de setor: ${sectorHint}` : ''}${consultorioLine ? `\n${consultorioLine}` : ''}
 
-${patientData}
+${patientData}${correlationBlock}
 
 Estruture a evolução clínica OBRIGATORIAMENTE nesta ordem exata (use APENAS tags HTML, sem Markdown):
 

@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Copy, Printer, CheckCircle2, Pencil, Save } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import PassagemVisita from './PassagemVisita';
 
 export default function ResultView({ currentSOAP, onUpdate }) {
   const [copied, setCopied] = useState(false);
@@ -119,6 +120,8 @@ export default function ResultView({ currentSOAP, onUpdate }) {
           {copied ? 'Copiado!' : 'Copiar'}
         </button>
       </div>
+
+      <PassagemVisita currentSOAP={currentSOAP} />
     </div>
   );
 }

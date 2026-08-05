@@ -195,6 +195,17 @@ export default function Transleitor() {
         ? `Contexto: consulta ambulatorial (${formData.consultorioType === 'retorno' ? 'retorno' : 'primeira consulta'}).${formData.consultorioType === 'retorno' && formData.previousConsult?.trim() ? `\nConsulta anterior:\n${formData.previousConsult.trim()}` : ''}`
         : '';
 
+      // Mescla medicamentos crônicos das comorbidades selecionadas à prescrição atual (somente para o prompt)
+      const selectedComorbidities = formData.comorbidities.split(',').map(s => s.trim()).filter(s => s && !s.startsWith('Alergia'));
+      const chronicMeds = selectedComorbidities
+        .map(c => comorbidityMeds.find(m => m.comorbidity_name === c))
+        .filter(Boolean)
+        .map(m => m.medications)
+        .filter(Boolean);
+      const mergedPrescription = chronicMeds.length > 0
+        ? `${formData.prescription?.trim() || ''}${formData.prescription?.trim() ? '\n' : ''}--- Medicamentos crônicos (uso contínuo) ---\n${chronicMeds.join('\n')}`
+        : (formData.prescription?.trim() || '');
+
       const patientData = `Dados do paciente:
 - Paciente: ${formData.patientInitials || '—'}
 - Leito: ${formData.bed || '—'} | Setor: ${formData.sector || '—'}
@@ -202,7 +213,7 @@ export default function Transleitor() {
 - Exames complementares: ${formData.labs || '—'}
 ${formData.previousEvolution?.trim() ? `\nEvolução médica anterior (use para comparar a progressão clínica):\n${formData.previousEvolution.trim()}` : ''}
 ${formData.nursingEvolution?.trim() ? `\nEvolução de enfermagem (integre as informações ao contexto):\n${formData.nursingEvolution.trim()}` : ''}
-${formData.prescription?.trim() ? `\nPrescrição atual do paciente (integre ao contexto clínico e ao plano):\n${formData.prescription.trim()}` : ''}
+${mergedPrescription ? `\nPrescrição atual do paciente (integre ao contexto clínico e ao plano):\n${mergedPrescription}` : ''}
 
 Descrição clínica atual:
 ${formData.clinicalDescription}`;

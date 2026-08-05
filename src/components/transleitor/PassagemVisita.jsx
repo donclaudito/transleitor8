@@ -61,6 +61,7 @@ REGRAS ABSOLUTAS:
   const handleCopy = () => {
     if (!passageText) return;
     navigator.clipboard?.writeText(passageText);
+    window.open('https://passagem.base44.app/', '_blank');
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };

@@ -343,16 +343,20 @@ export default function SymptomsPanel({ onAppend, clinicalDescription = '' }) {
   const suggestedItems = useMemo(() => getSuggestedItems(clinicalDescription), [clinicalDescription]);
 
   const handleToggle = (item) => {
-    const isRemoving = selected.includes(item);
-    setSelected(prev => isRemoving ? prev.filter(i => i !== item) : [...prev, item]);
-    if (!isRemoving) {
-      onAppend(item);
-    }
+    setSelected(prev => prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item]);
   };
 
   const handleClearAll = () => {
     setSelected([]);
     setSearchTerm('');
+  };
+
+  const handleInsertSelected = () => {
+    if (selected.length === 0) return;
+    onAppend(selected.join('; '));
+    setSelected([]);
+    setSearchTerm('');
+    setOpen(false);
   };
 
   return (
@@ -431,8 +435,8 @@ export default function SymptomsPanel({ onAppend, clinicalDescription = '' }) {
                 <div className="flex items-center justify-between">
                   <p className="text-xs text-muted-foreground">
                     {selected.length > 0
-                      ? <><span className="font-bold text-primary">{selected.length}</span> item(s) inserido(s)</>
-                      : 'Clique nos itens para inserir'}
+                      ? <><span className="font-bold text-primary">{selected.length}</span> item(s) selecionado(s)</>
+                      : 'Clique nos itens para selecionar'}
                   </p>
                   {selected.length > 0 && (
                     <button onClick={handleClearAll}
@@ -444,13 +448,17 @@ export default function SymptomsPanel({ onAppend, clinicalDescription = '' }) {
                 {selected.length > 0 && (
                   <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto">
                     {selected.map(item => (
-                      <span key={item} onClick={() => handleToggle(item)}
-                        className="cursor-pointer px-2 py-0.5 rounded-full text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/20 transition-all">
-                        {item} ×
+                      <span key={item}
+                        className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20">
+                        {item}
                       </span>
                     ))}
                   </div>
                 )}
+                <button onClick={handleInsertSelected} disabled={selected.length === 0}
+                  className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-bold hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all">
+                  Inserir selecionados ({selected.length})
+                </button>
               </div>
             </div>
           </div>

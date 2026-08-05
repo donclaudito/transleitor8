@@ -34,7 +34,8 @@ export default function FormView({
       <ComorbidityPopover
         comorbidityName={activeComorbidity.comorbidity_name}
         medications={activeComorbidity.medications}
-        onAddToPrescription={(text) => { onAddToPrescription(text); onCloseComorbidity(); }}
+        onAddToPrescription={(text) => onAddToPrescription(text)}
+        onAddAll={(text) => { onAddToPrescription(text); onCloseComorbidity(); }}
         onClose={onCloseComorbidity}
       />
     )}

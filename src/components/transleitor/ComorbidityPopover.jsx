@@ -1,18 +1,28 @@
 import React, { useState } from 'react';
-import { Pill, X, Plus } from 'lucide-react';
+import { Pill, X, Plus, Check } from 'lucide-react';
 
-export default function ComorbidityPopover({ comorbidityName, medications, onAddToPrescription, onClose }) {
+export default function ComorbidityPopover({ comorbidityName, medications, onAddToPrescription, onAddAll, onClose }) {
   const [customMed, setCustomMed] = useState('');
+  const [addedIndex, setAddedIndex] = useState(null);
+  const [addedCustom, setAddedCustom] = useState(false);
 
   if (!comorbidityName || !medications) return null;
 
   const meds = medications.split(',').map(m => m.trim()).filter(Boolean);
+
+  const handleAddOne = (med, index) => {
+    onAddToPrescription(med);
+    setAddedIndex(index);
+    setTimeout(() => setAddedIndex(null), 1000);
+  };
 
   const addCustom = () => {
     const trimmed = customMed.trim();
     if (trimmed) {
       onAddToPrescription(trimmed);
       setCustomMed('');
+      setAddedCustom(true);
+      setTimeout(() => setAddedCustom(false), 1000);
     }
   };
 
@@ -33,11 +43,21 @@ export default function ComorbidityPopover({ comorbidityName, medications, onAdd
           {meds.map((med, i) => (
             <button
               key={i}
-              onClick={() => onAddToPrescription(med)}
-              className="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-accent transition-colors border border-transparent hover:border-border flex items-center justify-between group"
+              onClick={() => handleAddOne(med, i)}
+              className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors border flex items-center justify-between group ${
+                addedIndex === i
+                  ? 'bg-green-500/10 border-green-500/40'
+                  : 'hover:bg-accent border-transparent hover:border-border'
+              }`}
             >
               <span>{med}</span>
-              <span className="text-[10px] text-primary font-bold opacity-0 group-hover:opacity-100 transition-opacity">+ Adicionar</span>
+              {addedIndex === i ? (
+                <span className="text-[10px] text-green-500 font-bold flex items-center gap-1">
+                  <Check className="w-3 h-3" /> Adicionado
+                </span>
+              ) : (
+                <span className="text-[10px] text-primary font-bold opacity-0 group-hover:opacity-100 transition-opacity">+ Adicionar</span>
+              )}
             </button>
           ))}
         </div>
@@ -51,12 +71,12 @@ export default function ComorbidityPopover({ comorbidityName, medications, onAdd
             className="flex-1 px-3 py-2 rounded-xl bg-muted border border-border text-sm focus:outline-none focus:border-primary/50 transition-all"
           />
           <button onClick={addCustom} className="p-2 rounded-xl bg-accent text-accent-foreground hover:opacity-80 transition-all">
-            <Plus className="w-4 h-4" />
+            {addedCustom ? <Check className="w-4 h-4 text-green-500" /> : <Plus className="w-4 h-4" />}
           </button>
         </div>
 
         <button
-          onClick={() => onAddToPrescription(medications)}
+          onClick={() => (onAddAll ? onAddAll(medications) : onAddToPrescription(medications))}
           className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-bold hover:opacity-90 transition-all"
         >
           Adicionar todos à prescrição

@@ -8,7 +8,7 @@ export default function ComorbidityPopover({ comorbidityName, medications, onAdd
 
   if (!comorbidityName || !medications) return null;
 
-  const meds = medications.split(',').map(m => m.trim()).filter(Boolean);
+  const meds = [...new Set(medications.split(',').map(m => m.trim()).filter(Boolean))];
 
   const handleAddOne = (med, index) => {
     onAddToPrescription(med);

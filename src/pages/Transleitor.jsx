@@ -162,6 +162,7 @@ export default function Transleitor() {
 
   const getSectorHint = (sector) => {
     const s = (sector || '').toLowerCase();
+    if (s.includes('consult')) return 'Ambulatorial: atue como especialista em Gastroenterologia e Coloproctologia. Foque em queixas digestivas, rastreio de câncer colorretal, doenças inflamatórias intestinais, distúrbios funcionais e afecções anorretais. Sugira condutas ambulatoriais e exames complementares pertinentes (endoscopia, colonoscopia, imagem abdominal, laboratório).';
     if (s.includes('pronto') || s.includes('ps')) return 'Setor PS: foco em exclusão de diagnósticos fatais.';
     if (s.includes('uti') || s.includes('intensiva')) return 'Setor UTI: estruture o Plano por sistemas.';
     if (s.includes('enfermaria')) return 'Setor Enfermaria: foco em evolução longitudinal e planejamento de alta.';

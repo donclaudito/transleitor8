@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Activity, Wand2, Settings2, FlaskConical, User, Cpu } from 'lucide-react';
 import SymptomsPanel from './SymptomsPanel';
 import ComorbidityPopover from './ComorbidityPopover';
+import GastroPanel from './GastroPanel';
 
 export default function FormView({
   formData, setFormData, allSectors, allComorbidities, setView,
@@ -30,6 +31,7 @@ export default function FormView({
   return (
     <>
     <SymptomsPanel onAppend={appendToClinical} clinicalDescription={formData.clinicalDescription} />
+    {isConsultorio && <GastroPanel onAppend={appendToClinical} />}
     {activeComorbidity && (
       <ComorbidityPopover
         comorbidityName={activeComorbidity.comorbidity_name}

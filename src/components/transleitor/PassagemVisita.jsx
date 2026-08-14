@@ -30,7 +30,39 @@ ${currentSOAP.labs || '—'}
 Evolução clínica gerada (extraia condutas e pendências daqui):
 ${currentSOAP.soap_text || '—'}`;
 
-      const prompt = `Você é um médico sênior brasileiro. Gere um resumo de PASSAGEM DE VISITA ultraconciso para outro colega entender o caso rapidamente.
+      const sector = (currentSOAP.sector || '').toLowerCase();
+      const isCirurgia = sector.includes('cirúrg') || sector.includes('cirurg');
+
+      const surgicalPrompt = `Você é um assistente cirúrgico especialista em sintaxe médica e comunicação intra-hospitalar. Extraia os dados da Evolução Médica Pós-Operatória e gere um RESUMO DE PASSAGEM DE PLANTÃO (Handover) ultradirecionado para o cirurgião que assumirá o plantão seguinte.
+
+${ctx}
+
+REGRAS DE SINTAXE E FORMATO:
+1. OMITA EXPRESSAMENTE: nome do paciente, iniciais, número de leito e número de prontuário.
+2. Estilo: direto, cirúrgico, sem rodeios, focado na segurança do paciente e nas pendências do plantão.
+3. Gere APENAS texto puro (sem HTML, sem Markdown, sem **, sem ##, sem -). Use * no início das linhas de campo conforme o modelo.
+4. Siga ESTRITAMENTE o modelo abaixo:
+
+📌 PROCEDIMENTO E TEMPO PÓS-OPERATÓRIO
+* [Cirurgia realizada] — [X]º PO.
+
+🩺 STATUS CLÍNICO E EVOLUÇÃO (Últimas 24h)
+* Quadro geral: [Estável / Instável / Em observação] | [Aceitação da dieta] | [Trânsito intestinal: gases/fezes].
+* Exame Físico / Abdome: [Sinais abdominais relevantes, presença/ausência de peritonismo].
+* Dispositivos / Drenos: [Aspecto e débito dos drenos nas últimas 24h ou ausência de drenos].
+* Laboratório / Imagem: [Alterações laboratoriais críticas do dia ou exames normais].
+
+🎯 CONDUTAS E INTERCONSULTAS EM ANDAMENTO
+* Interconsultas: [Especialidades acionadas e status do parecer, se houver].
+* Principais condutas: [Ajustes de ATB, progressão de dieta, desmame de drogas, etc.].
+
+⚠️ PONTOS DE ATENÇÃO / O QUE VIGIAR NO PLANTÃO
+* [Alertas específicos para o plantonista: monitorar débito do dreno X, checar hemograma de controle, reavaliar dor, aguardar parecer, etc.].
+* Planejamento: [Previsão de alta / Manutenção de conduta].
+
+Não invente dados. Use apenas as informações fornecidas.`;
+
+      const genericPrompt = `Você é um médico sênior brasileiro. Gere um resumo de PASSAGEM DE VISITA ultraconciso para outro colega entender o caso rapidamente.
 
 ${ctx}
 
@@ -44,6 +76,8 @@ REGRAS ABSOLUTAS:
 6. Campo "Condutas": o que foi feito/está em curso (ATB, procedimentos, ajustes).
 7. Campo "Pendências": exames aguardados, avaliações, decisões pendentes.
 8. Máximo 5 linhas no total. Ultraconciso. Não invente dados.`;
+
+      const prompt = isCirurgia ? surgicalPrompt : genericPrompt;
 
       const result = await base44.integrations.Core.InvokeLLM({
         prompt,

@@ -33,6 +33,10 @@
     "soap_text": {
       "type": "string",
       "description": "AI-generated SOAP evolution text"
+    },
+    "form_data": {
+      "type": "object",
+      "description": "Snapshot completo do formul\u00e1rio (dados de entrada) para retomar a edi\u00e7\u00e3o do paciente entre dispositivos"
     }
   },
   "required": [

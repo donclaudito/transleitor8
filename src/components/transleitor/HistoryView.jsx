@@ -1,5 +1,5 @@
 import React from 'react';
-import { ClipboardList, ChevronRight, Trash2 } from 'lucide-react';
+import { ClipboardList, ChevronRight, Trash2, Pencil, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -21,17 +21,25 @@ export default function HistoryView({ evolutions, onSelect, onDelete }) {
         <div className="space-y-3">
           {evolutions.map(ev => (
             <div key={ev.id} onClick={() => onSelect(ev)}
-              className="glass-card rounded-2xl p-4 cursor-pointer group transition-all hover:border-primary/20 flex items-center justify-between">
+              className="glass-card rounded-2xl p-4 cursor-pointer group transition-all hover:border-primary/30 flex items-center justify-between">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="font-bold text-sm truncate">{ev.patient_initials || 'Paciente'}</span>
                   {ev.bed && <span className="text-xs text-muted-foreground">Leito {ev.bed}</span>}
+                  <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-bold flex items-center gap-1">
+                    <Pencil className="w-2.5 h-2.5" /> Editar
+                  </span>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1.5">
                   {ev.sector && <span>{ev.sector}</span>}
                   {ev.sector && <span>·</span>}
                   <span>{format(new Date(ev.created_date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
                 </div>
+                {ev.form_data?.previousEvolution || ev.form_data?.nursingEvolution ? (
+                  <p className="text-[11px] text-teal-500 dark:text-teal-400 flex items-center gap-1 truncate">
+                    <FileText className="w-3 h-3 flex-shrink-0" /> Dados complementares salvos
+                  </p>
+                ) : null}
               </div>
               <div className="flex items-center gap-2">
                 {onDelete && (

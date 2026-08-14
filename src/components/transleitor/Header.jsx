@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Stethoscope, History, Plus, Settings, Calculator, Wrench, Sun, Moon, BookOpen, ChevronDown, ExternalLink, Microscope, Cpu, Bot } from 'lucide-react';
+import { Stethoscope, History, Plus, Settings, Calculator, Wrench, Sun, Moon, BookOpen, ChevronDown, ExternalLink, Microscope, Cpu } from 'lucide-react';
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
@@ -75,10 +75,6 @@ export default function Header({ view, setView, theme, setTheme, onNewEvolution,
           </>
         )}
       </div>
-
-      <Link to="/chamsa" title="Chamsa Isa — Assistente Cirúrgica" className="hidden md:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-teal-500/15 to-violet-500/15 border border-teal-500/20 text-teal-600 dark:text-teal-400 text-xs font-bold hover:from-teal-500/25 hover:to-violet-500/25 transition-all">
-        <Bot className="w-3.5 h-3.5" /> Chamsa
-      </Link>
 
       <nav className="flex items-center gap-1">
         {navButtons.map(({ id, icon: Icon, label, action }) => {

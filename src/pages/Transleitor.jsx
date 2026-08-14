@@ -293,6 +293,7 @@ NÃO use Markdown (sem ##, **, -, \`\`\`).`;
         sector: formData.sector, bed: formData.bed, patient_initials: formData.patientInitials,
         comorbidities: formData.comorbidities, labs: formData.labs, prescription: formData.prescription,
         clinical_description: formData.clinicalDescription, soap_text: result,
+        form_data: formData,
       };
 
       const createdPromise = createEvolutionMutation.mutateAsync(evolutionData);
@@ -319,10 +320,31 @@ NÃO use Markdown (sem ##, **, -, \`\`\`).`;
     setView('form');
   };
 
+  const loadEvolutionToForm = (ev) => {
+    const saved = ev.form_data || {};
+    setFormData({
+      ...DEFAULT_FORM,
+      sector: ev.sector || saved.sector || '',
+      bed: ev.bed || saved.bed || '',
+      patientInitials: ev.patient_initials || saved.patientInitials || '',
+      comorbidities: ev.comorbidities || saved.comorbidities || '',
+      labs: ev.labs || saved.labs || '',
+      prescription: ev.prescription || saved.prescription || '',
+      clinicalDescription: ev.clinical_description || saved.clinicalDescription || '',
+      consultorioType: saved.consultorioType ?? null,
+      previousConsult: saved.previousConsult || '',
+      previousEvolution: saved.previousEvolution || '',
+      nursingEvolution: saved.nursingEvolution || '',
+    });
+    setCurrentSOAP(ev);
+    setStreamingText('');
+    setView('form');
+  };
+
   const renderContent = () => {
     if (view === 'history') {
       return <HistoryView evolutions={evolutions}
-        onSelect={(ev) => { setCurrentSOAP(ev); setView('result'); }}
+        onSelect={(ev) => loadEvolutionToForm(ev)}
         onDelete={(id) => deleteEvolutionMutation.mutate(id)} />;
     }
     if (view === 'result') {

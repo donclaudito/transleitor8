@@ -17,7 +17,6 @@ import TemplatesSOAP from '@/pages/TemplatesSOAP';
 import GerenciarApps from '@/pages/GerenciarApps';
 import DevDocs from '@/pages/DevDocs';
 import AdminLLMs from '@/pages/AdminLLMs';
-import ChamsaIsa from '@/pages/ChamsaIsa';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -53,7 +52,6 @@ const AuthenticatedApp = () => {
         <Route path="/gerenciar-apps" element={<GerenciarApps />} />
         <Route path="/dev-docs" element={<DevDocs />} />
         <Route path="/admin-llms" element={<AdminLLMs />} />
-        <Route path="/chamsa" element={<ChamsaIsa />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

@@ -165,6 +165,7 @@ export default function Transleitor() {
     if (s.includes('consult')) return 'Ambulatorial: atue como especialista em Gastroenterologia e Coloproctologia. Foque em queixas digestivas, rastreio de câncer colorretal, doenças inflamatórias intestinais, distúrbios funcionais e afecções anorretais. Sugira condutas ambulatoriais e exames complementares pertinentes (endoscopia, colonoscopia, imagem abdominal, laboratório).';
     if (s.includes('pronto') || s.includes('ps')) return 'Setor PS: foco em exclusão de diagnósticos fatais.';
     if (s.includes('uti') || s.includes('intensiva')) return 'Setor UTI: estruture o Plano por sistemas.';
+    if (s.includes('cirúrg') || s.includes('cirurg')) return 'Cirurgia Geral e do Aparelho Digestivo: atue como especialista. Gere uma Evolução Diária Pós-Operatória formal, técnica e direta. Estruture OBRIGATORIAMENTE: 1) Identificação e tempo PO; 2) Subjetivo (aceitação alimentar/dieta, EVA, náuseas/vômitos, febre, eliminação de flatus/fezes, diurese, deambulação); 3) Objetivo (sinais vitais, exame físico e abdominal detalhado, ferida cirúrgica/portais, drenos/sondas/acessos, exames complementares); 4) Avaliação/Impressão clínica; 5) Plano e Condutas (cuidados de enfermagem, dietoterapia, solicitação de exames, pareceres/interconsultas, planejamento de alta). NÃO invente dados.';
     if (s.includes('enfermaria')) return 'Setor Enfermaria: foco em evolução longitudinal e planejamento de alta.';
     return '';
   };

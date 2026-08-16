@@ -6,6 +6,7 @@ import GastroPanel from './GastroPanel';
 import CirurgiaPanel from './CirurgiaPanel';
 import UTIPanel from './UTIPanel';
 import PSPanel from './PSPanel';
+import EmergenciaPanel from './EmergenciaPanel';
 
 export default function FormView({
   formData, setFormData, allSectors, allComorbidities, setView,
@@ -32,7 +33,8 @@ export default function FormView({
   const isConsultorio = ['consultório', 'consultorio'].includes(formData.sector?.toLowerCase());
   const isCirurgia = (formData.sector?.toLowerCase() || '').includes('cirúrg') || (formData.sector?.toLowerCase() || '').includes('cirurg');
   const isUTI = ['uti adulto', 'uti', 'intensiva'].includes((formData.sector || '').toLowerCase().trim());
-  const isPS = ['pronto socorro', 'ps', 'pronto-socorro', 'emergência', 'emergencia'].includes((formData.sector || '').toLowerCase().trim());
+  const isPS = ['pronto socorro', 'ps', 'pronto-socorro'].includes((formData.sector || '').toLowerCase().trim());
+  const isEmergencia = ['emergência', 'emergencia', 'sala de avaliação', 'sala de avaliacao', 'fast-track', 'fast track'].includes((formData.sector || '').toLowerCase().trim());
 
   return (
     <>
@@ -41,6 +43,7 @@ export default function FormView({
     {isCirurgia && <CirurgiaPanel onAppend={appendToClinical} />}
     {isUTI && <UTIPanel onAppend={appendToClinical} />}
     {isPS && <PSPanel onAppend={appendToClinical} />}
+    {isEmergencia && <EmergenciaPanel onAppend={appendToClinical} />}
     {activeComorbidity && (
       <ComorbidityPopover
         comorbidityName={activeComorbidity.comorbidity_name}

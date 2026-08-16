@@ -328,7 +328,15 @@ export default function EmergenciaPanel({ onAppend }) {
 
   const handleInsertSelected = () => {
     if (selected.length === 0) return;
-    onAppend(selected.join('; '));
+    if (activeTab === 'exames') {
+      const examNames = selected.map(item => {
+        const part = item.split(/[—–-]| → | \u2192 /)[0].trim();
+        return part || item;
+      });
+      onAppend(`Solicito ${examNames.join(', ')}.`);
+    } else {
+      onAppend(selected.join('; '));
+    }
     setSelected([]);
     setSearchTerm('');
     setOpen(false);

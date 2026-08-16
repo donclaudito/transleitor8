@@ -18,6 +18,7 @@ import GerenciarApps from '@/pages/GerenciarApps';
 import DevDocs from '@/pages/DevDocs';
 import AdminLLMs from '@/pages/AdminLLMs';
 import Passagem from '@/pages/Passagem';
+import ImagemMedica from '@/pages/ImagemMedica';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -54,6 +55,7 @@ const AuthenticatedApp = () => {
         <Route path="/dev-docs" element={<DevDocs />} />
         <Route path="/admin-llms" element={<AdminLLMs />} />
         <Route path="/passagem" element={<Passagem />} />
+        <Route path="/imagem-medica" element={<ImagemMedica />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

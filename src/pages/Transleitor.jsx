@@ -214,17 +214,19 @@ export default function Transleitor() {
 - Leito: ${formData.bed || '—'} | Setor: ${formData.sector || '—'}
 - Comorbidades: ${formData.comorbidities || '—'}
 - Exames complementares: ${formData.labs || '—'}
-${formData.previousEvolution?.trim() ? `\nEvolução médica anterior (use para comparar a progressão clínica):\n${formData.previousEvolution.trim()}` : ''}
+${formData.previousEvolution?.trim() ? `\nEvoluções médicas anteriores (analise a progressão clínica de forma CRONOLÓGICA, dia a dia):\n${formData.previousEvolution.trim()}` : ''}
 ${formData.nursingEvolution?.trim() ? `\nEvolução de enfermagem (integre as informações ao contexto):\n${formData.nursingEvolution.trim()}` : ''}
 ${mergedPrescription ? `\nPrescrição atual do paciente (integre ao contexto clínico e ao plano):\n${mergedPrescription}` : ''}
 
 Descrição clínica atual:
 ${formData.clinicalDescription}`;
 
-      const correlationBlock = formData.previousEvolution?.trim() ? `\n\nÂNCORA DE CORRELAÇÃO CRUZADA (use a Evolução Médica Anterior como referência obrigatória):
-1. Compare a progressão clínica atual vs. o dia anterior — destaque melhora ou piora de sintomas, sinais vitais e estado geral.
-2. Cruze com a Evolução de Enfermagem: identifique divergências ou confirmações relevantes. Se houver divergência entre o relato médico anterior e a evolução de enfermagem, SINALE explicitamente no texto gerado (ex: "Divergência identificada: enfermagem relata febre às 02h, não mencionada na evolução médica anterior.").
-3. Correlacione com os Exames Complementares para identificar tendências laboratoriais (ex: PCR caindo, leucocitose melhorando) e com a Prescrição Atual para avaliar a resposta terapêutica.` : '';
+      const correlationBlock = formData.previousEvolution?.trim() ? `\n\nÂNCORA DE CORRELAÇÃO CRUZADA (use TODAS as Evoluções Médicas Anteriores como referência obrigatória):
+1. ANÁLISE CRONOLÓGICA: ordene as evoluções anteriores por data/tempo e reconstrua a LINHA DO TEMPO clínica do paciente. Destaque a progressão dia a dia — melhora, piora ou estabilidade de sintomas, sinais vitais e estado geral entre as evoluções.
+2. Ao descrever a Descrição Clínica Atual, CONSIDERE OBRIGATORIAMENTE as últimas evoluções médicas — o quadro atual deve ser interpretado como continuação da tendência mais recente, não孤立mente. Se a última evolução já relatava melhora/piora de X, indique se a tendência se mantém, reverteu ou agravou.
+3. Cruze com a Evolução de Enfermagem: identifique divergências ou confirmações relevantes. Se houver divergência entre o relato médico anterior e a evolução de enfermagem, SINALE explicitamente no texto gerado (ex: "Divergência identificada: enfermagem relata febre às 02h, não mencionada na evolução médica anterior.").
+4. ANÁLISE CRONOLÓGICA DOS EXAMES: nos Exames Complementares, organize os resultados por data e identifique TENDÊNCIAS laboratoriais ao longo do tempo (ex: PCR caindo dia a dia, leucocitose melhorando, hemoglobina estável), citando os valores de comparação. Não relate apenas o valor isolado mais recente.
+5. Correlacione com a Prescrição Atual para avaliar a resposta terapêutica no tempo.` : '';
 
       const soapPrompt = `Você é um assistente médico especialista em documentação clínica brasileira.
 Gere uma evolução SOAP em formato HTML (tags semânticas), técnica, precisa, pronta para prontuário. NÃO invente dados.
@@ -268,7 +270,7 @@ Estruture a evolução clínica OBRIGATORIAMENTE nesta ordem exata (use APENAS t
 
 <p><strong>Alergias:</strong> (liste as alergias conhecidas do paciente. Se houver alguma alergia cadastrada, inclua um alerta no formato: ⚠️ <strong>ALERTA:</strong> Paciente alérgico a [substância]. Atenção redobrada na prescrição.) ...</p>
 
-<p><strong>Exames Complementares:</strong> (descreva e analise os exames laboratoriais e de imagem disponíveis, correlacionando com o quadro clínico) ...</p>
+<p><strong>Exames Complementares:</strong> (analise os exames de forma CRONOLÓGICA — organize por data, identifique tendências ao longo do tempo e correlacione com o quadro clínico; não relate apenas o valor mais recente isolado) ...</p>
 
 <p><strong>Prescrição Atual:</strong> (analise a prescrição vigente do paciente: liste os medicamentos em <strong>negrito</strong> com posologia, avalie a pertinência ao quadro clínico, identifique ajustes necessários, potenciais interações medicamentosas e alertas de segurança. Diferencie claramente dos medicamentos de uso contínuo já descritos em seção própria) ...</p>
 
@@ -299,7 +301,7 @@ Mantenha a MESMA sequência abaixo, mas seja EXTREMAMENTE breve em cada campo (m
 
 <p><strong>Alergias:</strong> (liste apenas as substâncias; se nenhuma, escreva "Sem alergias conhecidas") ...</p>
 
-<p><strong>Exames Complementares:</strong> (apenas alterações relevantes e tendências, sem valores detalhados) ...</p>
+<p><strong>Exames Complementares:</strong> (apenas alterações relevantes e TENDÊNCIAS cronológicas, sem valores detalhados) ...</p>
 
 <p><strong>Prescrição Atual:</strong> (liste os medicamentos vigentes em <strong>negrito</strong> com posologia; sinalize apenas ajustes ou alertas de segurança relevantes, sem repetir os de uso contínuo) ...</p>
 

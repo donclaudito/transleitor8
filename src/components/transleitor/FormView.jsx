@@ -135,9 +135,9 @@ export default function FormView({
       {/* Evolução Anterior */}
       <div className="glass-card rounded-2xl p-5 space-y-3">
         <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-          <span>📋</span> Evolução Médica Anterior
+          <span>📋</span> Evoluções Médicas Anteriores
         </h3>
-        <p className="text-[11px] text-muted-foreground -mt-1">Cole a evolução do dia anterior para a IA comparar a progressão.</p>
+        <p className="text-[11px] text-muted-foreground -mt-1">Cole TODAS as evoluções médicas anteriores para a IA analisar a progressão de forma cronológica.</p>
         <textarea rows={4} placeholder="Cole aqui a evolução médica anterior..."
           value={formData.previousEvolution || ''} onChange={e => setFormData({ ...formData, previousEvolution: e.target.value })}
           className="w-full px-4 py-3 rounded-xl bg-muted border border-border text-sm resize-none focus:outline-none focus:border-primary/50 transition-all" />
@@ -169,7 +169,8 @@ export default function FormView({
         <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
           <FlaskConical className="w-3.5 h-3.5" /> Exames Complementares
         </h3>
-        <textarea rows={3} placeholder="Resultados de exames laboratoriais e de imagem..."
+        <p className="text-[11px] text-muted-foreground -mt-1">Cole todos os exames (dias anteriores + atuais) para a IA analisar a evolução cronológica dos valores.</p>
+        <textarea rows={3} placeholder="Resultados de exames laboratoriais e de imagem (dias anteriores + atuais)..."
           value={formData.labs} onChange={e => setFormData({ ...formData, labs: e.target.value })}
           className="w-full px-4 py-3 rounded-xl bg-muted border border-border text-sm resize-none focus:outline-none focus:border-primary/50 transition-all" />
       </div>

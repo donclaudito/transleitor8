@@ -67,10 +67,10 @@ Não invente dados. Use apenas as informações fornecidas.`;
 ${ctx}
 
 REGRAS ABSOLUTAS:
-1. Gere APENAS texto puro (sem HTML, sem Markdown, sem **, sem ##, sem -).
-2. Use EXATAMENTE estes 5 campos em linha, nesta ordem, separados por " | ":
-   Paciente: ... | Motivo: ... | Quadro atual: ... | Condutas: ... | Pendências: ...
-3. Campo "Paciente": iniciais, leito e setor (ex: "G.S., Leito 5 — UTI Adulto").
+1. OMITA EXPRESSAMENTE: nome do paciente, iniciais, número de leito e número de prontuário — NÃO inclua nenhum campo de identificação do paciente.
+2. Gere APENAS texto puro (sem HTML, sem Markdown, sem **, sem ##, sem -).
+3. Use EXATAMENTE estes 4 campos em linha, nesta ordem, separados por " | ":
+   Motivo: ... | Quadro atual: ... | Condutas: ... | Pendências: ...
 4. Campo "Motivo": motivo principal de internação/consulta em 1 frase curta.
 5. Campo "Quadro atual": estado clínico atual em 2–3 frases telegráficas.
 6. Campo "Condutas": o que foi feito/está em curso (ATB, procedimentos, ajustes).

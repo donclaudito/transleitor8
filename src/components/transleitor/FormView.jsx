@@ -5,6 +5,7 @@ import ComorbidityPopover from './ComorbidityPopover';
 import GastroPanel from './GastroPanel';
 import CirurgiaPanel from './CirurgiaPanel';
 import UTIPanel from './UTIPanel';
+import PSPanel from './PSPanel';
 
 export default function FormView({
   formData, setFormData, allSectors, allComorbidities, setView,
@@ -31,6 +32,7 @@ export default function FormView({
   const isConsultorio = ['consultório', 'consultorio'].includes(formData.sector?.toLowerCase());
   const isCirurgia = (formData.sector?.toLowerCase() || '').includes('cirúrg') || (formData.sector?.toLowerCase() || '').includes('cirurg');
   const isUTI = ['uti adulto', 'uti', 'intensiva'].includes((formData.sector || '').toLowerCase().trim());
+  const isPS = ['pronto socorro', 'ps', 'pronto-socorro', 'emergência', 'emergencia'].includes((formData.sector || '').toLowerCase().trim());
 
   return (
     <>
@@ -38,6 +40,7 @@ export default function FormView({
     {isConsultorio && <GastroPanel onAppend={appendToClinical} />}
     {isCirurgia && <CirurgiaPanel onAppend={appendToClinical} />}
     {isUTI && <UTIPanel onAppend={appendToClinical} />}
+    {isPS && <PSPanel onAppend={appendToClinical} />}
     {activeComorbidity && (
       <ComorbidityPopover
         comorbidityName={activeComorbidity.comorbidity_name}

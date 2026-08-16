@@ -1,7 +1,50 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 import { marked } from 'npm:marked@15.0.12';
+import { secrets, waitUntil } from 'base44:runtime';
+
+const LANGSMITH_BASE = 'https://api.smith.langchain.com/runs';
+const LANGSMITH_PROJECT = 'transleitor';
+
+// Envia um trace de execução de LLM ao LangSmith (post-response, nunca bloqueia/quebra a geração).
+async function traceLlmRun({ name, inputs, outputs, startTime, endTime, error }) {
+  const apiKey = secrets.get('LANGSMITH_API_KEY');
+  if (!apiKey) return; // tracing desativado se a chave não estiver configurada
+  const runId = crypto.randomUUID();
+  const headers = { 'x-api-key': apiKey, 'Content-Type': 'application/json' };
+  try {
+    await fetch(LANGSMITH_BASE, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        id: runId,
+        name,
+        run_type: 'llm',
+        inputs,
+        start_time: startTime,
+        session_name: LANGSMITH_PROJECT,
+        tags: ['generateSOAP'],
+      }),
+    });
+    await fetch(`${LANGSMITH_BASE}/${runId}`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({
+        outputs: error ? undefined : outputs,
+        end_time: endTime,
+        ...(error ? { error } : {}),
+      }),
+    });
+  } catch (_) {
+    // tracing é best-effort: falhas de rede/API do LangSmith nunca afetam a geração
+  }
+}
 
 Deno.serve(async (req) => {
+  const chainStart = new Date().toISOString();
+  let provider = 'gemini_3_flash';
+  let modelName = 'gemini_3_flash';
+  let promptText = '';
+
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
@@ -11,6 +54,7 @@ Deno.serve(async (req) => {
 
     if (!prompt) return Response.json({ error: 'Prompt é obrigatório' }, { status: 400 });
 
+    promptText = prompt;
     let rawText = '';
 
     // Se não foi especificado um provedor externo, usa o InvokeLLM padrão
@@ -35,6 +79,9 @@ Deno.serve(async (req) => {
       if (!apiKey) {
         return Response.json({ error: `Chave API não configurada: ${llm.api_key_env_var}` }, { status: 500 });
       }
+
+      provider = llm.provider_name;
+      modelName = llm.model_name;
 
       // Garante que a URL termine com /chat/completions
       let apiUrl = llm.api_url;
@@ -74,8 +121,25 @@ Deno.serve(async (req) => {
     const hasHtmlTags = /<\/?[a-z][\s\S]*>/i.test(rawText);
     const text = hasHtmlTags ? rawText : marked.parse(rawText);
 
+    // Trace de sucesso (post-response)
+    waitUntil(traceLlmRun({
+      name: `${provider} ${modelName}`,
+      inputs: { prompt: promptText },
+      outputs: { output: text },
+      startTime: chainStart,
+      endTime: new Date().toISOString(),
+    }));
+
     return Response.json({ text });
   } catch (error) {
+    // Trace de erro (post-response)
+    waitUntil(traceLlmRun({
+      name: `${provider} ${modelName}`,
+      inputs: { prompt: promptText },
+      startTime: chainStart,
+      endTime: new Date().toISOString(),
+      error: error.message,
+    }));
     return Response.json({ error: error.message }, { status: 500 });
   }
 });

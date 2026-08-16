@@ -432,7 +432,7 @@ Use <p>, <strong>, <ul>/<li>, <br>. NÃO use <h2> nem Markdown (sem ##, **, -, \
               evolutionMode={evolutionMode} setEvolutionMode={setEvolutionMode}
             />
           </div>
-          <div className="overflow-y-auto p-4 md:p-6">
+          <div className={`overflow-y-auto p-4 md:p-6 transition-colors duration-500 ${currentSOAP && !loading && !streamingText ? 'bg-amber-50 dark:bg-amber-950/20' : ''}`}>
             {loading ? (
               <div className="flex flex-col items-center justify-center h-full gap-4">
                 <div className="w-10 h-10 border-3 border-primary/20 border-t-primary rounded-full animate-spin" />

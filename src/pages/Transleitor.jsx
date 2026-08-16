@@ -279,7 +279,34 @@ IMPORTANTE: Na seção de Conduta/Plano Terapêutico, NÃO inclua medicamentos d
 Use <p> para parágrafos, <strong> para negrito, <ul>/<li> para listas dentro dos parágrafos, <br> para quebras. NÃO use <h2> ou cabeçalhos. Texto corrido, profissional, como uma evolução de prontuário real.
 NÃO use Markdown (sem ##, **, -, \`\`\`).`;
 
-      const finalPrompt = evolutionMode === 'free' ? freePrompt : soapPrompt;
+      const simplePrompt = `Você é um assistente médico especialista em documentação clínica brasileira.
+Gere uma evolução clínica ULTRACONCISA, objetiva e telegráfica em formato HTML, para leitura RÁPIDA pelo médico que assumirá o plantão. NÃO invente dados.
+${sectorHint ? `\nFoco de setor: ${sectorHint}` : ''}${consultorioLine ? `\n${consultorioLine}` : ''}
+
+${patientData}${correlationBlock}
+
+Mantenha a MESMA sequência abaixo, mas seja EXTREMAMENTE breve em cada campo (máximo 1-2 linhas, frases curtas e diretas, sem floreios):
+
+<p><strong>Hipótese(s) Diagnóstica(s):</strong> ...</p>
+<code><strong>CID-10 sugerido:</strong> X00.0 — Nome resumido</code>
+(se houver mais de uma hipótese, liste até 3 códigos CID-10 por ordem de probabilidade)
+
+<p><strong>HPP/Comorbidades:</strong> (liste apenas as comorbidades relevantes, separadas por vírgula) ...</p>
+
+<p><strong>Uso de Medicação Contínua:</strong> (liste apenas nome + dose, um por linha, em <strong>negrito</strong>) ...</p>
+
+<p><strong>Alergias:</strong> (liste apenas as substâncias; se nenhuma, escreva "Sem alergias conhecidas") ...</p>
+
+<p><strong>Exames Complementares:</strong> (apenas alterações relevantes e tendências, sem valores detalhados) ...</p>
+
+<p><strong>Conduta:</strong> (apenas o que foi feito, telegráfico) ...</p>
+
+<p><strong>Plano Terapêutico:</strong> (próximos passos em tópicos curtos) ...</p>
+
+REGRAS: Seja objetivo, sem repetir informações. Priorize velocidade de leitura. Não inclua medicamentos contínuos no plano, apenas na seção própria.
+Use <p>, <strong>, <ul>/<li>, <br>. NÃO use <h2> nem Markdown (sem ##, **, -, \`\`\`).`;
+
+      const finalPrompt = evolutionMode === 'free' ? freePrompt : evolutionMode === 'simple' ? simplePrompt : soapPrompt;
 
       let result;
       if (selectedLLMId) {
@@ -403,7 +430,7 @@ NÃO use Markdown (sem ##, **, -, \`\`\`).`;
             {loading ? (
               <div className="flex flex-col items-center justify-center h-full gap-4">
                 <div className="w-10 h-10 border-3 border-primary/20 border-t-primary rounded-full animate-spin" />
-                <p className="text-sm text-muted-foreground">Gerando evolução{evolutionMode === 'free' ? ' livre' : ' SOAP'}...</p>
+                <p className="text-sm text-muted-foreground">Gerando evolução{evolutionMode === 'soap' ? ' SOAP' : evolutionMode === 'simple' ? ' simples' : ' livre'}...</p>
               </div>
             ) : streamingText ? (
               <div className="glass-card rounded-2xl p-6">
@@ -417,8 +444,8 @@ NÃO use Markdown (sem ##, **, -, \`\`\`).`;
                 <div className="w-16 h-16 rounded-2xl bg-primary/5 flex items-center justify-center mb-4">
                   <span className="text-2xl">📋</span>
                 </div>
-                <h3 className="font-bold mb-1">Evolução{evolutionMode === 'free' ? ' Livre' : ' SOAP'}</h3>
-                <p className="text-sm max-w-xs">Preencha os dados clínicos e clique em <strong className="text-primary">Gerar Evolução{evolutionMode === 'free' ? ' Livre' : ' SOAP'}</strong></p>
+                <h3 className="font-bold mb-1">Evolução{evolutionMode === 'soap' ? ' SOAP' : evolutionMode === 'simple' ? ' Simples' : ' Livre'}</h3>
+                <p className="text-sm max-w-xs">Preencha os dados clínicos e clique em <strong className="text-primary">Gerar Evolução{evolutionMode === 'soap' ? ' SOAP' : evolutionMode === 'simple' ? ' Simples' : ' Livre'}</strong></p>
               </div>
             )}
           </div>

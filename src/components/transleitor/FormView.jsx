@@ -219,6 +219,12 @@ export default function FormView({
           >
             📝 Livre
           </button>
+          <button
+            onClick={() => setEvolutionMode('simple')}
+            className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all ${evolutionMode === 'simple' ? 'bg-primary text-primary-foreground shadow-md' : 'text-muted-foreground hover:text-foreground'}`}
+          >
+            ⚡ Simples
+          </button>
         </div>
       </div>
 
@@ -228,7 +234,7 @@ export default function FormView({
         {loading ? (
           <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
         ) : (
-          <><Wand2 className="w-4 h-4" /> Gerar Evolução {evolutionMode === 'free' ? 'Livre' : 'SOAP'}</>
+          <><Wand2 className="w-4 h-4" /> Gerar Evolução {evolutionMode === 'soap' ? 'SOAP' : evolutionMode === 'simple' ? 'Simples' : 'Livre'}</>
         )}
       </button>
     </div>

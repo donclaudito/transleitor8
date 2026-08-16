@@ -92,27 +92,33 @@ REGRAS ABSOLUTAS:
     }
   };
 
-  const handleCopy = async () => {
+  const handleCopy = () => {
     if (!passageText) return;
+    // Abre a aba ANTES de qualquer await para preservar o gesto do usuário (evita bloqueio de popup)
+    const win = window.open('https://passagem.base44.app/', '_blank');
+    const markCopied = () => { setCopied(true); setTimeout(() => setCopied(false), 2000); };
+    const fallbackCopy = () => {
+      const ta = document.createElement('textarea');
+      ta.value = passageText;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      try { document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta);
+    };
     try {
       if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(passageText);
+        navigator.clipboard.writeText(passageText).then(markCopied).catch(() => { fallbackCopy(); markCopied(); });
       } else {
-        const ta = document.createElement('textarea');
-        ta.value = passageText;
-        ta.style.position = 'fixed';
-        ta.style.opacity = '0';
-        document.body.appendChild(ta);
-        ta.focus();
-        ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
+        fallbackCopy();
+        markCopied();
       }
-      window.open('https://passagem.base44.app/', '_blank');
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      if (!win) alert('O popup foi bloqueado. Permita popups para este site para abrir a passagem automaticamente.');
     } catch (err) {
-      alert('Não foi possível copiar. Copie manualmente: selecione o texto e use Ctrl+C.');
+      fallbackCopy();
+      markCopied();
     }
   };
 

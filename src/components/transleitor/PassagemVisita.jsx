@@ -94,31 +94,35 @@ REGRAS ABSOLUTAS:
 
   const handleCopy = () => {
     if (!passageText) return;
-    // Abre a aba ANTES de qualquer await para preservar o gesto do usuário (evita bloqueio de popup)
+
+    // 1. Copia o texto de forma SINCRONA primeiro (execCommand), ainda dentro do gesto do clique.
+    //    Isto garante que o texto já está na área de transferência antes de o foco mudar.
+    const ta = document.createElement('textarea');
+    ta.value = passageText;
+    ta.style.position = 'fixed';
+    ta.style.top = '0';
+    ta.style.left = '0';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    let copiedSync = false;
+    try { copiedSync = document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+
+    // 2. Abre a aba destino APÓS a cópia, ainda no mesmo gesto síncrono (evita popup blocker).
     const win = window.open('https://passagem.base44.app/', '_blank');
-    const markCopied = () => { setCopied(true); setTimeout(() => setCopied(false), 2000); };
-    const fallbackCopy = () => {
-      const ta = document.createElement('textarea');
-      ta.value = passageText;
-      ta.style.position = 'fixed';
-      ta.style.opacity = '0';
-      document.body.appendChild(ta);
-      ta.focus();
-      ta.select();
-      try { document.execCommand('copy'); } catch (e) {}
-      document.body.removeChild(ta);
-    };
-    try {
-      if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(passageText).then(markCopied).catch(() => { fallbackCopy(); markCopied(); });
-      } else {
-        fallbackCopy();
-        markCopied();
-      }
-      if (!win) alert('O popup foi bloqueado. Permita popups para este site para abrir a passagem automaticamente.');
-    } catch (err) {
-      fallbackCopy();
-      markCopied();
+
+    // 3. Reforço assíncrono com a Clipboard API moderna (pode falhar se o foco mudou, daí o fallback acima).
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(passageText).catch(() => {});
+    }
+
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+
+    if (!win) {
+      alert('O popup foi bloqueado, mas o texto já foi copiado. Permita popups para este site ou cole manualmente na passagem.');
     }
   };
 

@@ -247,7 +247,7 @@ CID-10 sugerido: Na seção Avaliação, após a análise clínica, sugira o có
 Se houver mais de uma hipótese, liste até 3 códigos por ordem de probabilidade.
 
 Use terminologia médica brasileira formal. Compare com a evolução anterior quando disponível e destaque mudanças clínicas relevantes.
-IMPORTANTE: Na seção P — Plano, NÃO inclua medicamentos de uso contínuo (já descritos em HPP/Comorbidades). Inclua apenas ajustes agudos da prescrição atual e novas condutas planejadas.
+IMPORTANTE: Na seção P — Plano, analise a Prescrição Atual do paciente: liste os medicamentos vigentes em <strong>negrito</strong> com posologia, avalie pertinência ao quadro, sinalize ajustes necessários e potenciais interações/alertas de segurança. NÃO inclua medicamentos de uso contínuo (já descritos em HPP/Comorbidades) — inclua apenas a prescrição aguda vigente, ajustes e novas condutas planejadas.
 Use <p> para parágrafos, <strong> para negrito, <ul>/<li> para listas, <br> para quebras. NÃO use Markdown (sem ##, **, -, \`\`\`).`;
 
       const freePrompt = `Você é um assistente médico especialista em documentação clínica brasileira.
@@ -269,6 +269,8 @@ Estruture a evolução clínica OBRIGATORIAMENTE nesta ordem exata (use APENAS t
 <p><strong>Alergias:</strong> (liste as alergias conhecidas do paciente. Se houver alguma alergia cadastrada, inclua um alerta no formato: ⚠️ <strong>ALERTA:</strong> Paciente alérgico a [substância]. Atenção redobrada na prescrição.) ...</p>
 
 <p><strong>Exames Complementares:</strong> (descreva e analise os exames laboratoriais e de imagem disponíveis, correlacionando com o quadro clínico) ...</p>
+
+<p><strong>Prescrição Atual:</strong> (analise a prescrição vigente do paciente: liste os medicamentos em <strong>negrito</strong> com posologia, avalie a pertinência ao quadro clínico, identifique ajustes necessários, potenciais interações medicamentosas e alertas de segurança. Diferencie claramente dos medicamentos de uso contínuo já descritos em seção própria) ...</p>
 
 <p><strong>Conduta:</strong> (descreva a conduta médica adotada — procedimentos realizados, interconsultas solicitadas, ajustes terapêuticos) ...</p>
 
@@ -298,6 +300,8 @@ Mantenha a MESMA sequência abaixo, mas seja EXTREMAMENTE breve em cada campo (m
 <p><strong>Alergias:</strong> (liste apenas as substâncias; se nenhuma, escreva "Sem alergias conhecidas") ...</p>
 
 <p><strong>Exames Complementares:</strong> (apenas alterações relevantes e tendências, sem valores detalhados) ...</p>
+
+<p><strong>Prescrição Atual:</strong> (liste os medicamentos vigentes em <strong>negrito</strong> com posologia; sinalize apenas ajustes ou alertas de segurança relevantes, sem repetir os de uso contínuo) ...</p>
 
 <p><strong>Conduta:</strong> (apenas o que foi feito, telegráfico) ...</p>
 

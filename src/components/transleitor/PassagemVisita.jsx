@@ -92,12 +92,28 @@ REGRAS ABSOLUTAS:
     }
   };
 
-  const handleCopy = () => {
+  const handleCopy = async () => {
     if (!passageText) return;
-    navigator.clipboard?.writeText(passageText);
-    window.open('https://passagem.base44.app/', '_blank');
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(passageText);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = passageText;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      window.open('https://passagem.base44.app/', '_blank');
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      alert('Não foi possível copiar. Copie manualmente: selecione o texto e use Ctrl+C.');
+    }
   };
 
   return (

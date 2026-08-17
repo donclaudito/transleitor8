@@ -122,7 +122,7 @@ export default function Header({ view, setView, theme, setTheme, onNewEvolution,
         <ScanLine className="w-4 h-4" />
       </Link>
 
-      <Link to="/elio" title="Elio — Copiloto Clínico"
+      <Link to="/elio" title="Elvio — Assistente clínico"
         className="p-2.5 rounded-xl text-muted-foreground hover:text-primary hover:bg-accent transition-all">
         <Bot className="w-4 h-4" />
       </Link>

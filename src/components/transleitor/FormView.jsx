@@ -7,6 +7,7 @@ import CirurgiaPanel from './CirurgiaPanel';
 import UTIPanel from './UTIPanel';
 import PSPanel from './PSPanel';
 import EmergenciaPanel from './EmergenciaPanel';
+import IdCaptureButton from './IdCaptureButton';
 
 export default function FormView({
   formData, setFormData, allSectors, allComorbidities, setView,
@@ -56,9 +57,18 @@ export default function FormView({
     <div className="space-y-6 p-4 md:p-6">
       {/* Identificação */}
       <div className="glass-card rounded-2xl p-5 space-y-4">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-          <User className="w-3.5 h-3.5" /> Identificação
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+            <User className="w-3.5 h-3.5" /> Identificação
+          </h3>
+          <IdCaptureButton
+            onExtract={({ primeiro_nome, leito }) => setFormData(prev => ({
+              ...prev,
+              patientInitials: primeiro_nome || prev.patientInitials,
+              bed: leito || prev.bed,
+            }))}
+          />
+        </div>
         <div className="flex gap-3">
           <select
             value={formData.sector}

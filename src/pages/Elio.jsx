@@ -19,7 +19,7 @@ export default function Elio() {
         </div>
         <div>
           <h1 className="text-base font-extrabold leading-tight">Elvio</h1>
-          <p className="text-[11px] text-muted-foreground -mt-0.5">Copiloto clínico</p>
+          <p className="text-[11px] text-muted-foreground -mt-0.5">Assistente clínico</p>
         </div>
       </header>
 

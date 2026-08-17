@@ -125,7 +125,7 @@ export default function ElioChat({ conversationId, onConversationCreated }) {
             <div>
               <h2 className="font-extrabold text-lg"> Elvio</h2>
               <p className="text-sm text-muted-foreground max-w-sm mt-1">
-                Seu copiloto clínico. Posso ajudar a redigir evoluções, interpretar exames e sugerir condutas — sempre com base nos dados que você fornecer.
+                Seu assistente clínico. Posso ajudar a redigir evoluções, interpretar exames e sugerir condutas — sempre com base nos dados que você fornecer.
               </p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-lg mt-2">
@@ -143,7 +143,7 @@ export default function ElioChat({ conversationId, onConversationCreated }) {
         <div className="flex justify-start">
             <div className="glass-card rounded-2xl px-4 py-3 flex items-center gap-2">
               <Loader2 className="w-4 h-4 animate-spin text-primary" />
-              <span className="text-xs text-muted-foreground">Elio está pensando...</span>
+              <span className="text-xs text-muted-foreground">Elvio está pensando...</span>
             </div>
           </div>
         }
@@ -183,7 +183,7 @@ export default function ElioChat({ conversationId, onConversationCreated }) {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {if (e.key === 'Enter' && !e.shiftKey) {e.preventDefault();send();}}}
             rows={1}
-            placeholder="Descreva o caso clínico ou peça ajuda ao Elio..."
+            placeholder="Descreva o caso clínico ou peça ajuda ao Elvio..."
             className="flex-1 px-4 py-3 rounded-2xl bg-muted border border-border text-sm resize-none focus:outline-none focus:border-primary/50 transition-all max-h-40" />
           
           <button type="submit" disabled={loading || uploading || !input.trim() && !pendingFiles.length}

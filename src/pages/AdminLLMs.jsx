@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Plus, Trash2, Power, PowerOff, Cpu, Key, Globe, Zap, Loader2, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Power, PowerOff, Cpu, Key, Globe, Zap, Loader2 } from 'lucide-react';
 
 export default function AdminLLMs() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [form, setForm] = useState({ provider_name: '', api_url: '', api_key: '', model_name: '', is_active: true });
+  const [form, setForm] = useState({ provider_name: '', api_url: '', api_key_env_var: '', model_name: '', is_active: true });
   const queryClient = useQueryClient();
 
   const { data: user } = useQuery({
@@ -21,8 +21,16 @@ export default function AdminLLMs() {
     enabled: !!user,
   });
 
-  const upsertMutation = useMutation({
-    mutationFn: (data) => base44.functions.invoke('upsertLLMConfig', data),
+  const createMutation = useMutation({
+    mutationFn: (data) => base44.entities.LLMConfig.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['llm-configs'] });
+      resetForm();
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.LLMConfig.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['llm-configs'] });
       resetForm();
@@ -42,26 +50,22 @@ export default function AdminLLMs() {
   const resetForm = () => {
     setShowForm(false);
     setEditingId(null);
-    setForm({ provider_name: '', api_url: '', api_key: '', model_name: '', is_active: true });
+    setForm({ provider_name: '', api_url: '', api_key_env_var: '', model_name: '', is_active: true });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!form.provider_name.trim() || !form.api_url.trim() || !form.model_name.trim()) return;
-    if (!editingId && !form.api_key.trim()) return;
-    upsertMutation.mutate({
-      id: editingId || undefined,
-      provider_name: form.provider_name,
-      api_url: form.api_url,
-      model_name: form.model_name,
-      is_active: form.is_active,
-      api_key: form.api_key,
-    });
+    if (!form.provider_name.trim() || !form.api_url.trim() || !form.api_key_env_var.trim() || !form.model_name.trim()) return;
+    if (editingId) {
+      updateMutation.mutate({ id: editingId, data: form });
+    } else {
+      createMutation.mutate(form);
+    }
   };
 
   const handleEdit = (p) => {
     setEditingId(p.id);
-    setForm({ provider_name: p.provider_name, api_url: p.api_url, api_key: '', model_name: p.model_name, is_active: p.is_active });
+    setForm({ provider_name: p.provider_name, api_url: p.api_url, api_key_env_var: p.api_key_env_var, model_name: p.model_name, is_active: p.is_active });
     setShowForm(true);
   };
 
@@ -82,8 +86,7 @@ export default function AdminLLMs() {
     );
   }
 
-  const isPending = upsertMutation.isPending;
-  const upsertError = upsertMutation.error?.response?.data?.error;
+  const isPending = createMutation.isPending || updateMutation.isPending;
 
   return (
     <div className="min-h-screen bg-background">
@@ -133,19 +136,16 @@ export default function AdminLLMs() {
               </div>
               <div className="sm:col-span-2 space-y-1.5">
                 <label className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
-                  <Key className="w-3 h-3" /> Chave da API
+                  <Key className="w-3 h-3" /> Nome da Variável de Ambiente (chave API)
                 </label>
-                <input type="password" value={form.api_key} onChange={e => setForm({ ...form, api_key: e.target.value })}
-                  placeholder={editingId ? 'Deixe vazio para manter a chave atual' : 'Cole a chave da API (ex: sk-...)'}
+                <input value={form.api_key_env_var} onChange={e => setForm({ ...form, api_key_env_var: e.target.value })}
+                  placeholder="Ex: MAGISTRAL_API_KEY"
                   className="w-full px-3 py-2.5 rounded-lg bg-muted border border-border text-sm focus:outline-none focus:border-primary/50 font-mono" />
                 <p className="text-[11px] text-muted-foreground">
-                  A chave é criptografada (AES-256-GCM) antes de ser salva no banco. Nunca é exibida novamente.
+                  Configure o valor real em Dashboard → Configurações → Variáveis de Ambiente
                 </p>
               </div>
             </div>
-            {upsertError && (
-              <p className="text-xs text-destructive">{upsertError}</p>
-            )}
             <div className="flex items-center gap-3 pt-2">
               <button type="submit" disabled={isPending}
                 className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground font-bold text-sm disabled:opacity-40 flex items-center justify-center gap-2">
@@ -160,13 +160,14 @@ export default function AdminLLMs() {
           </form>
         )}
 
-        {/* Dica de segurança */}
-        <div className="flex items-start gap-3 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-          <ShieldCheck className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
+        {/* Dica */}
+        <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
+          <Key className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
           <div>
-            <p className="text-xs font-bold text-emerald-500 mb-1">Chaves criptografadas no banco</p>
-            <p className="text-xs text-emerald-500/80">
-              As chaves de API são criptografadas com AES-256-GCM antes de serem armazenadas. A descriptografia acontece apenas no backend, no momento da geração da evolução.
+            <p className="text-xs font-bold text-amber-400 mb-1">Configuração das Chaves API</p>
+            <p className="text-xs text-amber-500/80">
+              Após cadastrar um provedor, acesse o Dashboard do Base44 → Configurações → Variáveis de Ambiente
+              e crie uma variável com exatamente o mesmo nome informado no campo acima. O valor deve ser a chave API secreta.
             </p>
           </div>
         </div>
@@ -197,10 +198,7 @@ export default function AdminLLMs() {
                   <Cpu className="w-5 h-5" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-sm truncate flex items-center gap-2">
-                    {p.provider_name}
-                    {p.api_key_encrypted && <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />}
-                  </h3>
+                  <h3 className="font-bold text-sm truncate">{p.provider_name}</h3>
                   <p className="text-xs text-muted-foreground truncate">{p.model_name}</p>
                   <p className="text-[10px] text-muted-foreground/60 truncate font-mono">{p.api_url}</p>
                 </div>

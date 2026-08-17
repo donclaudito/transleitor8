@@ -19,6 +19,7 @@ import DevDocs from '@/pages/DevDocs';
 import AdminLLMs from '@/pages/AdminLLMs';
 import Passagem from '@/pages/Passagem';
 import ImagemMedica from '@/pages/ImagemMedica';
+import Elio from '@/pages/Elio';
 import IdleTimeout from '@/components/IdleTimeout';
 
 const AuthenticatedApp = () => {
@@ -59,6 +60,7 @@ const AuthenticatedApp = () => {
           <Route path="/admin-llms" element={<AdminLLMs />} />
           <Route path="/passagem" element={<Passagem />} />
           <Route path="/imagem-medica" element={<ImagemMedica />} />
+          <Route path="/elio" element={<Elio />} />
         </Route>
         <Route path="*" element={<PageNotFound />} />
       </Routes>

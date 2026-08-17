@@ -32,15 +32,29 @@ export default function ElioChat({ conversationId, onConversationCreated }) {
     if (!conversationId) { setMessages([]); return; }
     setMessages([]);
     setLoading(true);
+    let hangTimer = null;
+    const armHangTimer = () => {
+      if (hangTimer) clearTimeout(hangTimer);
+      // Safety: se nenhuma mensagem terminal chegar em 90s, desbloqueia o loading.
+      hangTimer = setTimeout(() => setLoading(false), 90000);
+    };
+    armHangTimer();
     const unsub = base44.agents.subscribeToConversation(conversationId, (data) => {
       const msgs = data.messages || [];
       setMessages(msgs);
-      if (msgs.length && msgs[msgs.length - 1].role === 'assistant' && msgs[msgs.length - 1].content) {
+      armHangTimer();
+      if (!msgs.length) return;
+      const last = msgs[msgs.length - 1];
+      const hasContent = last.role === 'assistant' && last.content && String(last.content).trim().length > 0;
+      const isError = ['failed', 'error'].includes(last.status);
+      const endedEmpty = last.role === 'assistant' && !last.content && !(last.tool_calls && last.tool_calls.length);
+      if (hasContent || isError || endedEmpty) {
+        if (hangTimer) clearTimeout(hangTimer);
         setLoading(false);
         queryClient.invalidateQueries({ queryKey: ['elio-conversations'] });
       }
     });
-    return () => unsub();
+    return () => { unsub(); if (hangTimer) clearTimeout(hangTimer); };
   }, [conversationId]);
 
   useEffect(() => {

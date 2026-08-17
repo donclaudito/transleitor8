@@ -3,14 +3,25 @@ import { Camera, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 
-const SYSTEM_PROMPT = `Você é um módulo especialista de OCR e extração de dados clínicos para a interface do aplicativo. Sua única função é processar fotos ou textos de identificação de pacientes (crachá, pulseira de identificação, ficha de internação ou placa de leito) e retornar os dados padronizados.
+const SYSTEM_PROMPT = `Você é um módulo especialista de OCR e extração de dados clínicos para a interface do aplicativo. Sua única função é processar fotos de identificação de pacientes (crachá, pulseira de identificação, etiqueta de leito, ficha de internação ou placa de cabeceira) e retornar os dados padronizados, prontos para preencher automaticamente os campos do formulário.
 
-REGRAS:
-- primeiro_nome: extraia APENAS o primeiro nome do paciente. Remova abreviações, títulos (Dr., Sr., Sra.) e sobrenomes. Formate em Title Case (ex: "JOÃO SILVA SOBRINHO" -> "João").
-- leito: identifique e extraia o número/código do leito ou quarto. Remova palavras como "Leito", "Quarto", "UTI", mantendo apenas a identificação alfanumérica limpa (ex: "Leito 204-B" -> "204-B").
-- Se a imagem estiver ilegível ou faltar alguma informação, retorne o campo correspondente como null e status "error" com uma mensagem clara pedindo nova captura.
+CONDIÇÕES DE IMAGEM (luz variada):
+- A foto pode estar com baixa luminosidade, excesso de luz (clarão), sombra, reflexo/brilho metálico, desfoque leve, rotação (até 45°) ou texto parcialmente obstruído.
+- Aplique correção mental de contraste: o texto impresso costuma ser mais escuro que o fundo mesmo em fotos escuras. Considere o padrão típico de pulseiras hospitalares (nome completo em uma linha, leito/quarto abaixo) e de placas de leito (número em destaque).
+- Distinga RUÍDO de TEXTO: manchas, dedos sobre a pulseira e reflexos NÃO são caracteres. Só extraia sequências que formem um nome próprio ou um código de leito coerente.
 
-Responda ESTRITAMENTE no formato JSON abaixo, sem texto explicativo adicional.`;
+REGRAS DE EXTRAÇÃO:
+- primeiro_nome: extraia APENAS o primeiro nome do paciente (o primeiro token do nome completo). Remova títulos (Dr., Sr., Sra., Srta.), abreviações e sobrenomes. Formate em Title Case. EX: "JOÃO SILVA SOBRINHO" -> "João"; "MARIA JOSÉ SANTOS" -> "Maria"; "ANA CLAUDIA" -> "Ana".
+- leito: identifique e extraia o número/código do leito ou quarto. Aceite formatos como "204-B", "12A", "UTI-7", "Leito 3", "Qto 15". Remova palavras descritivas ("Leito", "Quarto", "Sala", "UTI", "Leito"), mantendo APENAS a identificação alfanumérica limpa. EX: "Leito 204-B" -> "204-B"; "Quarto 12A" -> "12A".
+- Se houver múltiplas linhas com números, priorize a rotulada como "Leito"/"Quarto"/"Cama". Se não houver rótulo, use o número isolado mais provável de leito (geralmente ao lado ou abaixo do nome).
+- Se um campo estiver totalmente ausente (não o nome NEM o leito estão presentes na imagem), retorne esse campo como null.
+- Se a imagem estiver completamente ilegível (nenhum texto legível em luz nenhuma), retorne status "error" com mensagem pedindo nova captura com melhor iluminação. NUNCA invente dados.
+
+GARANTIA DE PREENCHIMENTO:
+- Retorne status "success" sempre que conseguir extrair AO MENOS um dos dois campos (nome ou leito), mesmo se o outro for null. O sistema preencherá o que for não-nulo automaticamente.
+- Prefira extrair do que falhar: mesmo uma extração parcial (apenas o leito, ou apenas o nome) já é útil e deve ser marcada como success.
+
+Responda ESTRITAMENTE no formato JSON abaixo, sem texto explicativo adicional, sem markdown, sem crases.`;
 
 const SCHEMA = {
   type: 'object',

@@ -1,13 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { Stethoscope, History, Plus, Settings, Calculator, Wrench, Sun, Moon, BookOpen, ChevronDown, ExternalLink, Microscope, Cpu, ClipboardList, ScanLine } from 'lucide-react';
-import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 
 export default function Header({ view, setView, theme, setTheme, onNewEvolution, activeLLMName, llmProviders = [], selectedLLMId = '', setSelectedLLMId = () => {} }) {
   const [appsOpen, setAppsOpen] = useState(false);
   const [llmOpen, setLlmOpen] = useState(false);
+  const [appsRect, setAppsRect] = useState({ top: 0, right: 0 });
+  const [llmRect, setLlmRect] = useState({ top: 0, left: 0 });
   const { data: user } = useQuery({
     queryKey: ['me'],
     queryFn: () => base44.auth.me(),
@@ -34,19 +36,25 @@ export default function Header({ view, setView, theme, setTheme, onNewEvolution,
         <h1 className="text-base sm:text-lg font-extrabold tracking-tight whitespace-nowrap">Transleitor<span className="text-primary opacity-60 text-xs ml-1">7</span></h1>
       </Link>
 
-      {/* Seletor de LLM no cabeçalho */}
+      {/* Seletor de LLM no cabeçalho (portal para escapar do overflow-x do header) */}
       <div className="relative flex-shrink-0">
         <button
-          onClick={() => setLlmOpen(!llmOpen)}
+          onClick={(e) => {
+            if (!llmOpen) {
+              const r = e.currentTarget.getBoundingClientRect();
+              setLlmRect({ top: r.bottom + 8, left: r.left });
+            }
+            setLlmOpen(!llmOpen);
+          }}
           title="Trocar modelo de IA"
           className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center gap-1 hover:bg-primary/20 transition-all cursor-pointer"
         >
           <Cpu className="w-3 h-3" /> {activeLLMName || 'Gemini Flash'}
         </button>
-        {llmOpen && (
+        {llmOpen && createPortal(
           <>
-            <div className="fixed inset-0 z-30" onClick={() => setLlmOpen(false)} />
-            <div className="absolute left-0 top-full mt-2 w-56 bg-card rounded-xl border border-border shadow-2xl overflow-hidden z-40">
+            <div className="fixed inset-0 z-[60]" onClick={() => setLlmOpen(false)} />
+            <div className="fixed w-56 bg-card rounded-xl border border-border shadow-2xl overflow-hidden z-[61]" style={{ top: llmRect.top, left: llmRect.left }}>
               <div className="py-1">
                 <button
                   onClick={() => { setSelectedLLMId(''); setLlmOpen(false); }}
@@ -72,7 +80,7 @@ export default function Header({ view, setView, theme, setTheme, onNewEvolution,
                 )}
               </div>
             </div>
-          </>
+          </>, document.body
         )}
       </div>
 
@@ -126,10 +134,16 @@ export default function Header({ view, setView, theme, setTheme, onNewEvolution,
         </Link>
       )}
 
-      {/* Apps dropdown */}
+      {/* Apps dropdown (portal para escapar do overflow-x do header) */}
       <div className="relative">
         <button
-          onClick={() => setAppsOpen(!appsOpen)}
+          onClick={(e) => {
+            if (!appsOpen) {
+              const r = e.currentTarget.getBoundingClientRect();
+              setAppsRect({ top: r.bottom + 8, right: window.innerWidth - r.right });
+            }
+            setAppsOpen(!appsOpen);
+          }}
           title="Apps"
           className={`p-2.5 rounded-xl transition-all duration-200 flex items-center gap-1 ${
             appsOpen ? 'bg-primary text-primary-foreground shadow-lg' : 'text-muted-foreground hover:text-foreground hover:bg-accent'
@@ -138,10 +152,10 @@ export default function Header({ view, setView, theme, setTheme, onNewEvolution,
           <BookOpen className="w-4 h-4" />
           <ChevronDown className={`w-3 h-3 transition-transform ${appsOpen ? 'rotate-180' : ''}`} />
         </button>
-        {appsOpen && (
+        {appsOpen && createPortal(
           <>
-            <div className="fixed inset-0 z-30" onClick={() => setAppsOpen(false)} />
-            <div className="absolute right-0 top-full mt-2 w-56 bg-card rounded-xl border border-border shadow-2xl overflow-hidden z-40">
+            <div className="fixed inset-0 z-[60]" onClick={() => setAppsOpen(false)} />
+            <div className="fixed w-60 max-h-[70vh] overflow-y-auto bg-card rounded-xl border border-border shadow-2xl z-[61]" style={{ top: appsRect.top, right: appsRect.right }}>
               {activeApps.length > 0 && (
                 <div className="py-1">
                   {activeApps.map(app => (
@@ -180,7 +194,7 @@ export default function Header({ view, setView, theme, setTheme, onNewEvolution,
                 </>
               )}
             </div>
-          </>
+          </>, document.body
         )}
       </div>
     </header>

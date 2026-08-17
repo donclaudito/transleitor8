@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Send, Loader2, Sparkles } from 'lucide-react';
+import { Send, Loader2, Sparkles, Paperclip, X, FileText, Image as ImageIcon } from 'lucide-react';
 import MessageBubble from './MessageBubble';
 
 const SUGGESTIONS = [
@@ -10,12 +10,17 @@ const SUGGESTIONS = [
   'Sugira um plano terapêutico para paciente com HAS e DM2 internada',
 ];
 
+const ACCEPTED_TYPES = 'image/*,application/pdf,.pdf,.doc,.docx,.txt,.csv,.xls,.xlsx';
+
 export default function ElioChat() {
   const [conversationId, setConversationId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [pendingFiles, setPendingFiles] = useState([]);
+  const [uploading, setUploading] = useState(false);
   const scrollRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (!conversationId) return;
@@ -31,9 +36,9 @@ export default function ElioChat() {
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, pendingFiles]);
 
-  const startConversation = async (firstMessage) => {
+  const startConversation = async (firstMessage, fileUrls = []) => {
     setLoading(true);
     const conv = await base44.agents.createConversation({
       agent_name: 'elio',
@@ -41,19 +46,53 @@ export default function ElioChat() {
     });
     setConversationId(conv.id);
     setMessages(conv.messages || []);
-    await base44.agents.addMessage(conv, { role: 'user', content: firstMessage });
+    await base44.agents.addMessage(conv, { role: 'user', content: firstMessage, file_urls: fileUrls });
+  };
+
+  const handleSelectFiles = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    const mapped = files.map(f => ({ file: f, name: f.name, type: f.type, size: f.size, preview: f.type.startsWith('image/') ? URL.createObjectURL(f) : null }));
+    setPendingFiles(prev => [...prev, ...mapped]);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const removePending = (idx) => {
+    setPendingFiles(prev => {
+      const item = prev[idx];
+      if (item?.preview) URL.revokeObjectURL(item.preview);
+      return prev.filter((_, i) => i !== idx);
+    });
+  };
+
+  const uploadFiles = async () => {
+    if (!pendingFiles.length) return [];
+    setUploading(true);
+    try {
+      const urls = [];
+      for (const item of pendingFiles) {
+        const { file_url } = await base44.integrations.Core.UploadFile({ file: item.file });
+        urls.push(file_url);
+      }
+      return urls;
+    } finally {
+      setUploading(false);
+    }
   };
 
   const send = async (text) => {
     const content = (text ?? input).trim();
-    if (!content || loading) return;
+    if ((!content && !pendingFiles.length) || loading || uploading) return;
+    const fileUrls = await uploadFiles();
+    const finalContent = content || (pendingFiles.length ? `Enviei ${pendingFiles.length} anexo(s).` : '');
     setInput('');
+    setPendingFiles([]);
     setLoading(true);
     if (!conversationId) {
-      await startConversation(content);
+      await startConversation(finalContent, fileUrls);
     } else {
       const conv = await base44.agents.getConversation(conversationId);
-      await base44.agents.addMessage(conv, { role: 'user', content });
+      await base44.agents.addMessage(conv, { role: 'user', content: finalContent, file_urls: fileUrls });
     }
   };
 
@@ -93,7 +132,34 @@ export default function ElioChat() {
       </div>
 
       <div className="p-4 border-t border-border glass">
+        {pendingFiles.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-2">
+            {pendingFiles.map((f, idx) => (
+              <div key={idx} className="relative group flex items-center gap-2 pl-2 pr-7 py-1.5 rounded-xl bg-muted border border-border text-xs max-w-[200px]">
+                {f.preview ? (
+                  <img src={f.preview} alt={f.name} className="w-8 h-8 rounded object-cover flex-shrink-0" />
+                ) : (
+                  <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <FileText className="w-4 h-4 text-primary" />
+                  </div>
+                )}
+                <span className="truncate flex-1 font-medium">{f.name}</span>
+                <button type="button" onClick={() => removePending(idx)}
+                  className="absolute right-1 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
         <form onSubmit={(e) => { e.preventDefault(); send(); }} className="flex gap-2 items-end">
+          <input ref={fileInputRef} type="file" accept={ACCEPTED_TYPES} multiple onChange={handleSelectFiles} className="hidden" />
+          <button type="button" onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            title="Anexar arquivo (imagem, PDF, documento)"
+            className="p-3 rounded-2xl border border-border bg-card text-muted-foreground hover:text-primary hover:border-primary/40 disabled:opacity-40 transition-all btn-press flex-shrink-0">
+            {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Paperclip className="w-4 h-4" />}
+          </button>
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -102,9 +168,9 @@ export default function ElioChat() {
             placeholder="Descreva o caso clínico ou peça ajuda ao Elio..."
             className="flex-1 px-4 py-3 rounded-2xl bg-muted border border-border text-sm resize-none focus:outline-none focus:border-primary/50 transition-all max-h-40"
           />
-          <button type="submit" disabled={loading || !input.trim()}
+          <button type="submit" disabled={loading || uploading || (!input.trim() && !pendingFiles.length)}
             className="p-3 rounded-2xl bg-primary text-primary-foreground disabled:opacity-40 hover:opacity-90 transition-all btn-press">
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+            {loading || uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </button>
         </form>
       </div>

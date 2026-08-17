@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronRight, CheckCircle2, Loader2, AlertCircle, Wrench } from 'lucide-react';
+import { ChevronDown, ChevronRight, CheckCircle2, Loader2, AlertCircle, Wrench, FileText, Image as ImageIcon } from 'lucide-react';
 
 const STATUS = {
   pending: { Icon: Loader2, text: 'Pendente', cls: 'text-muted-foreground animate-spin' },
@@ -54,9 +54,26 @@ function FunctionDisplay({ toolCall }) {
 
 export default function MessageBubble({ message }) {
   const isUser = message.role === 'user';
+  const fileUrls = Array.isArray(message.file_urls) ? message.file_urls : [];
+  const isImage = (url) => /\.(png|jpe?g|webp|gif|bmp|svg)$/i.test(url) || url.includes('image');
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
       <div className={`max-w-[85%] rounded-2xl px-4 py-3 ${isUser ? 'bg-primary text-primary-foreground' : 'glass-card'}`}>
+        {fileUrls.length > 0 && (
+          <div className={`flex flex-wrap gap-2 ${message.content ? 'mb-2' : ''}`}>
+            {fileUrls.map((url, i) => isImage(url) ? (
+              <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block">
+                <img src={url} alt={`Anexo ${i + 1}`} className="w-24 h-24 object-cover rounded-lg border border-border/50" />
+              </a>
+            ) : (
+              <a key={i} href={url} target="_blank" rel="noopener noreferrer"
+                className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium ${isUser ? 'bg-primary-foreground/15 hover:bg-primary-foreground/25' : 'bg-muted hover:bg-accent'} transition-colors`}>
+                <FileText className="w-4 h-4" />
+                <span className="truncate max-w-[160px]">{url.split('/').pop() || `Anexo ${i + 1}`}</span>
+              </a>
+            ))}
+          </div>
+        )}
         {message.content && (isUser
           ? <p className="text-sm whitespace-pre-wrap">{message.content}</p>
           : <div className="text-sm max-w-none [&_p]:my-1.5 [&_ul]:my-1.5 [&_ol]:my-1.5 [&_li]:ml-4 [&_h3]:font-bold [&_h3]:mt-3 [&_h3]:mb-1 [&_h4]:font-bold [&_h4]:mt-2 [&_h4]:mb-1 [&_table]:my-2 [&_th]:border [&_th]:border-border [&_th]:px-2.5 [&_th]:py-1.5 [&_th]:bg-muted [&_th]:text-left [&_th]:font-bold [&_th]:text-xs [&_td]:border [&_td]:border-border [&_td]:px-2.5 [&_td]:py-1.5 [&_td]:text-xs [&_strong]:font-bold [&_code]:bg-amber-500/10 [&_code]:text-amber-600 [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_code]:font-mono [&_code]:text-xs [&_code]:font-bold" dangerouslySetInnerHTML={{ __html: message.content }} />)}

@@ -198,16 +198,8 @@ export default function Transleitor() {
         ? `Contexto: consulta ambulatorial (${formData.consultorioType === 'retorno' ? 'retorno' : 'primeira consulta'}).${formData.consultorioType === 'retorno' && formData.previousConsult?.trim() ? `\nConsulta anterior:\n${formData.previousConsult.trim()}` : ''}`
         : '';
 
-      // Mescla medicamentos crônicos das comorbidades selecionadas à prescrição atual (somente para o prompt)
-      const selectedComorbidities = formData.comorbidities.split(',').map(s => s.trim()).filter(s => s && !s.startsWith('Alergia'));
-      const chronicMeds = selectedComorbidities
-        .map(c => comorbidityMeds.find(m => m.comorbidity_name === c))
-        .filter(Boolean)
-        .map(m => m.medications)
-        .filter(Boolean);
-      const mergedPrescription = chronicMeds.length > 0
-        ? `${formData.prescription?.trim() || ''}${formData.prescription?.trim() ? '\n' : ''}--- Medicamentos crônicos (uso contínuo) ---\n${chronicMeds.join('\n')}`
-        : (formData.prescription?.trim() || '');
+      // Apenas os medicamentos adicionados individualmente via popover ficam na prescrição.
+      const mergedPrescription = formData.prescription?.trim() || '';
 
       // RAG: constrói a Base de Conhecimento APENAS com os campos preenchidos.
       // Campos ausentes são omitidos (não viram "—" para não virar dado ambíguo).
@@ -233,7 +225,7 @@ ${kbText || '(nenhum dado adicional)'}
 REGRAS RAG (OBRIGATÓRIAS):
 1. Use ESTRITAMENTE os dados da BASE DE CONHECIMENTO acima. É a única fonte permitida.
 2. NÃO use conhecimento externo, treinamento ou inferência para preencher lacunas clínicas.
-3. Se uma informação não está na base acima, escreva "Não informado" — nunca invente.
+3. Se uma informação não está na base acima, DEIXE O CAMPO VAZIO ou OMITA a seção — nunca invente e NUNCA escreva "Não informado".
 4. É PROIBIDO fabricar: exames, medicamentos, posologias, sinais vitais, achados de exame físico, CID-10 não justificado, datas ou condutas não descritas.
 5. Você organiza e formata os dados fornecidos — não diagnostica nem completa além do input.`;
 

@@ -95,14 +95,14 @@ Deno.serve(async (req) => {
         '',
         'REGRAS DE ATERRAMENTO (OBRIGATÓRIAS):',
         '1. Use APENAS os dados presentes na mensagem do usuário. Nunca invente, complete, infira ou adicione informações que não foram fornecidas.',
-        '2. Se um campo estiver vazio, ausente, com "—" ou "não informado", NÃO crie conteúdo para ele. Escreva "Não informado" ou omita a seção.',
+        '2. Se um campo estiver vazio, ausente, com "—" ou "não informado", NÃO crie conteúdo para ele. DEIXE O CAMPO VAZIO ou omita a seção — NUNCA escreva "Não informado".',
         '3. É PROIBIDO inventar: valores de exames, medicamentos, posologias, sinais vitais, achados de exame físico, CID-10 não justificado, datas, nomes de procedimentos ou condutas não descritas.',
         '4. O CID-10 sugerido deve derivar EXCLUSIVAMENTE do quadro descrito. Se não houver dados suficientes, escreva "CID-10: dados insuficientes".',
         '5. Siga EXATAMENTE a estrutura e a ordem de seções definidas no prompt do usuário. Use os títulos exatos solicitados (ex: no modo Livre: Hipótese(s) Diagnóstica(s), CID-10 sugerido, HPP / Comorbidades, Uso de Medicação Contínua, Alergias, Exames Complementares, Prescrição Atual, Conduta, Plano Terapêutico). NÃO adicione, remova, renomeie nem reordene seções.',
-        '6. Cada seção deve conter apenas dados efetivamente fornecidos; seção sem dado deve ficar "Não informado" ou vazia — nunca inventada.',
+        '6. Cada seção deve conter apenas dados efetivamente fornecidos; seção sem dado deve ficar VAZIA ou ser omitida — nunca inventada e nunca preenchida com "Não informado".',
         '7. Não use conhecimento geral para completar o raciocínio clínico além do input. Você organiza e formata — não diagnostica além do fornecido.',
         '',
-        'Documentação médica legal: alucinar dados causa dano ao paciente. Na dúvida, escreva "Não informado".',
+        'Documentação médica legal: alucinar dados causa dano ao paciente. Na dúvida, deixe o campo vazio ou omita a seção.',
       ].join('\n');
 
       // Chamada genérica à API externa (formato OpenAI-compatible)

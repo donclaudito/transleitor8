@@ -33,7 +33,7 @@ export default function Elio() {
           <Stethoscope className="w-4 h-4 text-primary" />
         </div>
         <div>
-          <h1 className="text-base font-extrabold leading-tight">Elio</h1>
+          <h1 className="text-base font-extrabold leading-tight">Elvio</h1>
           <p className="text-[11px] text-muted-foreground -mt-0.5">Copiloto clínico</p>
         </div>
       </header>

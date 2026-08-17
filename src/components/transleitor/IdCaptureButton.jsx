@@ -71,25 +71,20 @@ export default function IdCaptureButton({ onExtract }) {
   };
 
   return (
-    <>
+    <label
+      title="Capturar identificação do paciente (foto do crachá/pulseira)"
+      className={`relative px-2.5 py-1.5 rounded-lg text-[11px] font-semibold premium-gradient-soft text-primary border border-primary/20 flex items-center gap-1.5 transition-all btn-press ${loading ? 'opacity-50 pointer-events-none' : 'hover:border-primary/40 cursor-pointer'}`}
+    >
       <input
         ref={inputRef}
         type="file"
         accept="image/*"
         capture="environment"
-        className="hidden"
+        className="absolute inset-0 opacity-0 cursor-pointer"
         onChange={(e) => handleFile(e.target.files?.[0])}
       />
-      <button
-        type="button"
-        onClick={() => inputRef.current?.click()}
-        disabled={loading}
-        title="Capturar identificação do paciente (foto do crachá/pulseira)"
-        className="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold premium-gradient-soft text-primary border border-primary/20 flex items-center gap-1.5 hover:border-primary/40 transition-all btn-press disabled:opacity-50"
-      >
-        {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
-        {loading ? 'Lendo...' : 'Identificar'}
-      </button>
-    </>
+      {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
+      <span className="relative">{loading ? 'Lendo...' : 'Identificar'}</span>
+    </label>
   );
 }

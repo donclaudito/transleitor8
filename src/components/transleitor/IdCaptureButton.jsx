@@ -39,11 +39,39 @@ export default function IdCaptureButton({ onExtract }) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
+  const downscaleImage = (file) => new Promise((resolve) => {
+    if (!file.type.startsWith('image/')) { resolve(file); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 1600;
+        let { width, height } = img;
+        if (width > MAX || height > MAX) {
+          const scale = Math.min(MAX / width, MAX / height);
+          width = Math.round(width * scale);
+          height = Math.round(height * scale);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        canvas.toBlob((blob) => {
+          resolve(new File([blob], file.name.replace(/\.\w+$/, '.jpg'), { type: 'image/jpeg' }));
+        }, 'image/jpeg', 0.82);
+      };
+      img.onerror = () => resolve(file);
+      img.src = reader.result;
+    };
+    reader.onerror = () => resolve(file);
+    reader.readAsDataURL(file);
+  });
+
   const handleFile = async (file) => {
     if (!file) return;
     setLoading(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const optimized = await downscaleImage(file);
+      const { file_url } = await base44.integrations.Core.UploadFile({ file: optimized });
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: SYSTEM_PROMPT,
         file_urls: [file_url],

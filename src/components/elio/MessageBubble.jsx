@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronRight, CheckCircle2, Loader2, AlertCircle, Wrench, FileText, Image as ImageIcon } from 'lucide-react';
+import { ChevronDown, ChevronRight, CheckCircle2, Loader2, AlertCircle, Wrench, FileText, Image as ImageIcon, Copy, Check } from 'lucide-react';
 
 const STATUS = {
   pending: { Icon: Loader2, text: 'Pendente', cls: 'text-muted-foreground animate-spin' },
@@ -54,8 +54,26 @@ function FunctionDisplay({ toolCall }) {
 
 export default function MessageBubble({ message }) {
   const isUser = message.role === 'user';
+  const [copied, setCopied] = useState(false);
   const fileUrls = Array.isArray(message.file_urls) ? message.file_urls : [];
   const isImage = (url) => /\.(png|jpe?g|webp|gif|bmp|svg)$/i.test(url) || url.includes('image');
+
+  const copyContent = async () => {
+    try {
+      if (isUser) {
+        await navigator.clipboard.writeText(message.content || '');
+      } else {
+        // Renderiza o HTML e copia como texto limpo, preservando quebras de linha das tabelas
+        const tmp = document.createElement('div');
+        tmp.innerHTML = message.content || '';
+        const text = tmp.innerText.trim();
+        await navigator.clipboard.writeText(text);
+      }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch (_) {}
+  };
+
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
       <div className={`max-w-[85%] rounded-2xl px-4 py-3 ${isUser ? 'bg-primary text-primary-foreground' : 'glass-card'}`}>
@@ -78,6 +96,15 @@ export default function MessageBubble({ message }) {
           ? <p className="text-sm whitespace-pre-wrap">{message.content}</p>
           : <div className="text-sm max-w-none [&_p]:my-1.5 [&_ul]:my-1.5 [&_ol]:my-1.5 [&_li]:ml-4 [&_h3]:font-bold [&_h3]:mt-3 [&_h3]:mb-1 [&_h4]:font-bold [&_h4]:mt-2 [&_h4]:mb-1 [&_table]:my-2 [&_th]:border [&_th]:border-border [&_th]:px-2.5 [&_th]:py-1.5 [&_th]:bg-muted [&_th]:text-left [&_th]:font-bold [&_th]:text-xs [&_td]:border [&_td]:border-border [&_td]:px-2.5 [&_td]:py-1.5 [&_td]:text-xs [&_strong]:font-bold [&_code]:bg-amber-500/10 [&_code]:text-amber-600 [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_code]:font-mono [&_code]:text-xs [&_code]:font-bold" dangerouslySetInnerHTML={{ __html: message.content }} />)}
         {message.tool_calls?.map((tc, i) => <FunctionDisplay key={i} toolCall={tc} />)}
+        {!isUser && message.content && (
+          <div className="flex justify-end mt-2 -mb-1">
+            <button onClick={copyContent}
+              className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-primary transition-colors">
+              {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied ? 'Copiado' : 'Copiar'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

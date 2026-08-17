@@ -98,8 +98,9 @@ Deno.serve(async (req) => {
         '2. Se um campo estiver vazio, ausente, com "—" ou "não informado", NÃO crie conteúdo para ele. Escreva "Não informado" ou omita a seção.',
         '3. É PROIBIDO inventar: valores de exames, medicamentos, posologias, sinais vitais, achados de exame físico, CID-10 não justificado, datas, nomes de procedimentos ou condutas não descritas.',
         '4. O CID-10 sugerido deve derivar EXCLUSIVAMENTE do quadro descrito. Se não houver dados suficientes, escreva "CID-10: dados insuficientes".',
-        '5. Mantenha a estrutura HTML exigida no prompt, preenchendo cada seção apenas com o que foi efetivamente fornecido.',
-        '6. Não use conhecimento geral para completar o raciocínio clínico além do input. Você organiza e formata — não diagnostica além do fornecido.',
+        '5. Siga EXATAMENTE a estrutura e a ordem de seções definidas no prompt do usuário. Use os títulos exatos solicitados (ex: no modo Livre: Hipótese(s) Diagnóstica(s), CID-10 sugerido, HPP / Comorbidades, Uso de Medicação Contínua, Alergias, Exames Complementares, Prescrição Atual, Conduta, Plano Terapêutico). NÃO adicione, remova, renomeie nem reordene seções.',
+        '6. Cada seção deve conter apenas dados efetivamente fornecidos; seção sem dado deve ficar "Não informado" ou vazia — nunca inventada.',
+        '7. Não use conhecimento geral para completar o raciocínio clínico além do input. Você organiza e formata — não diagnostica além do fornecido.',
         '',
         'Documentação médica legal: alucinar dados causa dano ao paciente. Na dúvida, escreva "Não informado".',
       ].join('\n');

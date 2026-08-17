@@ -74,13 +74,6 @@ export default function ComorbidityPopover({ comorbidityName, medications, onAdd
             {addedCustom ? <Check className="w-4 h-4 text-green-500" /> : <Plus className="w-4 h-4" />}
           </button>
         </div>
-
-        <button
-          onClick={() => (onAddAll ? onAddAll(medications) : onAddToPrescription(medications))}
-          className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-bold hover:opacity-90 transition-all"
-        >
-          Adicionar todos à prescrição
-        </button>
       </div>
     </div>
   );

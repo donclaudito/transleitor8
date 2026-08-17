@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
-import { Stethoscope, History, Plus, Settings, Calculator, Wrench, Sun, Moon, BookOpen, ChevronDown, ExternalLink, Microscope, Cpu, ClipboardList, ScanLine, Bot } from 'lucide-react';
+import { Stethoscope, History, Plus, Settings, Calculator, Wrench, Sun, Moon, BookOpen, ChevronDown, ExternalLink, Cpu, ClipboardList, ScanLine, Bot } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 
@@ -115,11 +115,6 @@ export default function Header({ view, setView, theme, setTheme, onNewEvolution,
       <Link to="/passagem" title="Passagem de Visita"
         className="p-2.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
         <ClipboardList className="w-4 h-4" />
-      </Link>
-
-      <Link to="/exames" title="Interpretação de Exames"
-        className="p-2.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
-        <Microscope className="w-4 h-4" />
       </Link>
 
       <Link to="/imagem-medica" title="Análise de Imagem Médica"

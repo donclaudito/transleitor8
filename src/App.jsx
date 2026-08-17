@@ -12,7 +12,6 @@ import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import LandingPage from '@/pages/LandingPage';
 import Transleitor from '@/pages/Transleitor';
-import InterpretacaoExames from '@/pages/InterpretacaoExames';
 import TemplatesSOAP from '@/pages/TemplatesSOAP';
 import GerenciarApps from '@/pages/GerenciarApps';
 import DevDocs from '@/pages/DevDocs';
@@ -53,7 +52,6 @@ const AuthenticatedApp = () => {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
           <Route path="/transleitor" element={<Transleitor />} />
-          <Route path="/exames" element={<InterpretacaoExames />} />
           <Route path="/templates" element={<TemplatesSOAP />} />
           <Route path="/gerenciar-apps" element={<GerenciarApps />} />
           <Route path="/dev-docs" element={<DevDocs />} />

@@ -89,6 +89,21 @@ Deno.serve(async (req) => {
         apiUrl = apiUrl.replace(/\/+$/, '') + '/chat/completions';
       }
 
+      const systemMessage = [
+        'Você é um assistente médico de documentação clínica brasileira.',
+        'Sua ÚNICA fonte de verdade são os dados explicitamente fornecidos na mensagem do usuário (o formulário preenchido pelo médico).',
+        '',
+        'REGRAS DE ATERRAMENTO (OBRIGATÓRIAS):',
+        '1. Use APENAS os dados presentes na mensagem do usuário. Nunca invente, complete, infira ou adicione informações que não foram fornecidas.',
+        '2. Se um campo estiver vazio, ausente, com "—" ou "não informado", NÃO crie conteúdo para ele. Escreva "Não informado" ou omita a seção.',
+        '3. É PROIBIDO inventar: valores de exames, medicamentos, posologias, sinais vitais, achados de exame físico, CID-10 não justificado, datas, nomes de procedimentos ou condutas não descritas.',
+        '4. O CID-10 sugerido deve derivar EXCLUSIVAMENTE do quadro descrito. Se não houver dados suficientes, escreva "CID-10: dados insuficientes".',
+        '5. Mantenha a estrutura HTML exigida no prompt, preenchendo cada seção apenas com o que foi efetivamente fornecido.',
+        '6. Não use conhecimento geral para completar o raciocínio clínico além do input. Você organiza e formata — não diagnostica além do fornecido.',
+        '',
+        'Documentação médica legal: alucinar dados causa dano ao paciente. Na dúvida, escreva "Não informado".',
+      ].join('\n');
+
       // Chamada genérica à API externa (formato OpenAI-compatible)
       const response = await fetch(apiUrl, {
         method: 'POST',
@@ -98,8 +113,11 @@ Deno.serve(async (req) => {
         },
         body: JSON.stringify({
           model: llm.model_name,
-          messages: [{ role: 'user', content: prompt }],
-          temperature: 0.3,
+          messages: [
+            { role: 'system', content: systemMessage },
+            { role: 'user', content: prompt },
+          ],
+          temperature: 0.1,
         }),
       });
 

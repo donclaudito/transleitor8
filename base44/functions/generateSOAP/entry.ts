@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 import { marked } from 'npm:marked@15.0.12';
 import { secrets, waitUntil } from 'base44:runtime';
+import { decryptApiKey } from "../../shared/crypto.ts";
 
 const LANGSMITH_BASE = 'https://api.smith.langchain.com/runs';
 const LANGSMITH_PROJECT = 'transleitor';
@@ -75,9 +76,14 @@ Deno.serve(async (req) => {
         return Response.json({ error: 'Este provedor está desativado' }, { status: 400 });
       }
 
-      const apiKey = Deno.env.get(llm.api_key_env_var);
+      let apiKey = '';
+      if (llm.api_key_encrypted) {
+        apiKey = await decryptApiKey(llm.api_key_encrypted);
+      } else if (llm.api_key_env_var) {
+        apiKey = Deno.env.get(llm.api_key_env_var) || '';
+      }
       if (!apiKey) {
-        return Response.json({ error: `Chave API não configurada: ${llm.api_key_env_var}` }, { status: 500 });
+        return Response.json({ error: 'Chave API do provedor não configurada (reinforme a chave no painel de Provedores de IA)' }, { status: 500 });
       }
 
       provider = llm.provider_name;

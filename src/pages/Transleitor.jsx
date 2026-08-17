@@ -209,17 +209,33 @@ export default function Transleitor() {
         ? `${formData.prescription?.trim() || ''}${formData.prescription?.trim() ? '\n' : ''}--- Medicamentos crônicos (uso contínuo) ---\n${chronicMeds.join('\n')}`
         : (formData.prescription?.trim() || '');
 
-      const patientData = `Dados do paciente:
-- Paciente: ${formData.patientInitials || '—'}
-- Leito: ${formData.bed || '—'} | Setor: ${formData.sector || '—'}
-- Comorbidades: ${formData.comorbidities || '—'}
-- Exames complementares: ${formData.labs || '—'}
-${formData.previousEvolution?.trim() ? `\nEvoluções médicas anteriores (analise a progressão clínica de forma CRONOLÓGICA, dia a dia):\n${formData.previousEvolution.trim()}` : ''}
-${formData.nursingEvolution?.trim() ? `\nEvolução de enfermagem (integre as informações ao contexto):\n${formData.nursingEvolution.trim()}` : ''}
-${mergedPrescription ? `\nPrescrição atual do paciente (integre ao contexto clínico e ao plano):\n${mergedPrescription}` : ''}
+      // RAG: constrói a Base de Conhecimento APENAS com os campos preenchidos.
+      // Campos ausentes são omitidos (não viram "—" para não virar dado ambíguo).
+      const kbEntries = [
+        ['Paciente (iniciais)', formData.patientInitials?.trim()],
+        ['Leito', formData.bed?.trim()],
+        ['Setor', formData.sector?.trim()],
+        ['Comorbidades', formData.comorbidities?.trim()],
+        ['Exames complementares', formData.labs?.trim()],
+        ['Evoluções médicas anteriores', formData.previousEvolution?.trim()],
+        ['Evolução de enfermagem', formData.nursingEvolution?.trim()],
+        ['Prescrição atual', mergedPrescription?.trim()],
+        ['Descrição clínica atual', formData.clinicalDescription?.trim()],
+      ];
+      const kbText = kbEntries
+        .filter(([, v]) => v)
+        .map(([k, v]) => `- ${k}: ${v}`)
+        .join('\n');
 
-Descrição clínica atual:
-${formData.clinicalDescription}`;
+      const patientData = `BASE DE CONHECIMENTO (FONTE ÚNICA DE VERDADE):
+${kbText || '(nenhum dado adicional)'}
+
+REGRAS RAG (OBRIGATÓRIAS):
+1. Use ESTRITAMENTE os dados da BASE DE CONHECIMENTO acima. É a única fonte permitida.
+2. NÃO use conhecimento externo, treinamento ou inferência para preencher lacunas clínicas.
+3. Se uma informação não está na base acima, escreva "Não informado" — nunca invente.
+4. É PROIBIDO fabricar: exames, medicamentos, posologias, sinais vitais, achados de exame físico, CID-10 não justificado, datas ou condutas não descritas.
+5. Você organiza e formata os dados fornecidos — não diagnostica nem completa além do input.`;
 
       const correlationBlock = formData.previousEvolution?.trim() ? `\n\nÂNCORA DE CORRELAÇÃO CRUZADA (use TODAS as Evoluções Médicas Anteriores como referência obrigatória):
 1. ANÁLISE CRONOLÓGICA: ordene as evoluções anteriores por data/tempo e reconstrua a LINHA DO TEMPO clínica do paciente. Destaque a progressão dia a dia — melhora, piora ou estabilidade de sintomas, sinais vitais e estado geral entre as evoluções.

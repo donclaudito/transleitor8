@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Send, Loader2, Sparkles, Paperclip, X, FileText, Image as ImageIcon } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { Send, Loader2, Sparkles, Paperclip, X, FileText } from 'lucide-react';
 import MessageBubble from './MessageBubble';
 
 const SUGGESTIONS = [
@@ -12,8 +13,12 @@ const SUGGESTIONS = [
 
 const ACCEPTED_TYPES = 'image/*,application/pdf,.pdf,.doc,.docx,.txt,.csv,.xls,.xlsx';
 
-export default function ElioChat() {
-  const [conversationId, setConversationId] = useState(null);
+const titleFromContent = (content) => {
+  const t = (content || '').replace(/\s+/g, ' ').trim();
+  return t.length > 40 ? t.slice(0, 40).trim() + '…' : (t || 'Nova conversa');
+};
+
+export default function ElioChat({ conversationId, onConversationCreated }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -21,14 +26,18 @@ export default function ElioChat() {
   const [uploading, setUploading] = useState(false);
   const scrollRef = useRef(null);
   const fileInputRef = useRef(null);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
-    if (!conversationId) return;
+    if (!conversationId) { setMessages([]); return; }
+    setMessages([]);
+    setLoading(true);
     const unsub = base44.agents.subscribeToConversation(conversationId, (data) => {
       const msgs = data.messages || [];
       setMessages(msgs);
       if (msgs.length && msgs[msgs.length - 1].role === 'assistant' && msgs[msgs.length - 1].content) {
         setLoading(false);
+        queryClient.invalidateQueries({ queryKey: ['elio-conversations'] });
       }
     });
     return () => unsub();
@@ -37,17 +46,6 @@ export default function ElioChat() {
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages, pendingFiles]);
-
-  const startConversation = async (firstMessage, fileUrls = []) => {
-    setLoading(true);
-    const conv = await base44.agents.createConversation({
-      agent_name: 'elio',
-      metadata: { name: 'Conversa com Elio', description: 'Copiloto clínico' },
-    });
-    setConversationId(conv.id);
-    setMessages(conv.messages || []);
-    await base44.agents.addMessage(conv, { role: 'user', content: firstMessage, file_urls: fileUrls });
-  };
 
   const handleSelectFiles = (e) => {
     const files = Array.from(e.target.files || []);
@@ -89,11 +87,17 @@ export default function ElioChat() {
     setPendingFiles([]);
     setLoading(true);
     if (!conversationId) {
-      await startConversation(finalContent, fileUrls);
+      const conv = await base44.agents.createConversation({
+        agent_name: 'elio',
+        metadata: { name: titleFromContent(finalContent) },
+      });
+      onConversationCreated?.(conv.id);
+      await base44.agents.addMessage(conv, { role: 'user', content: finalContent, file_urls: fileUrls });
     } else {
       const conv = await base44.agents.getConversation(conversationId);
       await base44.agents.addMessage(conv, { role: 'user', content: finalContent, file_urls: fileUrls });
     }
+    queryClient.invalidateQueries({ queryKey: ['elio-conversations'] });
   };
 
   return (

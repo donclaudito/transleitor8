@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import ReactMarkdown from 'react-markdown';
 import { ChevronDown, ChevronRight, CheckCircle2, Loader2, AlertCircle, Wrench } from 'lucide-react';
 
 const STATUS = {
@@ -60,7 +59,7 @@ export default function MessageBubble({ message }) {
       <div className={`max-w-[85%] rounded-2xl px-4 py-3 ${isUser ? 'bg-primary text-primary-foreground' : 'glass-card'}`}>
         {message.content && (isUser
           ? <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-          : <ReactMarkdown className="text-sm prose prose-sm dark:prose-invert max-w-none [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1">{message.content}</ReactMarkdown>)}
+          : <div className="text-sm max-w-none [&_p]:my-1.5 [&_ul]:my-1.5 [&_ol]:my-1.5 [&_li]:ml-4 [&_h3]:font-bold [&_h3]:mt-3 [&_h3]:mb-1 [&_h4]:font-bold [&_h4]:mt-2 [&_h4]:mb-1 [&_table]:my-2 [&_th]:border [&_th]:border-border [&_th]:px-2.5 [&_th]:py-1.5 [&_th]:bg-muted [&_th]:text-left [&_th]:font-bold [&_th]:text-xs [&_td]:border [&_td]:border-border [&_td]:px-2.5 [&_td]:py-1.5 [&_td]:text-xs [&_strong]:font-bold [&_code]:bg-amber-500/10 [&_code]:text-amber-600 [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_code]:font-mono [&_code]:text-xs [&_code]:font-bold" dangerouslySetInnerHTML={{ __html: message.content }} />)}
         {message.tool_calls?.map((tc, i) => <FunctionDisplay key={i} toolCall={tc} />)}
       </div>
     </div>

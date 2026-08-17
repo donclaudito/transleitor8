@@ -365,7 +365,7 @@ export default function SymptomsPanel({ onAppend, clinicalDescription = '' }) {
       <button onClick={() => setOpen(true)}
         title="Sinais e Sintomas"
         className="fixed right-0 top-1/2 -translate-y-1/2 z-30 flex items-center gap-1.5 px-2 py-4 rounded-l-xl border border-r-0 border-border shadow-lg bg-card text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
-        <span className="writing-mode-vertical text-[10px] font-bold tracking-wider uppercase"
+        <span className="hidden sm:inline text-[10px] font-bold tracking-wider uppercase"
           style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
           Sintomas
         </span>

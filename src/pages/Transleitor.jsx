@@ -419,8 +419,8 @@ Use <p>, <strong>, <ul>/<li>, <br>. NÃO use <h2> nem Markdown (sem ##, **, -, \
             onClose={() => setShowAllergyPopover(false)}
           />
         )}
-        <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[calc(100vh-64px)]">
-          <div className="overflow-y-auto border-r border-border">
+        <div className="grid grid-cols-1 lg:grid-cols-2 lg:min-h-[calc(100vh-64px)]">
+          <div className="overflow-y-auto border-b lg:border-b-0 lg:border-r border-border">
             <FormView
               formData={formData} setFormData={setFormData}
               allSectors={allSectors} allComorbidities={allComorbidities}

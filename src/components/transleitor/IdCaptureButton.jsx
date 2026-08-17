@@ -39,50 +39,65 @@ export default function IdCaptureButton({ onExtract }) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const downscaleImage = (file) => new Promise((resolve) => {
-    if (!file.type.startsWith('image/')) { resolve(file); return; }
-    const reader = new FileReader();
-    reader.onload = () => {
-      const img = new Image();
-      img.onload = () => {
-        const MAX = 1600;
-        let { width, height } = img;
-        if (width > MAX || height > MAX) {
-          const scale = Math.min(MAX / width, MAX / height);
-          width = Math.round(width * scale);
-          height = Math.round(height * scale);
-        }
-        const canvas = document.createElement('canvas');
-        canvas.width = width; canvas.height = height;
-        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-        canvas.toBlob((blob) => {
-          resolve(new File([blob], file.name.replace(/\.\w+$/, '.jpg'), { type: 'image/jpeg' }));
-        }, 'image/jpeg', 0.82);
-      };
-      img.onerror = () => resolve(file);
-      img.src = reader.result;
-    };
-    reader.onerror = () => resolve(file);
-    reader.readAsDataURL(file);
-  });
+  // Redimensiona a foto usando createImageBitmap (decode fora da thread principal,
+  // evita congelar a tela com fotos grandes de celular). Fallback p/ imagem original.
+  const downscaleImage = async (file) => {
+    if (!file.type?.startsWith('image/')) return file;
+    try {
+      const bitmap = await window.createImageBitmap(file);
+      let { width, height } = bitmap;
+      const MAX = 1280;
+      if (width > MAX || height > MAX) {
+        const scale = Math.min(MAX / width, MAX / height);
+        width = Math.round(width * scale);
+        height = Math.round(height * scale);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext('2d').drawImage(bitmap, 0, 0, width, height);
+      bitmap.close?.();
+      const blob = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', 0.8));
+      if (!blob) return file;
+      const name = (file.name || 'capture').replace(/\.\w+$/, '.jpg');
+      return new File([blob], name, { type: 'image/jpeg' });
+    } catch {
+      return file;
+    }
+  };
+
+  const withTimeout = (promise, ms, msg) =>
+    Promise.race([
+      promise,
+      new Promise((_, reject) => setTimeout(() => reject(new Error(msg)), ms)),
+    ]);
 
   const handleFile = async (file) => {
     if (!file) return;
     setLoading(true);
     try {
       const optimized = await downscaleImage(file);
-      const { file_url } = await base44.integrations.Core.UploadFile({ file: optimized });
-      const result = await base44.integrations.Core.InvokeLLM({
-        prompt: SYSTEM_PROMPT,
-        file_urls: [file_url],
-        response_json_schema: SCHEMA,
-        model: 'gemini_3_flash',
-      });
+      const upload = await withTimeout(
+        base44.integrations.Core.UploadFile({ file: optimized }),
+        30000,
+        'Upload da foto demorou demais. Tente novamente em rede estável.'
+      );
+      const { file_url } = upload;
+      const result = await withTimeout(
+        base44.integrations.Core.InvokeLLM({
+          prompt: SYSTEM_PROMPT,
+          file_urls: [file_url],
+          response_json_schema: SCHEMA,
+          model: 'gemini_3_flash',
+        }),
+        45000,
+        'A leitura da imagem demorou demais. Tire uma foto mais nítida e tente novamente.'
+      );
 
       const primeiroNome = result?.data?.primeiro_nome ?? null;
       const leito = result?.data?.leito ?? null;
       const message = result?.ui_action?.message ||
-        (result?.status === 'error' ? 'Não foi possível extrair os dados. Tire uma nova foto.' : 'Dados extraídos com sucesso.');
+        (result?.status === 'error' ? 'Não foi possível extrair os dados. Tire uma nova foto.' : 'Identificação do paciente extraída com sucesso.');
 
       if (result?.status === 'error' || (!primeiroNome && !leito)) {
         toast({ title: 'Captura incompleta', description: message, variant: 'destructive' });

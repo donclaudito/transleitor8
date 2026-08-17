@@ -19,6 +19,7 @@ import DevDocs from '@/pages/DevDocs';
 import AdminLLMs from '@/pages/AdminLLMs';
 import Passagem from '@/pages/Passagem';
 import ImagemMedica from '@/pages/ImagemMedica';
+import IdleTimeout from '@/components/IdleTimeout';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -41,24 +42,27 @@ const AuthenticatedApp = () => {
   }
 
   return (
-    <Routes>
-      <Route path="/" element={<LandingPage />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
-      <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
-        <Route path="/transleitor" element={<Transleitor />} />
-        <Route path="/exames" element={<InterpretacaoExames />} />
-        <Route path="/templates" element={<TemplatesSOAP />} />
-        <Route path="/gerenciar-apps" element={<GerenciarApps />} />
-        <Route path="/dev-docs" element={<DevDocs />} />
-        <Route path="/admin-llms" element={<AdminLLMs />} />
-        <Route path="/passagem" element={<Passagem />} />
-        <Route path="/imagem-medica" element={<ImagemMedica />} />
-      </Route>
-      <Route path="*" element={<PageNotFound />} />
-    </Routes>
+    <>
+      <IdleTimeout />
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
+          <Route path="/transleitor" element={<Transleitor />} />
+          <Route path="/exames" element={<InterpretacaoExames />} />
+          <Route path="/templates" element={<TemplatesSOAP />} />
+          <Route path="/gerenciar-apps" element={<GerenciarApps />} />
+          <Route path="/dev-docs" element={<DevDocs />} />
+          <Route path="/admin-llms" element={<AdminLLMs />} />
+          <Route path="/passagem" element={<Passagem />} />
+          <Route path="/imagem-medica" element={<ImagemMedica />} />
+        </Route>
+        <Route path="*" element={<PageNotFound />} />
+      </Routes>
+    </>
   );
 };
 

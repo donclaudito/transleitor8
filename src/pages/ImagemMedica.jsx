@@ -93,26 +93,27 @@ export default function ImagemMedica() {
             <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
               <Upload className="w-3.5 h-3.5" /> Imagem Médica
             </h3>
-            {preview ? (
-              <div className="relative group">
-                <img src={preview} alt="preview" className="w-full rounded-xl max-h-80 object-contain bg-black/5" />
-                <button onClick={removeFile}
-                  className="absolute top-2 right-2 p-1.5 rounded-lg bg-background/80 backdrop-blur border border-border text-muted-foreground hover:text-destructive transition-all">
-                  <X className="w-4 h-4" />
-                </button>
-                <p className="text-xs text-muted-foreground mt-2 truncate">{file?.name}</p>
-              </div>
-            ) : (
-              <button onClick={() => inputRef.current?.click()}
-                className="w-full border-2 border-dashed border-border rounded-xl py-10 flex flex-col items-center gap-3 text-muted-foreground hover:border-primary/40 hover:text-primary transition-all">
-                <div className="w-12 h-12 rounded-2xl bg-primary/5 flex items-center justify-center">
-                  <Upload className="w-6 h-6" />
+            <label className="block">
+              <input ref={inputRef} type="file" accept="image/*" onChange={onFile} className="sr-only" />
+              {preview ? (
+                <div className="relative group cursor-pointer">
+                  <img src={preview} alt="preview" className="w-full rounded-xl max-h-80 object-contain bg-black/5" />
+                  <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeFile(); }}
+                    className="absolute top-2 right-2 p-1.5 rounded-lg bg-background/80 backdrop-blur border border-border text-muted-foreground hover:text-destructive transition-all">
+                    <X className="w-4 h-4" />
+                  </button>
+                  <p className="text-xs text-muted-foreground mt-2 truncate">{file?.name}</p>
                 </div>
-                <span className="text-sm font-semibold">Enviar imagem</span>
-                <span className="text-[11px]">Raio-X, TC, USG, RM — JPG/PNG</span>
-              </button>
-            )}
-            <input ref={inputRef} type="file" accept="image/*" onChange={onFile} className="hidden" />
+              ) : (
+                <div className="w-full border-2 border-dashed border-border rounded-xl py-10 flex flex-col items-center gap-3 text-muted-foreground hover:border-primary/40 hover:text-primary transition-all cursor-pointer">
+                  <div className="w-12 h-12 rounded-2xl bg-primary/5 flex items-center justify-center">
+                    <Upload className="w-6 h-6" />
+                  </div>
+                  <span className="text-sm font-semibold">Enviar imagem</span>
+                  <span className="text-[11px]">Raio-X, TC, USG, RM — JPG/PNG</span>
+                </div>
+              )}
+            </label>
           </div>
 
           {/* Modalidade */}

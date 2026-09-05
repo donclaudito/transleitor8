@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 import { waitUntil } from 'base44:runtime';
-import { traceLlmRun, toHtml, resolveProvider, callProviderLLM, ProviderError } from '../../shared/llm.ts';
+import { traceLlmRun, toHtml, resolveProvider, callProviderLLM, logLLMUsage, ProviderError } from '../../shared/llm.ts';
 
 const SOAP_SYSTEM_MESSAGE = [
   'Você é um assistente médico de documentação clínica brasileira.',
@@ -20,12 +20,14 @@ const SOAP_SYSTEM_MESSAGE = [
 
 Deno.serve(async (req) => {
   const chainStart = new Date().toISOString();
+  const startMs = Date.now();
   let provider = 'gemini_3_flash';
   let modelName = 'gemini_3_flash';
   let promptText = '';
+  let base44 = null;
 
   try {
-    const base44 = createClientFromRequest(req);
+    base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -35,6 +37,7 @@ Deno.serve(async (req) => {
 
     promptText = prompt;
     let rawText = '';
+    let tokens = null;
 
     // Se não foi especificado um provedor externo, usa o InvokeLLM padrão
     if (!llm_config_id) {
@@ -48,19 +51,31 @@ Deno.serve(async (req) => {
         const { llm, apiKey } = await resolveProvider(base44, llm_config_id);
         provider = llm.provider_name;
         modelName = llm.model_name;
-        rawText = await callProviderLLM({
+        const result = await callProviderLLM({
           llm,
           apiKey,
           systemMessage: SOAP_SYSTEM_MESSAGE,
           userContent: prompt,
         });
+        rawText = result.text;
+        tokens = result.tokens;
       } catch (e) {
         const status = e instanceof ProviderError ? e.status : 500;
+        waitUntil(logLLMUsage(base44, {
+          flow: 'evolucao', provider, model: modelName,
+          responseTimeMs: Date.now() - startMs, status: 'erro',
+        }));
         return Response.json({ error: e.message }, { status });
       }
     }
 
     const text = toHtml(rawText);
+
+    // Monitoramento de uso (tokens/tempo) — o id retorna ao frontend para a nota de precisão
+    const usageLogId = await logLLMUsage(base44, {
+      flow: 'evolucao', provider, model: modelName, tokens,
+      responseTimeMs: Date.now() - startMs,
+    });
 
     // Trace de sucesso (post-response)
     waitUntil(traceLlmRun({
@@ -72,8 +87,14 @@ Deno.serve(async (req) => {
       tags: ['generateSOAP'],
     }));
 
-    return Response.json({ text });
+    return Response.json({ text, usage_log_id: usageLogId });
   } catch (error) {
+    if (base44) {
+      waitUntil(logLLMUsage(base44, {
+        flow: 'evolucao', provider, model: modelName,
+        responseTimeMs: Date.now() - startMs, status: 'erro',
+      }));
+    }
     // Trace de erro (post-response)
     waitUntil(traceLlmRun({
       name: `${provider} ${modelName}`,

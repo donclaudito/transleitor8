@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 import { waitUntil } from 'base44:runtime';
-import { traceLlmRun, toHtml, resolveProvider, callProviderLLM, ProviderError } from '../../shared/llm.ts';
+import { traceLlmRun, toHtml, resolveProvider, callProviderLLM, logLLMUsage, ProviderError } from '../../shared/llm.ts';
 
 const SYSTEM_MESSAGE = [
   'Você é um assistente médico especialista em diagnóstico por imagem.',
@@ -20,12 +20,14 @@ const SYSTEM_MESSAGE = [
 
 export default async function (req) {
   const chainStart = new Date().toISOString();
+  const startMs = Date.now();
   let provider = 'gemini_3_flash';
   let modelName = 'gemini_3_flash';
   let inputs = {};
+  let base44 = null;
 
   try {
-    const base44 = createClientFromRequest(req);
+    base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -37,6 +39,7 @@ export default async function (req) {
 
     inputs = { file_url, prompt };
     let rawText = '';
+    let tokens = null;
 
     if (!llm_config_id) {
       // Provedor padrão gratuito (Gemini Vision via InvokeLLM)
@@ -53,11 +56,15 @@ export default async function (req) {
         ({ llm, apiKey } = await resolveProvider(base44, llm_config_id));
       } catch (e) {
         const status = e instanceof ProviderError ? e.status : 500;
+        waitUntil(logLLMUsage(base44, {
+          flow: 'imagem', provider, model: modelName,
+          responseTimeMs: Date.now() - startMs, status: 'erro',
+        }));
         return Response.json({ error: e.message }, { status });
       }
       provider = llm.provider_name;
       modelName = llm.model_name;
-      rawText = await callProviderLLM({
+      const result = await callProviderLLM({
         llm,
         apiKey,
         systemMessage: SYSTEM_MESSAGE,
@@ -66,9 +73,17 @@ export default async function (req) {
           { type: 'text', text: prompt },
         ],
       });
+      rawText = result.text;
+      tokens = result.tokens;
     }
 
     const text = toHtml(rawText);
+
+    // Monitoramento de uso (tokens/tempo) — o id retorna ao frontend para a nota de precisão
+    const usageLogId = await logLLMUsage(base44, {
+      flow: 'imagem', provider, model: modelName, tokens,
+      responseTimeMs: Date.now() - startMs,
+    });
 
     // Trace de sucesso (post-response)
     waitUntil(traceLlmRun({
@@ -80,8 +95,14 @@ export default async function (req) {
       tags: ['analyzeMedicalImage'],
     }));
 
-    return Response.json({ text });
+    return Response.json({ text, usage_log_id: usageLogId });
   } catch (error) {
+    if (base44) {
+      waitUntil(logLLMUsage(base44, {
+        flow: 'imagem', provider, model: modelName,
+        responseTimeMs: Date.now() - startMs, status: 'erro',
+      }));
+    }
     // Trace de erro (post-response)
     waitUntil(traceLlmRun({
       name: `${provider} ${modelName}`,

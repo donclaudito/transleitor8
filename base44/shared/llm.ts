@@ -103,5 +103,23 @@ export async function callProviderLLM({ llm, apiKey, systemMessage, userContent,
   if (!rawText) {
     throw new ProviderError('Resposta da API em formato inesperado', 502);
   }
-  return rawText;
+  const tokens = data.usage?.total_tokens ?? null;
+  return { text: rawText, tokens };
+}
+
+// Registra o uso de LLM na entidade LLMUsageLog (best-effort: falhas nunca afetam a geração).
+export async function logLLMUsage(base44, { flow, provider, model, tokens = null, responseTimeMs, status = 'sucesso' }) {
+  try {
+    const record = await base44.entities.LLMUsageLog.create({
+      flow,
+      provider,
+      model,
+      tokens,
+      response_time_ms: responseTimeMs,
+      status,
+    });
+    return record?.id || null;
+  } catch (_) {
+    return null;
+  }
 }

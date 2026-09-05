@@ -3,8 +3,9 @@ import { Copy, Printer, CheckCircle2, Pencil, Save } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import PassagemVisita from './PassagemVisita';
+import AccuracyRating from '@/components/monitoramento/AccuracyRating';
 
-export default function ResultView({ currentSOAP, onUpdate }) {
+export default function ResultView({ currentSOAP, onUpdate, usageLogId }) {
   const [copied, setCopied] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState('');
@@ -120,6 +121,12 @@ export default function ResultView({ currentSOAP, onUpdate }) {
           {copied ? 'Copiado!' : 'Copiar'}
         </button>
       </div>
+
+      {usageLogId && (
+        <div className="pt-3 border-t border-border">
+          <AccuracyRating logId={usageLogId} />
+        </div>
+      )}
 
       <PassagemVisita currentSOAP={currentSOAP} />
     </div>

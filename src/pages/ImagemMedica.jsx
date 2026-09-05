@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { ScanLine, Upload, Wand2, Copy, X, Loader2, ChevronLeft, ImageIcon } from 'lucide-react';
 import ProviderSelector from '@/components/imagem/ProviderSelector';
+import AccuracyRating from '@/components/monitoramento/AccuracyRating';
 
 const DEFAULT_PROMPT = `Você é um assistente médico especialista em imagem. Examine a imagem médica fornecida e analise:
 1. Identifique o tipo de exame e a região anatômica mostrada.
@@ -30,6 +31,7 @@ export default function ImagemMedica() {
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
   const [providerId, setProviderId] = useState('');
+  const [usageLogId, setUsageLogId] = useState(null);
   const inputRef = useRef(null);
 
   const { data: visionProviders = [] } = useQuery({
@@ -53,7 +55,7 @@ export default function ImagemMedica() {
 
   const analyze = async () => {
     if (!file) { setError('Selecione uma imagem primeiro.'); return; }
-    setLoading(true); setError(''); setResult('');
+    setLoading(true); setError(''); setResult(''); setUsageLogId(null);
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       const response = await base44.functions.invoke('analyzeMedicalImage', {
@@ -64,6 +66,7 @@ export default function ImagemMedica() {
       const text = response?.data?.text;
       if (!text) throw new Error(response?.data?.error || 'Erro ao analisar a imagem.');
       setResult(text);
+      setUsageLogId(response?.data?.usage_log_id || null);
     } catch (err) {
       setError(err?.response?.data?.error || err?.message || 'Erro ao analisar a imagem.');
     } finally {
@@ -179,6 +182,11 @@ export default function ImagemMedica() {
                   <pre className="text-sm whitespace-pre-wrap font-sans">{result}</pre>
                 )}
               </div>
+              {usageLogId && (
+                <div className="glass-card rounded-2xl p-4">
+                  <AccuracyRating logId={usageLogId} />
+                </div>
+              )}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">

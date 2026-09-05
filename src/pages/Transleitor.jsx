@@ -23,6 +23,7 @@ export default function Transleitor() {
   const [loading, setLoading] = useState(false);
   const [streamingText, setStreamingText] = useState('');
   const [currentSOAP, setCurrentSOAP] = useState(null);
+  const [usageLogId, setUsageLogId] = useState(null);
   const [newSectorName, setNewSectorName] = useState('');
   const [newComorbidityName, setNewComorbidityName] = useState('');
   const [newComorbidityMeds, setNewComorbidityMeds] = useState('');
@@ -190,6 +191,8 @@ export default function Transleitor() {
     setLoading(true);
     setStreamingText('');
     setCurrentSOAP(null);
+    setUsageLogId(null);
+    const t0 = Date.now();
 
     try {
       const sectorHint = getSectorHint(formData.sector);
@@ -327,8 +330,18 @@ Use <p>, <strong>, <ul>/<li>, <br>. NÃO use <h2> nem Markdown (sem ##, **, -, \
         const res = await base44.functions.invoke('generateSOAP', { prompt: finalPrompt, llm_config_id: selectedLLMId });
         if (res.data?.error) throw new Error(res.data.error);
         result = res.data.text;
+        setUsageLogId(res.data?.usage_log_id || null);
       } else {
         result = await base44.integrations.Core.InvokeLLM({ prompt: finalPrompt, model: 'gemini_3_flash' });
+        try {
+          const rec = await base44.entities.LLMUsageLog.create({
+            flow: 'evolucao', provider: 'gemini_3_flash', model: 'gemini_3_flash', tokens: null,
+            response_time_ms: Date.now() - t0, status: 'sucesso',
+          });
+          setUsageLogId(rec.id);
+        } catch {
+          setUsageLogId(null);
+        }
       }
 
       const evolutionData = {
@@ -351,6 +364,14 @@ Use <p>, <strong>, <ul>/<li>, <br>. NÃO use <h2> nem Markdown (sem ##, **, -, \
       );
     } catch (err) {
       setLoading(false);
+      if (!selectedLLMId) {
+        try {
+          await base44.entities.LLMUsageLog.create({
+            flow: 'evolucao', provider: 'gemini_3_flash', model: 'gemini_3_flash', tokens: null,
+            response_time_ms: Date.now() - t0, status: 'erro',
+          });
+        } catch { }
+      }
       alert('Erro ao gerar evolução: ' + (err?.response?.data?.error || err.message || 'Erro desconhecido'));
     }
   };
@@ -358,6 +379,7 @@ Use <p>, <strong>, <ul>/<li>, <br>. NÃO use <h2> nem Markdown (sem ##, **, -, \
   const handleNewEvolution = () => {
     setFormData(DEFAULT_FORM);
     setCurrentSOAP(null);
+    setUsageLogId(null);
     setStreamingText('');
     setView('form');
   };
@@ -390,7 +412,7 @@ Use <p>, <strong>, <ul>/<li>, <br>. NÃO use <h2> nem Markdown (sem ##, **, -, \
         onDelete={(id) => deleteEvolutionMutation.mutate(id)} />;
     }
     if (view === 'result') {
-      return <ResultView currentSOAP={currentSOAP} onUpdate={updateEvolution} />;
+      return <ResultView currentSOAP={currentSOAP} onUpdate={updateEvolution} usageLogId={usageLogId} />;
     }
     if (view === 'settings') {
       return <SettingsPanel settings={settings} setTheme={setTheme}
@@ -452,7 +474,7 @@ Use <p>, <strong>, <ul>/<li>, <br>. NÃO use <h2> nem Markdown (sem ##, **, -, \
                 <div className="prose prose-sm dark:prose-invert max-w-none [&_code]:bg-amber-500/10 [&_code]:text-amber-600 [&_code]:dark:text-amber-400 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:font-mono [&_code]:text-xs [&_code]:font-bold" dangerouslySetInnerHTML={{ __html: streamingText }} />
               </div>
             ) : currentSOAP ? (
-              <ResultView currentSOAP={currentSOAP} onUpdate={updateEvolution} />
+              <ResultView currentSOAP={currentSOAP} onUpdate={updateEvolution} usageLogId={usageLogId} />
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
                 <div className="w-16 h-16 rounded-2xl bg-primary/5 flex items-center justify-center mb-4">

@@ -47,8 +47,14 @@ export async function traceLlmRun({ name, inputs, outputs, startTime, endTime, e
 
 // Converte Markdown para HTML se a resposta não contiver tags HTML
 export function toHtml(rawText) {
-  const hasHtmlTags = /<\/?[a-z][\s\S]*>/i.test(rawText);
-  return hasHtmlTags ? rawText : marked.parse(rawText);
+  // Alguns provedores (ex: DeepSeek) cercam a resposta com ```html ... ``` — remove as cercas
+  let text = rawText.replace(/```[a-zA-Z]*\n?/g, '').trim();
+  const hasHtmlTags = /<\/?[a-z][\s\S]*>/i.test(text);
+  if (!hasHtmlTags) return marked.parse(text);
+  // Se o provedor devolver um documento HTML completo, extrai apenas o conteúdo do <body>
+  const bodyMatch = text.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+  if (bodyMatch) return bodyMatch[1].trim();
+  return text;
 }
 
 // Garante que a URL termine com /chat/completions

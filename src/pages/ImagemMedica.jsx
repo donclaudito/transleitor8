@@ -1,7 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { ScanLine, Upload, Wand2, Copy, X, Loader2, ChevronLeft, ImageIcon } from 'lucide-react';
+import ProviderSelector from '@/components/imagem/ProviderSelector';
 
 const DEFAULT_PROMPT = `Você é um assistente médico especialista em imagem. Examine a imagem médica fornecida e analise:
 1. Identifique o tipo de exame e a região anatômica mostrada.
@@ -27,7 +29,13 @@ export default function ImagemMedica() {
   const [result, setResult] = useState('');
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [providerId, setProviderId] = useState('');
   const inputRef = useRef(null);
+
+  const { data: visionProviders = [] } = useQuery({
+    queryKey: ['llm-configs-vision'],
+    queryFn: () => base44.entities.LLMConfig.filter({ is_active: true, supports_image: true }),
+  });
 
   const onFile = (e) => {
     const f = e.target.files?.[0];
@@ -48,14 +56,16 @@ export default function ImagemMedica() {
     setLoading(true); setError(''); setResult('');
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      const text = await base44.integrations.Core.InvokeLLM({
+      const response = await base44.functions.invoke('analyzeMedicalImage', {
+        file_url,
         prompt,
-        file_urls: [file_url],
-        model: 'gemini_3_flash',
+        ...(providerId ? { llm_config_id: providerId } : {}),
       });
-      setResult(typeof text === 'string' ? text : JSON.stringify(text));
+      const text = response?.data?.text;
+      if (!text) throw new Error(response?.data?.error || 'Erro ao analisar a imagem.');
+      setResult(text);
     } catch (err) {
-      setError(err?.message || 'Erro ao analisar a imagem.');
+      setError(err?.response?.data?.error || err?.message || 'Erro ao analisar a imagem.');
     } finally {
       setLoading(false);
     }
@@ -80,9 +90,7 @@ export default function ImagemMedica() {
           <ScanLine className="w-5 h-5 text-primary" />
           <h1 className="text-lg font-extrabold tracking-tight">Análise de Imagem Médica</h1>
         </div>
-        <span className="ml-auto text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center gap-1">
-          <ImageIcon className="w-3 h-3" /> Gemini Vision
-        </span>
+        <ProviderSelector providers={visionProviders} selectedId={providerId} onSelect={setProviderId} />
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[calc(100vh-64px)]">

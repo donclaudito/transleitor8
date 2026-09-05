@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Plus, Trash2, Power, PowerOff, Cpu, Key, Globe, Zap, Loader2 } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Power, PowerOff, Cpu, Key, Globe, Zap, Loader2, ImageIcon } from 'lucide-react';
 
 export default function AdminLLMs() {
   const [showForm, setShowForm] = useState(false);
@@ -50,7 +50,7 @@ export default function AdminLLMs() {
   const resetForm = () => {
     setShowForm(false);
     setEditingId(null);
-    setForm({ provider_name: '', api_url: '', api_key_env_var: '', model_name: '', is_active: true });
+    setForm({ provider_name: '', api_url: '', api_key_env_var: '', model_name: '', is_active: true, supports_image: false });
   };
 
   const handleSubmit = (e) => {
@@ -65,7 +65,7 @@ export default function AdminLLMs() {
 
   const handleEdit = (p) => {
     setEditingId(p.id);
-    setForm({ provider_name: p.provider_name, api_url: p.api_url, api_key_env_var: p.api_key_env_var, model_name: p.model_name, is_active: p.is_active });
+    setForm({ provider_name: p.provider_name, api_url: p.api_url, api_key_env_var: p.api_key_env_var, model_name: p.model_name, is_active: p.is_active, supports_image: !!p.supports_image });
     setShowForm(true);
   };
 
@@ -146,6 +146,14 @@ export default function AdminLLMs() {
                 </p>
               </div>
             </div>
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input type="checkbox" checked={!!form.supports_image}
+                onChange={e => setForm({ ...form, supports_image: e.target.checked })}
+                className="w-4 h-4 rounded accent-[hsl(var(--primary))]" />
+              <span className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
+                <ImageIcon className="w-3 h-3" /> Suporta análise de imagem (modelo com visão)
+              </span>
+            </label>
             <div className="flex items-center gap-3 pt-2">
               <button type="submit" disabled={isPending}
                 className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground font-bold text-sm disabled:opacity-40 flex items-center justify-center gap-2">
@@ -198,7 +206,14 @@ export default function AdminLLMs() {
                   <Cpu className="w-5 h-5" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-sm truncate">{p.provider_name}</h3>
+                  <h3 className="font-bold text-sm truncate flex items-center gap-1.5">
+                    {p.provider_name}
+                    {p.supports_image && (
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 flex items-center gap-1">
+                        <ImageIcon className="w-2.5 h-2.5" /> VISÃO
+                      </span>
+                    )}
+                  </h3>
                   <p className="text-xs text-muted-foreground truncate">{p.model_name}</p>
                   <p className="text-[10px] text-muted-foreground/60 truncate font-mono">{p.api_url}</p>
                 </div>

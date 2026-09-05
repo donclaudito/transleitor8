@@ -21,6 +21,10 @@
     "is_active": {
       "type": "boolean",
       "description": "Se o provedor est\u00e1 ativo para uso"
+    },
+    "supports_image": {
+      "type": "boolean",
+      "description": "Se o modelo suporta an\u00e1lise de imagens (multimodal/vis\u00e3o)"
     }
   },
   "required": [

@@ -464,9 +464,20 @@ Use <p>, <strong>, <ul>/<li>, <br>. NÃO use <h2> nem Markdown (sem ##, **, -, \
           </div>
           <div className={`overflow-y-auto p-4 md:p-6 transition-colors duration-500 ${currentSOAP && !loading && !streamingText ? 'bg-amber-50 dark:bg-amber-950/20' : ''}`}>
             {loading ? (
-              <div className="flex flex-col items-center justify-center h-full gap-4">
-                <div className="w-10 h-10 border-3 border-primary/20 border-t-primary rounded-full animate-spin" />
-                <p className="text-sm text-muted-foreground">Gerando evolução{evolutionMode === 'soap' ? ' SOAP' : evolutionMode === 'simple' ? ' simples' : ' livre'}...</p>
+              <div className="relative flex flex-col items-center justify-center h-full gap-5">
+                <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent pointer-events-none" />
+                <div className="relative w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center border-4 border-amber-500 border-t-transparent animate-spin" />
+                <div className="relative w-full max-w-md px-4">
+                  <div className="flex items-center justify-center gap-2 mb-4">
+                    <div className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-amber-500/60 animate-pulse [animation-delay:0.3s]" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-amber-500/40 animate-pulse [animation-delay:0.6s]" />
+                  </div>
+                  <h3 className="font-bold text-lg text-center mb-2">Gerando evolução clínica...</h3>
+                  <p className="text-sm text-muted-foreground text-center">
+                    Processando dados clínicos e gerando resposta com base nas informações fornecidas.
+                  </p>
+                </div>
               </div>
             ) : streamingText ? (
               <div className="glass-card rounded-2xl p-6">

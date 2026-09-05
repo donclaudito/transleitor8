@@ -241,9 +241,16 @@ export default function FormView({
 
       {/* Gerar */}
       <button onClick={handleGenerate} disabled={loading || !formData.clinicalDescription}
-        className="w-full py-4 rounded-2xl font-bold text-sm bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-40 transition-all flex items-center justify-center gap-2 shadow-lg btn-press">
+        className={`w-full py-4 rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg btn-press ${
+          loading
+            ? 'bg-amber-500/15 text-amber-500 border border-amber-500/30 animate-pulse cursor-not-allowed'
+            : 'bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-40'
+        }`}>
         {loading ? (
-          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          <>
+            <div className="w-4 h-4 border-2 border-amber-500/40 border-t-amber-500 rounded-full animate-spin" />
+            Gerando evolução...
+          </>
         ) : (
           <><Wand2 className="w-4 h-4" /> Gerar Evolução {evolutionMode === 'soap' ? 'SOAP' : evolutionMode === 'simple' ? 'Simples' : 'Livre'}</>
         )}

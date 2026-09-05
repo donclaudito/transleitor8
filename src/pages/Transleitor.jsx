@@ -196,9 +196,11 @@ export default function Transleitor() {
 
     try {
       const sectorHint = getSectorHint(formData.sector);
-      const isConsultorio = ['consultório', 'consultorio'].includes(formData.sector?.toLowerCase());
+      const normalizedSector = (formData.sector || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const isGastro = normalizedSector.includes('gastro');
+      const isConsultorio = normalizedSector.trim() === 'consultorio' || isGastro;
       const consultorioLine = isConsultorio && formData.consultorioType
-        ? `Contexto: consulta ambulatorial (${formData.consultorioType === 'retorno' ? 'retorno' : 'primeira consulta'}).${formData.consultorioType === 'retorno' && formData.previousConsult?.trim() ? `\nConsulta anterior:\n${formData.previousConsult.trim()}` : ''}`
+        ? `Contexto: consulta ${isGastro ? 'gastroenterológica ' : ''}ambulatorial (${formData.consultorioType === 'retorno' ? 'retorno' : 'primeira consulta'}).${!isGastro && formData.consultorioType === 'retorno' && formData.previousConsult?.trim() ? `\nConsulta anterior:\n${formData.previousConsult.trim()}` : ''}`
         : '';
 
       // Apenas os medicamentos adicionados individualmente via popover ficam na prescrição.
@@ -212,8 +214,12 @@ export default function Transleitor() {
         ['Setor', formData.sector?.trim()],
         ['Comorbidades', formData.comorbidities?.trim()],
         ['Exames complementares', formData.labs?.trim()],
-        ['Evoluções médicas anteriores', formData.previousEvolution?.trim()],
-        ['Evolução de enfermagem', formData.nursingEvolution?.trim()],
+        ...(isGastro
+          ? [['Consulta anterior', formData.previousConsult?.trim()]]
+          : [
+              ['Evoluções médicas anteriores', formData.previousEvolution?.trim()],
+              ['Evolução de enfermagem', formData.nursingEvolution?.trim()],
+            ]),
         ['Prescrição atual', mergedPrescription?.trim()],
         ['Descrição clínica atual', formData.clinicalDescription?.trim()],
       ];
@@ -232,12 +238,20 @@ REGRAS RAG (OBRIGATÓRIAS):
 4. É PROIBIDO fabricar: exames, medicamentos, posologias, sinais vitais, achados de exame físico, CID-10 não justificado, datas ou condutas não descritas.
 5. Você organiza e formata os dados fornecidos — não diagnostica nem completa além do input.`;
 
-      const correlationBlock = formData.previousEvolution?.trim() ? `\n\nÂNCORA DE CORRELAÇÃO CRUZADA (use TODAS as Evoluções Médicas Anteriores como referência obrigatória):
+      const gastroCorrelationBlock = formData.previousConsult?.trim() ? `\n\nÂNCORA DE CORRELAÇÃO CRUZADA (use a CONSULTA ANTERIOR como referência obrigatória):
+1. COMPARAÇÃO COM A CONSULTA ANTERIOR: compare ponto a ponto as queixas, achados e condutas da consulta anterior com o quadro atual, indicando melhora, piora, resolução ou estabilidade de cada item.
+2. Correlacione os Exames Complementares atuais com os citados na consulta anterior, destacando tendências e novas alterações.
+3. Na avaliação do quadro atual, sinalize explicitamente as MUDANÇAS CLÍNICAS RELEVANTES desde a consulta anterior.
+4. Use exclusivamente os dados fornecidos — NÃO invente informações.` : '';
+
+      const correlationBlock = isGastro
+        ? gastroCorrelationBlock
+        : (formData.previousEvolution?.trim() ? `\n\nÂNCORA DE CORRELAÇÃO CRUZADA (use TODAS as Evoluções Médicas Anteriores como referência obrigatória):
 1. ANÁLISE CRONOLÓGICA: ordene as evoluções anteriores por data/tempo e reconstrua a LINHA DO TEMPO clínica do paciente. Destaque a progressão dia a dia — melhora, piora ou estabilidade de sintomas, sinais vitais e estado geral entre as evoluções.
 2. Ao descrever a Descrição Clínica Atual, CONSIDERE OBRIGATORIAMENTE as últimas evoluções médicas — o quadro atual deve ser interpretado como continuação da tendência mais recente, não孤立mente. Se a última evolução já relatava melhora/piora de X, indique se a tendência se mantém, reverteu ou agravou.
 3. Cruze com a Evolução de Enfermagem: identifique divergências ou confirmações relevantes. Se houver divergência entre o relato médico anterior e a evolução de enfermagem, SINALE explicitamente no texto gerado (ex: "Divergência identificada: enfermagem relata febre às 02h, não mencionada na evolução médica anterior.").
 4. ANÁLISE CRONOLÓGICA DOS EXAMES: nos Exames Complementares, organize os resultados por data e identifique TENDÊNCIAS laboratoriais ao longo do tempo (ex: PCR caindo dia a dia, leucocitose melhorando, hemoglobina estável), citando os valores de comparação. Não relate apenas o valor isolado mais recente.
-5. Correlacione com a Prescrição Atual para avaliar a resposta terapêutica no tempo.` : '';
+5. Correlacione com a Prescrição Atual para avaliar a resposta terapêutica no tempo.` : '');
 
       const soapPrompt = `Você é um assistente médico especialista em documentação clínica brasileira.
 Gere uma evolução SOAP em formato HTML (tags semânticas), técnica, precisa, pronta para prontuário. NÃO invente dados.

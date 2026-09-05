@@ -8,6 +8,9 @@ import UTIPanel from './UTIPanel';
 import PSPanel from './PSPanel';
 import EmergenciaPanel from './EmergenciaPanel';
 import IdCaptureButton from './IdCaptureButton';
+import ConsultasPrevias from './ConsultasPrevias';
+
+const GASTRO_QUICK_COMORBS = ['HAS', 'DM2', 'Dislipidemia', 'Tabagismo', 'DRC', 'ICC', 'DPOC', 'Obesidade', 'Alergia', 'Hepatopatia', 'Diabetes Gestacional', 'Etilismo', 'Hipotireoidismo', 'Retocolite Ulcerativa', 'HIV'];
 
 export default function FormView({
   formData, setFormData, allSectors, allComorbidities, setView,
@@ -17,6 +20,7 @@ export default function FormView({
   evolutionMode = 'free', setEvolutionMode = () => {},
 }) {
   const [sectorError, setSectorError] = useState(false);
+  const [showPrevias, setShowPrevias] = useState(false);
   const handleGenerate = () => {
     if (!formData.sector) { setSectorError(true); return; }
     generateSOAP();
@@ -31,7 +35,12 @@ export default function FormView({
       return { ...prev, clinicalDescription: current + separator + item };
     });
   };
-  const isConsultorio = ['consultório', 'consultorio'].includes(formData.sector?.toLowerCase());
+  const normalizedSector = (formData.sector || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const isGastro = normalizedSector.includes('gastro');
+  const isConsultorio = normalizedSector.trim() === 'consultorio' || isGastro;
+  const norm = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+  const existingComorbSet = new Set(allComorbidities.map(norm));
+  const gastroQuickComorbs = GASTRO_QUICK_COMORBS.filter(c => !existingComorbSet.has(norm(c)));
   const isCirurgia = (formData.sector?.toLowerCase() || '').includes('cirúrg') || (formData.sector?.toLowerCase() || '').includes('cirurg');
   const isUTI = ['uti adulto', 'uti', 'intensiva'].includes((formData.sector || '').toLowerCase().trim());
   const isPS = ['pronto socorro', 'ps', 'pronto-socorro'].includes((formData.sector || '').toLowerCase().trim());
@@ -106,11 +115,26 @@ export default function FormView({
       </div>
 
       {isConsultorio && formData.consultorioType === 'retorno' && (
-        <div className="glass-card rounded-2xl p-5">
-          <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 block">📋 Consulta Anterior</label>
+        <div className="glass-card rounded-2xl p-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block">📋 Consulta Anterior</label>
+            {isGastro && (
+              <button onClick={() => setShowPrevias(true)}
+                className="text-xs font-semibold px-2.5 py-1 rounded-lg border border-border text-primary hover:bg-accent transition-all">
+                Consultas Prévias
+              </button>
+            )}
+          </div>
           <textarea rows={3} placeholder="Cole a consulta anterior para comparação..."
             value={formData.previousConsult || ''} onChange={e => setFormData({ ...formData, previousConsult: e.target.value })}
             className="w-full px-4 py-3 rounded-xl bg-muted border border-border text-sm resize-none focus:outline-none focus:border-primary/50 transition-all" />
+          {isGastro && showPrevias && (
+            <ConsultasPrevias
+              patientInitials={formData.patientInitials}
+              onSelect={(text) => { setFormData({ ...formData, previousConsult: text }); setShowPrevias(false); }}
+              onClose={() => setShowPrevias(false)}
+            />
+          )}
         </div>
       )}
 
@@ -139,30 +163,48 @@ export default function FormView({
               </button>
             );
           })}
+          {isGastro && gastroQuickComorbs.length > 0 && (
+            <div className="pt-3 border-t border-border space-y-2">
+              <p className="text-[11px] text-muted-foreground">Comorbidades frequentes (gastro):</p>
+              <div className="flex flex-wrap gap-2">
+                {gastroQuickComorbs.map(c => {
+                  const selected = formData.comorbidities.split(',').map(s => s.trim()).includes(c);
+                  return (
+                    <button key={c} onClick={() => toggleComorbidityInForm(c)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${selected ? 'bg-teal-500/15 border-teal-500/30 text-teal-500' : 'border-border text-muted-foreground hover:border-teal-500/30'}`}>
+                      {c}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Evolução Anterior */}
-      <div className="glass-card rounded-2xl p-5 space-y-3">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-          <span>📋</span> Evoluções Médicas Anteriores
-        </h3>
-        <p className="text-[11px] text-muted-foreground -mt-1">Cole TODAS as evoluções médicas anteriores para a IA analisar a progressão de forma cronológica.</p>
-        <textarea rows={4} placeholder="Cole aqui a evolução médica anterior..."
-          value={formData.previousEvolution || ''} onChange={e => setFormData({ ...formData, previousEvolution: e.target.value })}
-          className="w-full px-4 py-3 rounded-xl bg-muted border border-border text-sm resize-none focus:outline-none focus:border-primary/50 transition-all" />
-      </div>
+      {!isGastro && (
+        <div className="glass-card rounded-2xl p-5 space-y-3">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+            <span>📋</span> Evoluções Médicas Anteriores
+          </h3>
+          <p className="text-[11px] text-muted-foreground -mt-1">Cole TODAS as evoluções médicas anteriores para a IA analisar a progressão de forma cronológica.</p>
+          <textarea rows={4} placeholder="Cole aqui a evolução médica anterior..."
+            value={formData.previousEvolution || ''} onChange={e => setFormData({ ...formData, previousEvolution: e.target.value })}
+            className="w-full px-4 py-3 rounded-xl bg-muted border border-border text-sm resize-none focus:outline-none focus:border-primary/50 transition-all" />
+        </div>
+      )}
 
-      {/* Evolução de Enfermagem */}
-      <div className="glass-card rounded-2xl p-5 space-y-3">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-          <span>🩺</span> Evolução de Enfermagem
-        </h3>
-        <p className="text-[11px] text-muted-foreground -mt-1">Cole as anotações de enfermagem para enriquecer o contexto clínico.</p>
-        <textarea rows={4} placeholder="Cole aqui a evolução de enfermagem..."
-          value={formData.nursingEvolution || ''} onChange={e => setFormData({ ...formData, nursingEvolution: e.target.value })}
-          className="w-full px-4 py-3 rounded-xl bg-muted border border-border text-sm resize-none focus:outline-none focus:border-primary/50 transition-all" />
-      </div>
+      {!isGastro && (
+        <div className="glass-card rounded-2xl p-5 space-y-3">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+            <span>🩺</span> Evolução de Enfermagem
+          </h3>
+          <p className="text-[11px] text-muted-foreground -mt-1">Cole as anotações de enfermagem para enriquecer o contexto clínico.</p>
+          <textarea rows={4} placeholder="Cole aqui a evolução de enfermagem..."
+            value={formData.nursingEvolution || ''} onChange={e => setFormData({ ...formData, nursingEvolution: e.target.value })}
+            className="w-full px-4 py-3 rounded-xl bg-muted border border-border text-sm resize-none focus:outline-none focus:border-primary/50 transition-all" />
+        </div>
+      )}
 
       {/* Descrição Clínica */}
       <div className="glass-card rounded-2xl p-5 space-y-3">

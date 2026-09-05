@@ -75,25 +75,50 @@ export async function resolveProvider(base44, llmConfigId) {
   return { llm, apiKey };
 }
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 // Chamada genérica a APIs externas OpenAI-compatible (texto puro ou multimodal com image_url).
-export async function callProviderLLM({ llm, apiKey, systemMessage, userContent, temperature = 0.1 }) {
-  const response = await fetch(ensureChatCompletionsUrl(llm.api_url), {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: llm.model_name,
-      messages: [
-        { role: 'system', content: systemMessage },
-        { role: 'user', content: userContent },
-      ],
-      temperature,
-    }),
+// Em caso de rate limit (429), tenta novamente com espera progressiva antes de falhar.
+export async function callProviderLLM({ llm, apiKey, systemMessage, userContent, temperature = 0.1, maxRetries = 3 }) {
+  const url = ensureChatCompletionsUrl(llm.api_url);
+  const payload = JSON.stringify({
+    model: llm.model_name,
+    messages: [
+      { role: 'system', content: systemMessage },
+      { role: 'user', content: userContent },
+    ],
+    temperature,
   });
 
-  if (!response.ok) {
+  let response;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: payload,
+    });
+
+    if (response.ok) break;
+
+    if (response.status === 429 && attempt < maxRetries) {
+      const retryAfter = Number(response.headers.get('retry-after'));
+      const waitMs = Number.isFinite(retryAfter) && retryAfter > 0
+        ? retryAfter * 1000
+        : 1000 * 2 ** attempt; // 1s, 2s, 4s
+      await sleep(Math.min(waitMs, 8000));
+      continue;
+    }
+
+    if (response.status === 429) {
+      throw new ProviderError(
+        'Limite de requisições do provedor atingido (429). Aguarde um momento e tente novamente ou selecione outro modelo.',
+        502,
+      );
+    }
+
     const errText = await response.text();
     throw new ProviderError(`Erro na API do provedor (${response.status}): ${errText}`, 502);
   }

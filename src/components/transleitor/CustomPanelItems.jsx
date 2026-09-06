@@ -33,12 +33,19 @@ export default function CustomPanelItems({ panel, title, groups = [], onAppend }
   const createMutation = useMutation({
     mutationFn: async ({ name, group_label, duplicateTo }) => {
       const created = await base44.entities.PanelCustomItem.create({ panel, name, group_label });
+      let duplicate = null;
       if (duplicateTo) {
-        await base44.entities.PanelCustomItem.create({ panel: duplicateTo, name, group_label: '' });
+        duplicate = await base44.entities.PanelCustomItem.create({ panel: duplicateTo, name, group_label: '' });
       }
-      return created;
+      return { created, duplicate, duplicateTo };
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['panel-custom-items'] }),
+    // Cache imediato: insere o registro na lista na hora, sem esperar refetch.
+    onSuccess: ({ created, duplicate, duplicateTo }) => {
+      queryClient.setQueryData(['panel-custom-items', panel], (old = []) => [...old, created]);
+      if (duplicate && duplicateTo) {
+        queryClient.setQueryData(['panel-custom-items', duplicateTo], (old = []) => [...old, duplicate]);
+      }
+    },
   });
 
   const deleteMutation = useMutation({
@@ -49,10 +56,15 @@ export default function CustomPanelItems({ panel, title, groups = [], onAppend }
   const handleAdd = () => {
     const name = newItem.trim();
     if (!name) return;
+    // Item já existe: mantém a seção e apenas limpa o texto.
+    if (items.some((rec) => rec.name === name)) {
+      setNewItem('');
+      return;
+    }
     createMutation.mutate({ name, group_label: newGroup.trim(), duplicateTo: dupTarget || null });
+    // Só o texto é limpo — a seção (e o atalho de duplicação) ficam mantidos
+    // para adicionar vários itens seguidos na mesma seção.
     setNewItem('');
-    setNewGroup('');
-    setDupTarget('');
   };
 
   const handleRemove = (rec) => {

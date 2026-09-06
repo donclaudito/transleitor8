@@ -172,6 +172,15 @@ export default function Transleitor() {
     return '';
   };
 
+  const HUMANIZACAO = `
+REDAÇÃO FINAL (OBRIGATÓRIA):
+- Redija como um médico brasileiro escreve um prontuário real: terminologia médica formal, fraseado natural e VARIADO — cada seção com construção própria, sem fórmulas repetidas entre seções.
+- A evolução final é um documento clínico: NUNCA mencione "base de conhecimento", "dados fornecidos", "assistente", "IA", "inteligência artificial", "regras", "contexto", "prompt" ou "instruções".
+- PROIBIDO escrever "com base nos dados fornecidos", "segundo a base de conhecimento" ou qualquer frase equivalente.
+- PROIBIDO explicar o próprio processo, descrever o que está fazendo ou repetir qualquer instrução recebida.
+- PROIBIDO marcações de preenchimento: nunca escreva "..." (reticências) nem parênteses de orientação como "(liste...)" ou "(analise...)" — escreva o texto clínico direto, já redigido.
+- PROIBIDO preencher seção sem dados com "(dados não fornecidos)", "(sem dados)" ou parênteses equivalentes — seção sem dado fica vazia ou é omitida.`;
+
   const simulateStream = (fullText, onChunk, onDone) => {
     const words = fullText.split(' ');
     let i = 0, accumulated = '';
@@ -259,23 +268,22 @@ ${sectorHint ? `\nFoco de setor: ${sectorHint}` : ''}${consultorioLine ? `\n${co
 
 ${patientData}${correlationBlock}
 
-Formato obrigatório (use APENAS tags HTML, sem Markdown):
+Formato obrigatório (use APENAS tags HTML, sem Markdown) — quatro seções, nesta ordem, cada uma com o título exato abaixo seguido dos parágrafos com o conteúdo clínico já redigido:
 <h2>S — Subjetivo</h2>
-<p>...</p>
 <h2>O — Objetivo</h2>
-<p>...</p>
 <h2>A — Avaliação</h2>
-<p>...</p>
 <h2>P — Plano</h2>
-<p>...</p>
 
-CID-10 sugerido: Na seção Avaliação, após a análise clínica, sugira o código CID-10 mais provável com base no quadro descrito, no formato:
-<code><strong>CID-10 sugerido:</strong> X00.0 — Nome resumido da condição</code>
-Se houver mais de uma hipótese, liste até 3 códigos por ordem de probabilidade.
+Preenchimento de cada seção:
+- S — Subjetivo: queixas, sintomas e relato do quadro atual.
+- O — Objetivo: sinais vitais, exame físico e achados objetivos descritos.
+- A — Avaliação: análise clínica; ao final, sugira o CID-10 mais provável no formato <code><strong>CID-10 sugerido:</strong> X00.0 — Nome resumido da condição</code> — substitua o exemplo pelo código e nome reais; se houver mais de uma hipótese, liste até 3 códigos por ordem de probabilidade.
+- P — Plano: análise da Prescrição Atual do paciente — liste os medicamentos vigentes em <strong>negrito</strong> com posologia, avalie pertinência ao quadro, sinalize ajustes necessários e potenciais interações/alertas de segurança; NÃO inclua medicamentos de uso contínuo (já descritos em HPP/Comorbidades) — apenas a prescrição aguda vigente, ajustes e novas condutas planejadas.
+Se uma seção não tiver dados correspondentes, omita-a por completo.
 
 Use terminologia médica brasileira formal. Compare com a evolução anterior quando disponível e destaque mudanças clínicas relevantes.
-IMPORTANTE: Na seção P — Plano, analise a Prescrição Atual do paciente: liste os medicamentos vigentes em <strong>negrito</strong> com posologia, avalie pertinência ao quadro, sinalize ajustes necessários e potenciais interações/alertas de segurança. NÃO inclua medicamentos de uso contínuo (já descritos em HPP/Comorbidades) — inclua apenas a prescrição aguda vigente, ajustes e novas condutas planejadas.
-Use <p> para parágrafos, <strong> para negrito, <ul>/<li> para listas, <br> para quebras. NÃO use Markdown (sem ##, **, -, \`\`\`).`;
+Use <p> para parágrafos, <strong> para negrito, <ul>/<li> para listas, <br> para quebras. NÃO use Markdown (sem ##, **, -, \`\`\`).
+${HUMANIZACAO}`;
 
       const freePrompt = `Você é um assistente médico especialista em documentação clínica brasileira.
 Gere uma evolução clínica em formato HTML (tags semânticas) NARRATIVA, concisa e profissional, pronta para prontuário. NÃO invente dados.
@@ -283,30 +291,33 @@ ${sectorHint ? `\nFoco de setor: ${sectorHint}` : ''}${consultorioLine ? `\n${co
 
 ${patientData}${correlationBlock}
 
-Estruture a evolução clínica OBRIGATORIAMENTE nesta ordem exata (use APENAS tags HTML, sem Markdown):
+Estruture a evolução clínica OBRIGATORIAMENTE nesta ordem exata. O CONTEÚDO de cada seção é:
+- Hipótese(s) Diagnóstica(s): hipóteses diagnósticas do quadro atual.
+- CID-10 sugerido: código mais provável; se houver mais de uma hipótese, até 3 códigos por ordem de probabilidade.
+- HPP (História Patológica Pregressa) / Comorbidades: comorbidades do paciente e seu impacto no quadro atual.
+- Uso de Medicação Contínua: cada medicamento de uso crônico em <strong>negrito</strong> com posologia e relação com o quadro atual (ex.: <strong>Losartana 50mg/dia</strong>, <strong>Metformina XR 1g/dia</strong>).
+- Alergias: alergias conhecidas; se houver alguma, inclua um alerta no formato: ⚠️ <strong>ALERTA:</strong> Paciente alérgico a [substância]. Atenção redobrada na prescrição.
+- Exames Complementares: análise CRONOLÓGICA — organize por data, identifique tendências ao longo do tempo e correlacione com o quadro clínico; não relate apenas o valor mais recente isolado.
+- Prescrição Atual: medicamentos vigentes em <strong>negrito</strong> com posologia, pertinência ao quadro clínico, ajustes necessários, interações medicamentosas e alertas de segurança, diferenciando claramente dos medicamentos de uso contínuo já descritos em seção própria.
+- Conduta: conduta médica adotada — procedimentos realizados, interconsultas solicitadas, ajustes terapêuticos.
+- Plano Terapêutico: plano de tratamento e próximos passos; NÃO inclua medicamentos de uso contínuo — apenas ajustes agudos da prescrição atual e novas condutas (os contínuos ficam somente na seção "Uso de Medicação Contínua").
+Se uma seção não tiver dados correspondentes, omita-a por completo.
 
-<p><strong>Hipótese(s) Diagnóstica(s):</strong> ...</p>
+MOLDE EXATO de saída (use apenas estes rótulos, nesta ordem; escreva o texto clínico já redigido após cada rótulo — substitua o exemplo do CID-10 pelo código e nome reais):
+<p><strong>Hipótese(s) Diagnóstica(s):</strong> </p>
 <code><strong>CID-10 sugerido:</strong> X00.0 — Nome resumido da condição</code>
-(se houver mais de uma hipótese, liste até 3 códigos CID-10 por ordem de probabilidade)
-
-<p><strong>HPP (História Patológica Pregressa) / Comorbidades:</strong> (liste as comorbidades do paciente e seu impacto no quadro atual) ...</p>
-
-<p><strong>Uso de Medicação Contínua:</strong> (liste cada medicamento de uso crônico em <strong>negrito</strong>, descrevendo posologia e relação com o quadro atual. Ex: <strong>Losartana 50mg/dia</strong>, <strong>Metformina XR 1g/dia</strong>) ...</p>
-
-<p><strong>Alergias:</strong> (liste as alergias conhecidas do paciente. Se houver alguma alergia cadastrada, inclua um alerta no formato: ⚠️ <strong>ALERTA:</strong> Paciente alérgico a [substância]. Atenção redobrada na prescrição.) ...</p>
-
-<p><strong>Exames Complementares:</strong> (analise os exames de forma CRONOLÓGICA — organize por data, identifique tendências ao longo do tempo e correlacione com o quadro clínico; não relate apenas o valor mais recente isolado) ...</p>
-
-<p><strong>Prescrição Atual:</strong> (analise a prescrição vigente do paciente: liste os medicamentos em <strong>negrito</strong> com posologia, avalie a pertinência ao quadro clínico, identifique ajustes necessários, potenciais interações medicamentosas e alertas de segurança. Diferencie claramente dos medicamentos de uso contínuo já descritos em seção própria) ...</p>
-
-<p><strong>Conduta:</strong> (descreva a conduta médica adotada — procedimentos realizados, interconsultas solicitadas, ajustes terapêuticos) ...</p>
-
-<p><strong>Plano Terapêutico:</strong> (descreva o plano de tratamento e os próximos passos planejados) ...</p>
+<p><strong>HPP (História Patológica Pregressa) / Comorbidades:</strong> </p>
+<p><strong>Uso de Medicação Contínua:</strong> </p>
+<p><strong>Alergias:</strong> </p>
+<p><strong>Exames Complementares:</strong> </p>
+<p><strong>Prescrição Atual:</strong> </p>
+<p><strong>Conduta:</strong> </p>
+<p><strong>Plano Terapêutico:</strong> </p>
 
 Use terminologia médica brasileira formal. Compare com a evolução anterior quando disponível e destaque mudanças clínicas relevantes.
-IMPORTANTE: Na seção de Conduta/Plano Terapêutico, NÃO inclua medicamentos de uso contínuo (já descritos em seção própria). Inclua apenas ajustes agudos da prescrição atual e novas condutas. Os medicamentos contínuos não devem aparecer no plano, apenas na seção "Uso de Medicação Contínua".
 Use <p> para parágrafos, <strong> para negrito, <ul>/<li> para listas dentro dos parágrafos, <br> para quebras. NÃO use <h2> ou cabeçalhos. Texto corrido, profissional, como uma evolução de prontuário real.
-NÃO use Markdown (sem ##, **, -, \`\`\`).`;
+NÃO use Markdown (sem ##, **, -, \`\`\`).
+${HUMANIZACAO}`;
 
       const simplePrompt = `Você é um assistente médico especialista em documentação clínica brasileira.
 Gere uma evolução clínica ULTRACONCISA, objetiva e telegráfica em formato HTML, para leitura RÁPIDA pelo médico que assumirá o plantão. NÃO invente dados.
@@ -314,28 +325,32 @@ ${sectorHint ? `\nFoco de setor: ${sectorHint}` : ''}${consultorioLine ? `\n${co
 
 ${patientData}${correlationBlock}
 
-Mantenha a MESMA sequência abaixo, mas seja EXTREMAMENTE breve em cada campo (máximo 1-2 linhas, frases curtas e diretas, sem floreios):
+Mantenha a MESMA sequência de seções abaixo, EXTREMAMENTE breve em cada campo (máximo 1-2 linhas, frases curtas e diretas, sem floreios). O CONTEÚDO de cada seção é:
+- Hipótese(s) Diagnóstica(s): hipóteses do quadro atual.
+- CID-10 sugerido: código mais provável (até 3, por ordem de probabilidade).
+- HPP/Comorbidades: apenas as comorbidades relevantes, separadas por vírgula.
+- Uso de Medicação Contínua: apenas nome + dose, um por linha, em <strong>negrito</strong>.
+- Alergias: apenas as substâncias; se nenhuma, escreva "Sem alergias conhecidas".
+- Exames Complementares: apenas alterações relevantes e TENDÊNCIAS cronológicas, sem valores detalhados.
+- Prescrição Atual: medicamentos vigentes em <strong>negrito</strong> com posologia; sinalize apenas ajustes ou alertas de segurança relevantes, sem repetir os de uso contínuo.
+- Conduta: apenas o que foi feito, telegráfico.
+- Plano Terapêutico: próximos passos em tópicos curtos; sem medicamentos contínuos (estes ficam na seção própria).
+Se uma seção não tiver dados correspondentes, omita-a por completo.
 
-<p><strong>Hipótese(s) Diagnóstica(s):</strong> ...</p>
+MOLDE EXATO de saída (use apenas estes rótulos, nesta ordem; escreva o texto clínico já redigido após cada rótulo — substitua o exemplo do CID-10 pelo código e nome reais):
+<p><strong>Hipótese(s) Diagnóstica(s):</strong> </p>
 <code><strong>CID-10 sugerido:</strong> X00.0 — Nome resumido</code>
-(se houver mais de uma hipótese, liste até 3 códigos CID-10 por ordem de probabilidade)
+<p><strong>HPP/Comorbidades:</strong> </p>
+<p><strong>Uso de Medicação Contínua:</strong> </p>
+<p><strong>Alergias:</strong> </p>
+<p><strong>Exames Complementares:</strong> </p>
+<p><strong>Prescrição Atual:</strong> </p>
+<p><strong>Conduta:</strong> </p>
+<p><strong>Plano Terapêutico:</strong> </p>
 
-<p><strong>HPP/Comorbidades:</strong> (liste apenas as comorbidades relevantes, separadas por vírgula) ...</p>
-
-<p><strong>Uso de Medicação Contínua:</strong> (liste apenas nome + dose, um por linha, em <strong>negrito</strong>) ...</p>
-
-<p><strong>Alergias:</strong> (liste apenas as substâncias; se nenhuma, escreva "Sem alergias conhecidas") ...</p>
-
-<p><strong>Exames Complementares:</strong> (apenas alterações relevantes e TENDÊNCIAS cronológicas, sem valores detalhados) ...</p>
-
-<p><strong>Prescrição Atual:</strong> (liste os medicamentos vigentes em <strong>negrito</strong> com posologia; sinalize apenas ajustes ou alertas de segurança relevantes, sem repetir os de uso contínuo) ...</p>
-
-<p><strong>Conduta:</strong> (apenas o que foi feito, telegráfico) ...</p>
-
-<p><strong>Plano Terapêutico:</strong> (próximos passos em tópicos curtos) ...</p>
-
-REGRAS: Seja objetivo, sem repetir informações. Priorize velocidade de leitura. Não inclua medicamentos contínuos no plano, apenas na seção própria.
-Use <p>, <strong>, <ul>/<li>, <br>. NÃO use <h2> nem Markdown (sem ##, **, -, \`\`\`).`;
+Seja objetivo, sem repetir informações. Priorize velocidade de leitura.
+Use <p>, <strong>, <ul>/<li>, <br>. NÃO use <h2> nem Markdown (sem ##, **, -, \`\`\`).
+${HUMANIZACAO}`;
 
       const finalPrompt = evolutionMode === 'free' ? freePrompt : evolutionMode === 'simple' ? simplePrompt : soapPrompt;
 

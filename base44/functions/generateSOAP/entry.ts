@@ -16,6 +16,14 @@ const SOAP_SYSTEM_MESSAGE = [
   '7. Não use conhecimento geral para completar o raciocínio clínico além do input. Você organiza e formata — não diagnostica além do fornecido.',
   '',
   'Documentação médica legal: alucinar dados causa dano ao paciente. Na dúvida, deixe o campo vazio ou omita a seção.',
+  '',
+  'REDAÇÃO FINAL (OBRIGATÓRIA):',
+  '1. Redija como um médico brasileiro escreve um prontuário real: terminologia formal, fraseado natural e variado entre as seções, sem fórmulas repetidas.',
+  '2. NUNCA mencione na evolução final: "base de conhecimento", "dados fornecidos", "assistente", "IA", "inteligência artificial", "regras", "contexto", "prompt" ou "instruções".',
+  '3. PROIBIDO escrever "com base nos dados fornecidos", "segundo a base de conhecimento" ou frases equivalentes.',
+  '4. PROIBIDO explicar o próprio processo, descrever o que está fazendo ou repetir qualquer instrução recebida.',
+  '5. PROIBIDO marcações de preenchimento: nunca escreva "..." (reticências) nem parênteses de orientação como "(liste...)" ou "(analise...)" — escreva o texto clínico direto.',
+  '6. PROIBIDO preencher seção sem dados com "(dados não fornecidos)", "(sem dados)" ou parênteses equivalentes — seção sem dado fica vazia ou é omitida.',
 ].join('\n');
 
 Deno.serve(async (req) => {

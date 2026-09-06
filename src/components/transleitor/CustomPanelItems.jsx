@@ -32,6 +32,17 @@ export default function CustomPanelItems({ panel, title, groups = [], onAppend }
   });
 
   const createMutation = useMutation({
+    // Adição otimista: o item entra na lista local na hora, já no grupo correto,
+    // e já vem selecionado (✓) — sem esperar a resposta do servidor.
+    onMutate: async ({ name, group_label }) => {
+      const key = ['panel-custom-items', panel];
+      const previous = queryClient.getQueryData(key);
+      const temp = { id: `temp-${Date.now()}`, panel, name, group_label };
+      queryClient.setQueryData(key, (old = []) => [...old, temp]);
+      setSelected((prev) => (prev.includes(name) ? prev : [...prev, name]));
+      setFlashId(temp.id);
+      return { previous, key, name };
+    },
     mutationFn: async ({ name, group_label, duplicateTo }) => {
       const created = await base44.entities.PanelCustomItem.create({ panel, name, group_label });
       let duplicate = null;
@@ -40,15 +51,23 @@ export default function CustomPanelItems({ panel, title, groups = [], onAppend }
       }
       return { created, duplicate, duplicateTo };
     },
-    // Cache imediato: insere o registro na lista na hora, sem esperar refetch.
     onSuccess: ({ created, duplicate, duplicateTo }) => {
-      queryClient.setQueryData(['panel-custom-items', panel], (old = []) => [...old, created]);
+      // Troca o registro temporário pelo definitivo no cache local.
+      queryClient.setQueryData(['panel-custom-items', panel], (old = []) =>
+        old.map((r) => (r.id?.startsWith?.('temp-') && r.name === created.name ? created : r)));
       if (duplicate && duplicateTo) {
         queryClient.setQueryData(['panel-custom-items', duplicateTo], (old = []) => [...old, duplicate]);
       }
       // Flash: destaca brevemente o item novo para o médico localizar onde caiu.
       setFlashId(created.id);
       setTimeout(() => setFlashId((cur) => (cur === created.id ? null : cur)), 1800);
+    },
+    // Rollback se a gravação falhar: remove o item otimista e desmarca.
+    onError: (_err, _vars, ctx) => {
+      if (!ctx) return;
+      queryClient.setQueryData(ctx.key, ctx.previous);
+      setSelected((prev) => prev.filter((n) => n !== ctx.name));
+      alert('Erro ao salvar o item. Tente novamente.');
     },
   });
 
@@ -82,6 +101,7 @@ export default function CustomPanelItems({ panel, title, groups = [], onAppend }
 
   const handleInsert = () => {
     if (selected.length === 0) return;
+    if (typeof onAppend !== 'function') return;
     onAppend(selected.join('; '));
     setSelected([]);
   };

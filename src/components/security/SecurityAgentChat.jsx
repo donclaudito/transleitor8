@@ -10,35 +10,15 @@ const SUGGESTIONS = [
   'Revise os links do app (AppLink) em busca de URLs inseguras',
 ];
 
-// Chat com o Agente de Segurança (security_auditor): auditoria Red/Blue Team,
-// registro de achados com permissão e correção sempre autorizada pelo admin.
+// Chat com o Agente de Segurança: auditoria Red/Blue Team com evidências, roteada
+// pelo provedor Groq (função securityAgentChat — não usa créditos de integração).
+// A conversa vive no estado local do painel; o agente é consultivo e nunca altera dados.
 export default function SecurityAgentChat() {
-  const [conversationId, setConversationId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const scrollRef = useRef(null);
-
-  useEffect(() => {
-    if (!conversationId) { setMessages([]); return; }
-    setMessages([]);
-    setLoading(true);
-    // Segurança: se nenhuma mensagem terminal chegar em 90s, desbloqueia o loading.
-    let hangTimer = setTimeout(() => setLoading(false), 90000);
-    const unsub = base44.agents.subscribeToConversation(conversationId, (data) => {
-      const msgs = data.messages || [];
-      setMessages(msgs);
-      if (!msgs.length) return;
-      const last = msgs[msgs.length - 1];
-      const hasContent = last.role === 'assistant' && last.content && String(last.content).trim().length > 0;
-      const isError = ['failed', 'error'].includes(last.status);
-      if (hasContent || isError) {
-        clearTimeout(hangTimer);
-        setLoading(false);
-      }
-    });
-    return () => { unsub(); clearTimeout(hangTimer); };
-  }, [conversationId]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
@@ -48,22 +28,21 @@ export default function SecurityAgentChat() {
     const content = (text ?? input).trim();
     if (!content || loading) return;
     setInput('');
+    setError('');
+    const nextMessages = [...messages, { role: 'user', content }];
+    setMessages(nextMessages);
     setLoading(true);
     try {
-      if (!conversationId) {
-        const conv = await base44.agents.createConversation({
-          agent_name: 'security_auditor',
-          metadata: { name: 'Auditoria de Segurança' },
-        });
-        setConversationId(conv.id);
-        await base44.agents.addMessage(conv, { role: 'user', content });
-      } else {
-        const conv = await base44.agents.getConversation(conversationId);
-        await base44.agents.addMessage(conv, { role: 'user', content });
-      }
+      const res = await base44.functions.invoke('securityAgentChat', { messages: nextMessages });
+      const reply = res?.data?.text;
+      if (!reply) throw new Error(res?.data?.error || 'Resposta vazia do agente.');
+      setMessages((prev) => [...prev, { role: 'assistant', content: reply }]);
     } catch (e) {
+      const msg = e?.response?.data?.error || e.message || 'erro desconhecido';
+      setError('Erro ao conversar com o agente: ' + msg);
+      setMessages((prev) => prev.slice(0, -1)); // remove a mensagem sem resposta
+    } finally {
       setLoading(false);
-      alert('Erro ao conversar com o agente: ' + (e?.response?.data?.error || e.message));
     }
   };
 
@@ -78,7 +57,7 @@ export default function SecurityAgentChat() {
             <div>
               <h3 className="font-extrabold">Agente de Segurança</h3>
               <p className="text-xs text-muted-foreground max-w-xs mt-1">
-                Auditoria Red Team & Blue Team com evidências. Ele registra achados apenas com sua permissão e nunca altera nada sozinho.
+                Auditoria Red Team &amp; Blue Team com evidências. Ele analisa e orienta — a decisão de registrar e corrigir é sempre sua.
               </p>
             </div>
             <div className="grid grid-cols-1 gap-2 w-full max-w-md mt-1">
@@ -99,6 +78,9 @@ export default function SecurityAgentChat() {
               <span className="text-xs text-muted-foreground">Analisando...</span>
             </div>
           </div>
+        )}
+        {error && (
+          <p className="text-xs text-destructive text-center">{error}</p>
         )}
       </div>
 

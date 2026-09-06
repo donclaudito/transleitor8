@@ -247,7 +247,7 @@ function getSuggestedItems(clinicalText) {
   return suggestions;
 }
 
-function AccordionGroup({ group, selectedItems, onToggle, colorClasses, searchTerm, suggestedItems, isFavorite, toggleFavorite }) {
+function AccordionGroup({ group, selectedItems, onToggle, colorClasses, searchTerm, suggestedItems, isFavorite, toggleFavorite, isGroupFavorite, toggleGroupFavorite }) {
   const [open, setOpen] = useState(false);
   const selectedCount = group.items.filter(i => selectedItems.includes(i)).length;
 
@@ -263,7 +263,10 @@ function AccordionGroup({ group, selectedItems, onToggle, colorClasses, searchTe
     <div className="border border-border rounded-xl overflow-hidden">
       <button onClick={() => setOpen(!open)}
         className="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-muted/50 transition-colors">
-        <span className="text-xs font-bold text-foreground/80">{group.label}</span>
+        <span className="text-xs font-bold text-foreground/80 flex items-center">
+          <FavoriteStar active={isGroupFavorite(group.label)} onToggle={() => toggleGroupFavorite(group.label)} />
+          {group.label}
+        </span>
         <div className="flex items-center gap-2">
           {selectedCount > 0 && (
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${colorClasses.bg} ${colorClasses.color}`}>
@@ -300,7 +303,7 @@ function AccordionGroup({ group, selectedItems, onToggle, colorClasses, searchTe
   );
 }
 
-function SectionAccordion({ sectionKey, section, selectedItems, onToggle, searchTerm, suggestedItems, defaultOpen, isFavorite, toggleFavorite }) {
+function SectionAccordion({ sectionKey, section, selectedItems, onToggle, searchTerm, suggestedItems, defaultOpen, isFavorite, toggleFavorite, isGroupFavorite, toggleGroupFavorite }) {
   const [open, setOpen] = useState(defaultOpen || sectionKey === 'subjetivo');
   const totalSelected = section.groups.flatMap(g => g.items).filter(i => selectedItems.includes(i)).length;
 
@@ -329,11 +332,12 @@ function SectionAccordion({ sectionKey, section, selectedItems, onToggle, search
       </button>
       {effectiveOpen && (
         <div className="p-2 space-y-1.5 bg-card/40">
-          {section.groups.map(g => (
+          {[...section.groups].sort((a, b) => (isGroupFavorite(b.label) ? 1 : 0) - (isGroupFavorite(a.label) ? 1 : 0)).map(g => (
             <AccordionGroup key={g.label} group={g} selectedItems={selectedItems} onToggle={onToggle}
               colorClasses={{ bg: section.bg, border: section.border, color: section.color, ring: section.ring }}
               searchTerm={searchTerm} suggestedItems={suggestedItems}
-              isFavorite={isFavorite} toggleFavorite={toggleFavorite} />
+              isFavorite={isFavorite} toggleFavorite={toggleFavorite}
+              isGroupFavorite={isGroupFavorite} toggleGroupFavorite={toggleGroupFavorite} />
           ))}
         </div>
       )}
@@ -345,7 +349,7 @@ export default function SymptomsPanel({ onAppend, clinicalDescription = '' }) {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const { isFavorite, toggleFavorite } = usePanelFavorites('sintomas');
+  const { isFavorite, toggleFavorite, isGroupFavorite, toggleGroupFavorite } = usePanelFavorites('sintomas');
 
   const suggestedItems = useMemo(() => getSuggestedItems(clinicalDescription), [clinicalDescription]);
 
@@ -436,9 +440,12 @@ export default function SymptomsPanel({ onAppend, clinicalDescription = '' }) {
                     suggestedItems={suggestedItems}
                     isFavorite={isFavorite}
                     toggleFavorite={toggleFavorite}
+                    isGroupFavorite={isGroupFavorite}
+                    toggleGroupFavorite={toggleGroupFavorite}
                   />
                 ))}
-                <CustomPanelItems panel="sintomas" title="Sintomas" onAppend={onAppend} />
+                <CustomPanelItems panel="sintomas" title="Sintomas" onAppend={onAppend}
+                  groups={Object.values(SYMPTOMS_DATA).flatMap(s => s.groups.map(g => g.label))} />
               </div>
 
               {/* Footer */}

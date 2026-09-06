@@ -87,7 +87,7 @@ function fuzzyMatch(text, query) {
   return qi === q.length;
 }
 
-function AccordionGroup({ group, selectedItems, onToggle, onToggleType, allowTypeToggle, colorClasses, searchTerm, isFavorite, toggleFavorite }) {
+function AccordionGroup({ group, selectedItems, onToggle, onToggleType, allowTypeToggle, colorClasses, searchTerm, isFavorite, toggleFavorite, isGroupFavorite, toggleGroupFavorite }) {
   const [open, setOpen] = useState(false);
   const selectedCount = group.items.filter(i => selectedItems[i]).length;
   const filteredItems = group.items.filter(item => fuzzyMatch(item, searchTerm));
@@ -97,7 +97,10 @@ function AccordionGroup({ group, selectedItems, onToggle, onToggleType, allowTyp
     <div className="border border-border rounded-xl overflow-hidden">
       <button onClick={() => setOpen(!open)}
         className="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-muted/50 transition-colors">
-        <span className="text-xs font-bold text-foreground/80">{group.label}</span>
+        <span className="text-xs font-bold text-foreground/80 flex items-center">
+          <FavoriteStar active={isGroupFavorite(group.label)} onToggle={() => toggleGroupFavorite(group.label)} />
+          {group.label}
+        </span>
         <div className="flex items-center gap-2">
           {selectedCount > 0 && (
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${colorClasses.bg} ${colorClasses.color}`}>
@@ -143,7 +146,7 @@ function AccordionGroup({ group, selectedItems, onToggle, onToggleType, allowTyp
   );
 }
 
-function SectionAccordion({ section, selectedItems, onToggle, onToggleType, allowTypeToggle, searchTerm, defaultOpen, isFavorite, toggleFavorite }) {
+function SectionAccordion({ section, selectedItems, onToggle, onToggleType, allowTypeToggle, searchTerm, defaultOpen, isFavorite, toggleFavorite, isGroupFavorite, toggleGroupFavorite }) {
   const [open, setOpen] = useState(defaultOpen ?? true);
   const totalSelected = section.groups.flatMap(g => g.items).filter(i => selectedItems[i]).length;
   const hasMatches = !searchTerm || section.groups.some(g => g.items.some(item => fuzzyMatch(item, searchTerm)));
@@ -168,11 +171,12 @@ function SectionAccordion({ section, selectedItems, onToggle, onToggleType, allo
       </button>
       {effectiveOpen && (
         <div className="p-2 space-y-1.5 bg-card/40">
-          {section.groups.map(g => (
+          {[...section.groups].sort((a, b) => (isGroupFavorite(b.label) ? 1 : 0) - (isGroupFavorite(a.label) ? 1 : 0)).map(g => (
             <AccordionGroup key={g.label} group={g} selectedItems={selectedItems} onToggle={onToggle}
               onToggleType={onToggleType} allowTypeToggle={allowTypeToggle}
               colorClasses={{ bg: section.bg, border: section.border, color: section.color, ring: section.ring }}
-              searchTerm={searchTerm} isFavorite={isFavorite} toggleFavorite={toggleFavorite} />
+              searchTerm={searchTerm} isFavorite={isFavorite} toggleFavorite={toggleFavorite}
+              isGroupFavorite={isGroupFavorite} toggleGroupFavorite={toggleGroupFavorite} />
           ))}
         </div>
       )}
@@ -184,7 +188,7 @@ export default function GastroPanel({ onAppend }) {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
-  const { isFavorite, toggleFavorite } = usePanelFavorites('gastro');
+  const { isFavorite, toggleFavorite, isGroupFavorite, toggleGroupFavorite } = usePanelFavorites('gastro');
 
   const handleToggle = (item) => {
     setSelected(prev => {
@@ -281,9 +285,12 @@ export default function GastroPanel({ onAppend }) {
                     defaultOpen={key === 'patologias'}
                     isFavorite={isFavorite}
                     toggleFavorite={toggleFavorite}
+                    isGroupFavorite={isGroupFavorite}
+                    toggleGroupFavorite={toggleGroupFavorite}
                   />
                 ))}
-                <CustomPanelItems panel="gastro" title="Gastro" onAppend={onAppend} />
+                <CustomPanelItems panel="gastro" title="Gastro" onAppend={onAppend}
+                  groups={Object.values(GASTRO_DATA).flatMap(s => s.groups.map(g => g.label))} />
               </div>
 
               <div className="p-4 border-t border-border flex-shrink-0 space-y-2">

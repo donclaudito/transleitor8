@@ -1,14 +1,26 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, FolderOpen } from 'lucide-react';
 import FavoriteStar from './FavoriteStar';
 import { usePanelFavorites } from '@/hooks/usePanelFavorites';
 
+const PANEL_LABELS = {
+  uti: 'UTI Cirúrgica',
+  cirurgia: 'Cirurgia',
+  ps: 'Pronto Socorro',
+  emergencia: 'Avaliação Cirúrgica',
+  sintomas: 'Sintomas',
+  gastro: 'Gastro',
+};
+
 // Bloco "⭐ Meus itens" de cada pestana: itens personalizados do médico logado,
-// salvos por usuário (RLS), com seleção múltipla e inserção na Descrição Clínica.
-export default function CustomPanelItems({ panel, title, onAppend }) {
+// salvos por usuário (RLS), organizados por seção/grupo da pestana, com seleção
+// múltipla, inserção na Descrição Clínica e atalho para duplicar em outra pestana.
+export default function CustomPanelItems({ panel, title, groups = [], onAppend }) {
   const [newItem, setNewItem] = useState('');
+  const [newGroup, setNewGroup] = useState('');
+  const [dupTarget, setDupTarget] = useState('');
   const [selected, setSelected] = useState([]);
   const queryClient = useQueryClient();
   const { isFavorite, toggleFavorite } = usePanelFavorites(panel);
@@ -19,8 +31,14 @@ export default function CustomPanelItems({ panel, title, onAppend }) {
   });
 
   const createMutation = useMutation({
-    mutationFn: (name) => base44.entities.PanelCustomItem.create({ panel, name }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['panel-custom-items', panel] }),
+    mutationFn: async ({ name, group_label, duplicateTo }) => {
+      const created = await base44.entities.PanelCustomItem.create({ panel, name, group_label });
+      if (duplicateTo) {
+        await base44.entities.PanelCustomItem.create({ panel: duplicateTo, name, group_label: '' });
+      }
+      return created;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['panel-custom-items'] }),
   });
 
   const deleteMutation = useMutation({
@@ -31,8 +49,10 @@ export default function CustomPanelItems({ panel, title, onAppend }) {
   const handleAdd = () => {
     const name = newItem.trim();
     if (!name) return;
-    createMutation.mutate(name);
+    createMutation.mutate({ name, group_label: newGroup.trim(), duplicateTo: dupTarget || null });
     setNewItem('');
+    setNewGroup('');
+    setDupTarget('');
   };
 
   const handleRemove = (rec) => {
@@ -50,6 +70,18 @@ export default function CustomPanelItems({ panel, title, onAppend }) {
     setSelected([]);
   };
 
+  // Agrupa itens por seção: grupos da pestana em ordem, depois seções avulsas, "Geral" por último.
+  const itemsByGroup = {};
+  items.forEach((rec) => {
+    const label = rec.group_label?.trim() ? rec.group_label.trim() : 'Geral';
+    (itemsByGroup[label] ||= []).push(rec);
+  });
+  const orderedLabels = [
+    ...groups.filter((l) => itemsByGroup[l]?.length),
+    ...Object.keys(itemsByGroup).filter((l) => l !== 'Geral' && !groups.includes(l)),
+    'Geral',
+  ].filter((l) => itemsByGroup[l]?.length);
+
   return (
     <div className="rounded-xl border border-dashed border-primary/40 bg-primary/[0.03] p-3 space-y-3">
       <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
@@ -58,30 +90,39 @@ export default function CustomPanelItems({ panel, title, onAppend }) {
       {items.length === 0 ? (
         <p className="text-[11px] text-muted-foreground">Nenhum item personalizado ainda...</p>
       ) : (
-        <div className="flex flex-wrap gap-1.5">
-          {items.map((rec) => {
-            const active = selected.includes(rec.name);
-            return (
-              <span
-                key={rec.id}
-                onClick={() => handleToggle(rec.name)}
-                className={`inline-flex items-center gap-0.5 px-2.5 py-1 rounded-lg text-[11px] font-medium border transition-all cursor-pointer ${
-                  active
-                    ? 'bg-primary/15 border-primary/40 text-primary ring-1 ring-primary/30'
-                    : 'border-border text-muted-foreground hover:border-primary/30 hover:text-foreground'
-                }`}>
-                <FavoriteStar active={isFavorite(rec.name)} onToggle={() => toggleFavorite(rec.name, 'Meus itens')} />
-                {active && <span>✓</span>}
-                {rec.name}
-                <button
-                  onClick={(e) => { e.stopPropagation(); handleRemove(rec); }}
-                  className="ml-1 text-muted-foreground/60 hover:text-destructive transition-colors"
-                  title="Remover item">
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
-            );
-          })}
+        <div className="space-y-2">
+          {orderedLabels.map((label) => (
+            <div key={label} className="space-y-1">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                <FolderOpen className="w-3 h-3" /> {label}
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {itemsByGroup[label].map((rec) => {
+                  const active = selected.includes(rec.name);
+                  return (
+                    <span
+                      key={rec.id}
+                      onClick={() => handleToggle(rec.name)}
+                      className={`inline-flex items-center gap-0.5 px-2.5 py-1 rounded-lg text-[11px] font-medium border transition-all cursor-pointer ${
+                        active
+                          ? 'bg-primary/15 border-primary/40 text-primary ring-1 ring-primary/30'
+                          : 'border-border text-muted-foreground hover:border-primary/30 hover:text-foreground'
+                      }`}>
+                      <FavoriteStar active={isFavorite(rec.name)} onToggle={() => toggleFavorite(rec.name, rec.group_label || 'Meus itens')} />
+                      {active && <span>✓</span>}
+                      {rec.name}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleRemove(rec); }}
+                        className="ml-1 text-muted-foreground/60 hover:text-destructive transition-colors"
+                        title="Remover item">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </div>
       )}
       <div className="flex gap-1.5">
@@ -99,6 +140,35 @@ export default function CustomPanelItems({ panel, title, onAppend }) {
           title="Adicionar item">
           <Plus className="w-3.5 h-3.5" />
         </button>
+      </div>
+      <div className="flex gap-1.5">
+        {groups.length > 0 ? (
+          <select
+            value={newGroup}
+            onChange={(e) => setNewGroup(e.target.value)}
+            title="Seção da pestana onde o item ficará"
+            className="flex-1 px-2 py-1.5 rounded-lg bg-muted border border-border text-[11px] focus:outline-none focus:border-primary/50 transition-all">
+            <option value="">Seção: Geral</option>
+            {groups.map((g) => <option key={g} value={g}>{g}</option>)}
+          </select>
+        ) : (
+          <input
+            value={newGroup}
+            onChange={(e) => setNewGroup(e.target.value)}
+            placeholder="Seção (opcional)..."
+            className="flex-1 px-3 py-1.5 rounded-lg bg-muted border border-border text-[11px] focus:outline-none focus:border-primary/50 transition-all"
+          />
+        )}
+        <select
+          value={dupTarget}
+          onChange={(e) => setDupTarget(e.target.value)}
+          title="Criar o mesmo item também em outra pestana"
+          className="flex-1 px-2 py-1.5 rounded-lg bg-muted border border-border text-[11px] focus:outline-none focus:border-primary/50 transition-all">
+          <option value="">📄 Só nesta pestana</option>
+          {Object.entries(PANEL_LABELS).filter(([key]) => key !== panel).map(([key, label]) => (
+            <option key={key} value={key}>Duplicar p/ {label}</option>
+          ))}
+        </select>
       </div>
       <button
         onClick={handleInsert}

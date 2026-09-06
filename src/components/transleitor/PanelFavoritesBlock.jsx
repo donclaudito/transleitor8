@@ -5,8 +5,8 @@ import { usePanelFavorites } from '@/hooks/usePanelFavorites';
 // Bloco "⭐ Favoritos" fixo no topo do modal: chips clicáveis que selecionam o item
 // no estado da própria pestana (funciona com selected em array OU em objeto).
 export default function PanelFavoritesBlock({ panel, onToggle, selectedItems }) {
-  const { favorites, isFavorite, toggleFavorite } = usePanelFavorites(panel);
-  if (favorites.length === 0) return null;
+  const { itemFavorites, isFavorite, toggleFavorite } = usePanelFavorites(panel);
+  if (itemFavorites.length === 0) return null;
 
   const isSelected = (item) => Array.isArray(selectedItems)
     ? selectedItems.includes(item)
@@ -16,7 +16,7 @@ export default function PanelFavoritesBlock({ panel, onToggle, selectedItems }) 
     <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 space-y-2">
       <h3 className="text-xs font-bold uppercase tracking-wider text-amber-500">⭐ Favoritos</h3>
       <div className="flex flex-wrap gap-1.5">
-        {favorites.map((fav) => {
+        {itemFavorites.map((fav) => {
           const active = isSelected(fav.item);
           return (
             <span

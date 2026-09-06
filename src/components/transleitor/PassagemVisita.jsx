@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { RefreshCw, Copy, CheckCircle2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 
-export default function PassagemVisita({ currentSOAP }) {
+export default function PassagemVisita({ currentSOAP, selectedLLMId = '', llmProviders = [] }) {
   const [passageText, setPassageText] = useState('');
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const activeProvider = selectedLLMId ? llmProviders.find(p => p.id === selectedLLMId) : null;
 
   // Reseta a passagem quando uma nova evolução é carregada
   useEffect(() => {
@@ -79,10 +80,13 @@ REGRAS ABSOLUTAS:
 
       const prompt = isCirurgia ? surgicalPrompt : genericPrompt;
 
-      const result = await base44.integrations.Core.InvokeLLM({
+      const res = await base44.functions.invoke('generateSOAP', {
         prompt,
-        model: 'gemini_3_flash',
+        ...(selectedLLMId ? { llm_config_id: selectedLLMId } : {}),
+        output_format: 'text',
       });
+      if (res.data?.error) throw new Error(res.data.error);
+      const result = res.data.text;
 
       setPassageText(typeof result === 'string' ? result.trim() : '');
     } catch (err) {
@@ -131,6 +135,9 @@ REGRAS ABSOLUTAS:
       <div className="flex items-center gap-2 mb-3">
         <span className="text-sm">🔁</span>
         <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Passagem de Visita</h4>
+        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap ${activeProvider ? 'bg-amber-500/10 text-amber-500 border-amber-500/30' : 'bg-primary/10 text-primary border-primary/20'}`}>
+          {activeProvider ? `⚡ ${activeProvider.provider_name} — ${activeProvider.model_name}` : '✨ Gemini Flash'}
+        </span>
       </div>
 
       {!passageText && !loading ? (

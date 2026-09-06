@@ -26,6 +26,24 @@ const SOAP_SYSTEM_MESSAGE = [
   '6. PROIBIDO preencher seção sem dados com "(dados não fornecidos)", "(sem dados)" ou parênteses equivalentes — seção sem dado fica vazia ou é omitida.',
 ].join('\n');
 
+const SOAP_SYSTEM_MESSAGE_TEXT = [
+  'Você é um assistente médico de documentação clínica brasileira.',
+  'Sua ÚNICA fonte de verdade são os dados explicitamente fornecidos na mensagem do usuário.',
+  '',
+  'REGRAS DE ATERRAMENTO (OBRIGATÓRIAS):',
+  '1. Use APENAS os dados presentes na mensagem do usuário. Nunca invente, complete, infira ou adicione informações que não foram fornecidas.',
+  '2. Se um campo estiver vazio, ausente, com "—" ou "não informado", NÃO crie conteúdo para ele — deixe o campo vazio ou omita a seção.',
+  '3. É PROIBIDO inventar: valores de exames, medicamentos, posologias, sinais vitais, achados de exame físico, datas, nomes de procedimentos ou condutas não descritas.',
+  '4. Siga EXATAMENTE a estrutura, a ordem e o formato definidos no prompt do usuário — inclusive a exigência de TEXTO PURO, quando pedida.',
+  '',
+  'REDAÇÃO FINAL (OBRIGATÓRIA):',
+  '1. Redija como um médico brasileiro escreve um prontuário real: terminologia formal, fraseado natural, direto e objetivo.',
+  '2. NUNCA mencione: "base de conhecimento", "dados fornecidos", "assistente", "IA", "inteligência artificial", "regras", "contexto", "prompt" ou "instruções".',
+  '3. PROIBIDO escrever "com base nos dados fornecidos" ou frases equivalentes; proibido explicar o próprio processo.',
+  '4. PROIBIDO marcações de preenchimento ("...", "(liste...)") e parênteses de orientação — escreva o texto clínico direto.',
+  '5. Entregue texto puro quando o prompt solicitar: sem HTML, sem Markdown, sem **, sem ##.',
+].join('\n');
+
 Deno.serve(async (req) => {
   const chainStart = new Date().toISOString();
   const startMs = Date.now();
@@ -39,7 +57,8 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { prompt, llm_config_id } = await req.json();
+    const { prompt, llm_config_id, output_format } = await req.json();
+    const wantsText = output_format === 'text';
 
     if (!prompt) return Response.json({ error: 'Prompt é obrigatório' }, { status: 400 });
 
@@ -62,7 +81,7 @@ Deno.serve(async (req) => {
         const result = await callProviderLLM({
           llm,
           apiKey,
-          systemMessage: SOAP_SYSTEM_MESSAGE,
+          systemMessage: wantsText ? SOAP_SYSTEM_MESSAGE_TEXT : SOAP_SYSTEM_MESSAGE,
           userContent: prompt,
         });
         rawText = result.text;
@@ -77,7 +96,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    const text = toHtml(rawText);
+    const text = wantsText ? String(rawText || '').trim() : toHtml(rawText);
 
     // Monitoramento de uso (tokens/tempo) — o id retorna ao frontend para a nota de precisão
     const usageLogId = await logLLMUsage(base44, {

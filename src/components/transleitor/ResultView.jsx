@@ -5,7 +5,7 @@ import { ptBR } from 'date-fns/locale';
 import PassagemVisita from './PassagemVisita';
 import AccuracyRating from '@/components/monitoramento/AccuracyRating';
 
-export default function ResultView({ currentSOAP, onUpdate, usageLogId }) {
+export default function ResultView({ currentSOAP, onUpdate, usageLogId, selectedLLMId = '', llmProviders = [] }) {
   const [copied, setCopied] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState('');
@@ -128,7 +128,7 @@ export default function ResultView({ currentSOAP, onUpdate, usageLogId }) {
         </div>
       )}
 
-      <PassagemVisita currentSOAP={currentSOAP} />
+      <PassagemVisita currentSOAP={currentSOAP} selectedLLMId={selectedLLMId} llmProviders={llmProviders} />
     </div>
   );
 }

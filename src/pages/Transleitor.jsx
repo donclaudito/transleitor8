@@ -193,6 +193,15 @@ REGRA CLÍNICA — NÃO PRESUMIR PÓS-OPERATÓRIO (OBRIGATÓRIA):
 7. PROGRESSÃO DO DPO: acompanhe a linha do tempo do pós-operatório. Se a evolução anterior registra "1º PO" e a descrição atual é do dia seguinte, hoje é "2º PO" — NÃO repita o DPO da evolução anterior. Dimensione o risco esperado pela janela do DPO atual: DPO 1–2 (sangramento, atelectasia, TEP), DPO 3–5 (infecção, ITU, febre medicamentosa), DPO 5–7 (deiscência, vazamento de anastomose, ISC profunda), DPO 30+ (obstrução por aderências, hérnias).
 8. OLHAR DE CIRURGIÃO DE PLANTÃO (caso cirúrgico confirmado): priorize a integridade da cirurgia — sítio cirúrgico/ferida operatória, drenos e débitos, função do órgão operado, correlacione exames (laboratoriais e de imagem/TC) às complicações possíveis no DPO atual e sinalize red flags (taquicardia persistente, dor de padrão alterado, alteração súbita de drenos, abdômen tenso) SOMENTE quando os dados fornecidos as sustentarem — sem inventar achados e sem citar processo interno/IA.`;
 
+  const examsSequenceRule = `
+
+ANÁLISE SEQUENCIAL DOS EXAMES COMPLEMENTARES (OBRIGATÓRIA):
+1. NUNCA leia exames isoladamente: organize os resultados por data/ordem de coleta (dias anteriores + atuais) e analise-os EM SEQUÊNCIA, como uma série temporal.
+2. Reflita explicitamente as DIFERENÇAS entre as aquisições: descreva se cada parâmetro subiu, caiu, estabilizou ou apresentou alteração nova, citando o intervalo temporal quando houver (ex.: "PCR 180 → 120 → 60 mg/L, em queda progressiva"; "TC de hoje com coleção nova, ausente na de anteontem").
+3. A mesma lógica vale para laboratório E imagem: hemograma, função renal e provas inflamatórias recebem o mesmo tratamento comparativo que laudos de TC/RX/USG de datas diferentes.
+4. CRUZE imagem × laboratório × quadro clínico: identifique concordâncias e discordâncias entre as frentes (ex.: coleção nova na TC + leucocitose em ascensão + febre = provável abscesso).
+5. Use a sequência para embasar a avaliação e o plano — sem inventar valores, laudos ou datas.`;
+
   const simulateStream = (fullText, onChunk, onDone) => {
     const words = fullText.split(' ');
     let i = 0, accumulated = '';
@@ -278,7 +287,7 @@ REGRAS (OBRIGATÓRIAS):
 Gere uma evolução SOAP em formato HTML (tags semânticas), técnica, precisa, pronta para prontuário. NÃO invente dados.
 ${sectorHint ? `\nFoco de setor: ${sectorHint}` : ''}${consultorioLine ? `\n${consultorioLine}` : ''}
 
-${patientData}${correlationBlock}${clinicalContextRule}
+${patientData}${correlationBlock}${clinicalContextRule}${examsSequenceRule}
 
 Formato obrigatório (use APENAS tags HTML, sem Markdown) — quatro seções, nesta ordem, cada uma com o título exato abaixo seguido dos parágrafos com o conteúdo clínico já redigido:
 <h2>S — Subjetivo</h2>
@@ -301,7 +310,7 @@ ${HUMANIZACAO}`;
 Gere uma evolução clínica em formato HTML (tags semânticas) NARRATIVA, concisa e profissional, pronta para prontuário. NÃO invente dados.
 ${sectorHint ? `\nFoco de setor: ${sectorHint}` : ''}${consultorioLine ? `\n${consultorioLine}` : ''}
 
-${patientData}${correlationBlock}${clinicalContextRule}
+${patientData}${correlationBlock}${clinicalContextRule}${examsSequenceRule}
 
 Estruture a evolução clínica OBRIGATORIAMENTE nesta ordem exata. O CONTEÚDO de cada seção é:
 - Hipótese(s) Diagnóstica(s): hipóteses diagnósticas do quadro atual.
@@ -335,7 +344,7 @@ ${HUMANIZACAO}`;
 Gere uma evolução clínica ULTRACONCISA, objetiva e telegráfica em formato HTML, para leitura RÁPIDA pelo médico que assumirá o plantão. NÃO invente dados.
 ${sectorHint ? `\nFoco de setor: ${sectorHint}` : ''}${consultorioLine ? `\n${consultorioLine}` : ''}
 
-${patientData}${correlationBlock}${clinicalContextRule}
+${patientData}${correlationBlock}${clinicalContextRule}${examsSequenceRule}
 
 Mantenha a MESMA sequência de seções abaixo, EXTREMAMENTE breve em cada campo (máximo 1-2 linhas, frases curtas e diretas, sem floreios). O CONTEÚDO de cada seção é:
 - Hipótese(s) Diagnóstica(s): hipóteses do quadro atual.
@@ -453,7 +462,7 @@ ${HUMANIZACAO}`;
         onDelete={(id) => deleteEvolutionMutation.mutate(id)} />;
     }
     if (view === 'result') {
-      return <ResultView currentSOAP={currentSOAP} onUpdate={updateEvolution} usageLogId={usageLogId} />;
+      return <ResultView currentSOAP={currentSOAP} onUpdate={updateEvolution} usageLogId={usageLogId} selectedLLMId={selectedLLMId} llmProviders={llmProviders} />;
     }
     if (view === 'settings') {
       return <SettingsPanel settings={settings} setTheme={setTheme}
@@ -526,7 +535,7 @@ ${HUMANIZACAO}`;
                 <div className="prose prose-sm dark:prose-invert max-w-none [&_code]:bg-amber-500/10 [&_code]:text-amber-600 [&_code]:dark:text-amber-400 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:font-mono [&_code]:text-xs [&_code]:font-bold" dangerouslySetInnerHTML={{ __html: streamingText }} />
               </div>
             ) : currentSOAP ? (
-              <ResultView currentSOAP={currentSOAP} onUpdate={updateEvolution} usageLogId={usageLogId} />
+              <ResultView currentSOAP={currentSOAP} onUpdate={updateEvolution} usageLogId={usageLogId} selectedLLMId={selectedLLMId} llmProviders={llmProviders} />
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
                 <div className="w-16 h-16 rounded-2xl bg-primary/5 flex items-center justify-center mb-4">

@@ -86,6 +86,23 @@ export default async function(req) {
       });
     }
 
+    // Alerta por e-mail ao admin quando a varredura registra achado crítico (best-effort).
+    const criticosCriados = created.filter(rec => rec.severity === 'critica');
+    let alertaEmail = false;
+    if (criticosCriados.length > 0) {
+      try {
+        await base44.asServiceRole.integrations.Core.SendEmail({
+          to: user.email,
+          subject: '🚨 Transleitor — ' + criticosCriados.length + ' achado(s) crítico(s) na varredura de segurança',
+          body: '<p>A varredura automática de segurança encontrou <strong>' + criticosCriados.length +
+            ' achado(s) de severidade crítica</strong>:</p><ul>' +
+            criticosCriados.map(c => '<li>' + c.title + '</li>').join('') +
+            '</ul><p>Acesse o painel de Segurança para revisar as evidências e as correções recomendadas.</p>'
+        });
+        alertaEmail = true;
+      } catch { /* falha de e-mail nunca quebra a varredura */ }
+    }
+
     const summary = {
       total: detected.length,
       novos: created.length,
@@ -100,7 +117,7 @@ export default async function(req) {
       duration_ms: Date.now() - t0,
       summary: { criticos: summary.criticos, altos: summary.altos, red: summary.red, blue: summary.blue }
     });
-    return Response.json({ summary, novos: created.length, scan_run_id: run.id });
+    return Response.json({ summary, novos: created.length, scan_run_id: run.id, alerta_email: alertaEmail });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

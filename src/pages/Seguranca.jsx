@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ShieldAlert, ScanLine, History as HistoryIcon, ClipboardCopy, Printer } from 'lucide-react';
+import { ShieldAlert, ScanLine, History as HistoryIcon, ClipboardCopy, Printer, Bot } from 'lucide-react';
 import FindingDetailModal from '@/components/security/FindingDetailModal';
+import SecurityAgentChat from '@/components/security/SecurityAgentChat';
 import ScanHistoryModal from '@/components/security/ScanHistoryModal';
 import {
   SEVERITY_RANK, STATUS_RANK, SEVERITY_LABELS, SEVERITY_STYLES, STATUS_LABELS,
@@ -16,6 +17,7 @@ export default function Seguranca() {
   const [scanResult, setScanResult] = useState(null);
   const [selectedFinding, setSelectedFinding] = useState(null);
   const [showHistory, setShowHistory] = useState(false);
+  const [showAgent, setShowAgent] = useState(false);
   const [copied, setCopied] = useState(false);
   const queryClient = useQueryClient();
 
@@ -177,6 +179,10 @@ export default function Seguranca() {
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border text-xs font-bold text-muted-foreground hover:bg-accent hover:text-foreground transition-all">
             <HistoryIcon className="w-3.5 h-3.5" /> Histórico
           </button>
+          <button onClick={() => setShowAgent(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border text-xs font-bold text-muted-foreground hover:bg-accent hover:text-foreground transition-all">
+            <Bot className="w-3.5 h-3.5" /> Agente
+          </button>
           <button onClick={exportReport}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border text-xs font-bold text-muted-foreground hover:bg-accent hover:text-foreground transition-all">
             <ClipboardCopy className="w-3.5 h-3.5" /> {copied ? 'Copiado!' : 'Relatório'}
@@ -273,6 +279,23 @@ export default function Seguranca() {
           onSetStatus={onSetStatus} onDelete={handleDelete} />
       )}
       {showHistory && <ScanHistoryModal runs={runs} onClose={() => setShowHistory(false)} />}
+
+      {showAgent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowAgent(false)} />
+          <div className="relative w-full max-w-2xl h-[85vh] flex flex-col bg-card rounded-2xl border border-border shadow-2xl overflow-hidden">
+            <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+              <h2 className="text-sm font-extrabold flex items-center gap-2">
+                <Bot className="w-4 h-4 text-primary" /> Agente de Segurança
+              </h2>
+              <button onClick={() => setShowAgent(false)} className="p-1 rounded-lg hover:bg-accent text-muted-foreground">×</button>
+            </div>
+            <div className="flex-1 flex flex-col min-h-0">
+              <SecurityAgentChat />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

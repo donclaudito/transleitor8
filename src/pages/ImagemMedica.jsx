@@ -35,8 +35,8 @@ export default function ImagemMedica() {
   const inputRef = useRef(null);
 
   const { data: visionProviders = [] } = useQuery({
-    queryKey: ['llm-configs-vision'],
-    queryFn: () => base44.entities.LLMConfig.filter({ is_active: true, supports_image: true }),
+    queryKey: ['llm-providers-vision'],
+    queryFn: async () => (await base44.functions.invoke('listLLMProviders', { supports_image: true })).data?.providers ?? [],
   });
 
   const onFile = (e) => {

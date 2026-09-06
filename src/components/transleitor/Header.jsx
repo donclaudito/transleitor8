@@ -78,7 +78,7 @@ export default function Header({ view, setView, theme, setTheme, onNewEvolution,
                     className={`w-full text-left flex items-center gap-2.5 px-4 py-2.5 text-xs hover:bg-accent transition-colors ${selectedLLMId === p.id ? 'bg-primary/10 text-primary font-bold' : ''}`}
                   >
                     <Cpu className="w-3.5 h-3.5" />
-                    <span className="flex-1 truncate">{p.provider_name} — {p.model_name}</span>
+                    <span className="flex-1 truncate">{p.provider_name}</span>
                     {selectedLLMId === p.id && <span className="text-[10px] text-green-500 font-bold">✓</span>}
                   </button>
                 ))}

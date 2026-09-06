@@ -43,7 +43,7 @@ export default function ProviderSelector({ providers = [], selectedId, onSelect 
                   className={`w-full text-left flex items-center gap-2.5 px-4 py-2.5 text-xs hover:bg-accent transition-colors ${selectedId === p.id ? 'bg-primary/10 text-primary font-bold' : ''}`}
                 >
                   <ImageIcon className="w-3.5 h-3.5" />
-                  <span className="flex-1 truncate">{p.provider_name} — {p.model_name}</span>
+                  <span className="flex-1 truncate">{p.provider_name}</span>
                   {selectedId === p.id && <Check className="w-3 h-3 text-green-500" />}
                 </button>
               ))}

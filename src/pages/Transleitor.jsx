@@ -47,8 +47,8 @@ export default function Transleitor() {
   });
 
   const { data: llmProviders = [] } = useQuery({
-    queryKey: ['llm-configs'],
-    queryFn: () => base44.entities.LLMConfig.filter({ is_active: true }, 'provider_name', 20),
+    queryKey: ['llm-providers'],
+    queryFn: async () => (await base44.functions.invoke('listLLMProviders', {})).data?.providers ?? [],
   });
 
   const [selectedLLMId, setSelectedLLMId] = useState('');

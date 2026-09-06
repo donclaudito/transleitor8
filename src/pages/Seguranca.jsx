@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ShieldAlert, ScanLine, History as HistoryIcon, ClipboardCopy, Printer, Bot } from 'lucide-react';
+import { ShieldAlert, ScanLine, History as HistoryIcon, ClipboardCopy, Printer, Bot, AlertTriangle } from 'lucide-react';
 import FindingDetailModal from '@/components/security/FindingDetailModal';
 import SecurityAgentChat from '@/components/security/SecurityAgentChat';
 import ScanHistoryModal from '@/components/security/ScanHistoryModal';
@@ -236,6 +236,12 @@ export default function Seguranca() {
                   </div>
                   <p className="text-xs font-bold mt-1">{f.title}</p>
                   <p className="text-[11px] text-muted-foreground line-clamp-2">{f.evidence}</p>
+                  {f.status === 'falso_positivo' && (
+                    <p className="text-[10px] font-semibold text-amber-500 mt-1 flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3 flex-shrink-0" />
+                      Achado marcado como falso positivo — evidência não verificável ou fora do escopo do app.
+                    </p>
+                  )}
                 </button>
                 <div className="flex flex-col gap-1 flex-shrink-0">
                   {f.status === 'aberto' && (

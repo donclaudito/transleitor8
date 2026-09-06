@@ -3,11 +3,12 @@ import { base44 } from '@/api/base44Client';
 import { Send, Loader2, ShieldAlert } from 'lucide-react';
 import MessageBubble from '@/components/elio/MessageBubble';
 
+// Auditorias guiadas: prompts focados que só aceitam evidência consultável.
 const SUGGESTIONS = [
-  'Faça uma auditoria Red Team das configurações do app',
-  'Faça uma auditoria Blue Team das permissões e do RLS das entidades clínicas',
-  'Revise os provedores de IA (LLMConfig) em busca de exposição de chaves',
-  'Revise os links do app (AppLink) em busca de URLs inseguras',
+  'Audite apenas os provedores de IA (LLMConfig): liste api_url, api_key_env_var, supports_image e is_active, e sinalize só o que estiver comprovadamente inseguro (URL http://, variável de chave vazia, chave gravada no cadastro). Se algo não puder ser consultado, diga "sem acesso para verificar".',
+  'Audite apenas os links do app (AppLink): liste nome, url e status, sinalizando somente URLs sem TLS (http://) ou destinos suspeitos. Se algo não puder ser consultado, diga "sem acesso para verificar".',
+  'Faça uma auditoria Blue Team da segregação de dados clínicos (Evolution, Patient): analise com base SOMENTE no que puder consultar e nos achados registrados; o que não puder verificar, declare "sem acesso para verificar".',
+  'Resuma a postura de segurança atual com base SOMENTE nos achados registrados no painel — sem especular vulnerabilidades não evidenciadas.',
 ];
 
 // Chat com o Agente de Segurança: auditoria Red/Blue Team com evidências, roteada

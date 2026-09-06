@@ -22,6 +22,7 @@ export default function CustomPanelItems({ panel, title, groups = [], onAppend }
   const [newGroup, setNewGroup] = useState('');
   const [dupTarget, setDupTarget] = useState('');
   const [selected, setSelected] = useState([]);
+  const [flashId, setFlashId] = useState(null);
   const queryClient = useQueryClient();
   const { isFavorite, toggleFavorite } = usePanelFavorites(panel);
 
@@ -45,6 +46,9 @@ export default function CustomPanelItems({ panel, title, groups = [], onAppend }
       if (duplicate && duplicateTo) {
         queryClient.setQueryData(['panel-custom-items', duplicateTo], (old = []) => [...old, duplicate]);
       }
+      // Flash: destaca brevemente o item novo para o médico localizar onde caiu.
+      setFlashId(created.id);
+      setTimeout(() => setFlashId((cur) => (cur === created.id ? null : cur)), 1800);
     },
   });
 
@@ -111,15 +115,17 @@ export default function CustomPanelItems({ panel, title, groups = [], onAppend }
               <div className="flex flex-wrap gap-1.5">
                 {itemsByGroup[label].map((rec) => {
                   const active = selected.includes(rec.name);
+                  const flashing = flashId === rec.id;
                   return (
                     <span
                       key={rec.id}
                       onClick={() => handleToggle(rec.name)}
+                      ref={flashing ? (el) => el?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }) : undefined}
                       className={`inline-flex items-center gap-0.5 px-2.5 py-1 rounded-lg text-[11px] font-medium border transition-all cursor-pointer ${
                         active
                           ? 'bg-primary/15 border-primary/40 text-primary ring-1 ring-primary/30'
                           : 'border-border text-muted-foreground hover:border-primary/30 hover:text-foreground'
-                      }`}>
+                      } ${flashing ? 'ring-2 ring-primary/70 bg-primary/15 border-primary/50 animate-pulse' : ''}`}>
                       <FavoriteStar active={isFavorite(rec.name)} onToggle={() => toggleFavorite(rec.name, rec.group_label || 'Meus itens')} />
                       {active && <span>✓</span>}
                       {rec.name}

@@ -181,6 +181,15 @@ REDAÇÃO FINAL (OBRIGATÓRIA):
 - PROIBIDO marcações de preenchimento: nunca escreva "..." (reticências) nem parênteses de orientação como "(liste...)" ou "(analise...)" — escreva o texto clínico direto, já redigido.
 - PROIBIDO preencher seção sem dados com "(dados não fornecidos)", "(sem dados)" ou parênteses equivalentes — seção sem dado fica vazia ou é omitida.`;
 
+  const clinicalContextRule = `
+
+REGRA CLÍNICA — NÃO PRESUMIR PÓS-OPERATÓRIO (OBRIGATÓRIA):
+1. NÃO presuma que o paciente é pós-operatório apenas pelo setor (UTI, Pronto Socorro, Emergência, Enfermaria). O setor não define a condição cirúrgica.
+2. Trate o paciente como cirúrgico/pós-operatório (mencionar DPO, cirurgia, procedimento, ferida operatória, curativo) SOMENTE se isso estiver explicitamente indicado na Descrição Clínica Atual ou nas evoluções anteriores fornecidas.
+3. Varrer as evoluções anteriores: se o médico não identificou o paciente como pós-operatório (sem menção a cirurgia, DPO ou procedimento cirúrgico), trate o paciente como CLÍNICO daquele setor, com raciocínio de caso não cirúrgico.
+4. Em caso de ambiguidade, opte por NÃO rotular o paciente como cirúrgico.
+5. As orientações de setor que citam raciocínio pós-operatório são CONDICIONAIS: descrevem como raciocinar QUANDO o paciente for cirúrgico — não autorizam assumir cirurgia sem evidência explícita nos dados.`;
+
   const simulateStream = (fullText, onChunk, onDone) => {
     const words = fullText.split(' ');
     let i = 0, accumulated = '';
@@ -266,7 +275,7 @@ REGRAS (OBRIGATÓRIAS):
 Gere uma evolução SOAP em formato HTML (tags semânticas), técnica, precisa, pronta para prontuário. NÃO invente dados.
 ${sectorHint ? `\nFoco de setor: ${sectorHint}` : ''}${consultorioLine ? `\n${consultorioLine}` : ''}
 
-${patientData}${correlationBlock}
+${patientData}${correlationBlock}${clinicalContextRule}
 
 Formato obrigatório (use APENAS tags HTML, sem Markdown) — quatro seções, nesta ordem, cada uma com o título exato abaixo seguido dos parágrafos com o conteúdo clínico já redigido:
 <h2>S — Subjetivo</h2>
@@ -289,7 +298,7 @@ ${HUMANIZACAO}`;
 Gere uma evolução clínica em formato HTML (tags semânticas) NARRATIVA, concisa e profissional, pronta para prontuário. NÃO invente dados.
 ${sectorHint ? `\nFoco de setor: ${sectorHint}` : ''}${consultorioLine ? `\n${consultorioLine}` : ''}
 
-${patientData}${correlationBlock}
+${patientData}${correlationBlock}${clinicalContextRule}
 
 Estruture a evolução clínica OBRIGATORIAMENTE nesta ordem exata. O CONTEÚDO de cada seção é:
 - Hipótese(s) Diagnóstica(s): hipóteses diagnósticas do quadro atual.
@@ -323,7 +332,7 @@ ${HUMANIZACAO}`;
 Gere uma evolução clínica ULTRACONCISA, objetiva e telegráfica em formato HTML, para leitura RÁPIDA pelo médico que assumirá o plantão. NÃO invente dados.
 ${sectorHint ? `\nFoco de setor: ${sectorHint}` : ''}${consultorioLine ? `\n${consultorioLine}` : ''}
 
-${patientData}${correlationBlock}
+${patientData}${correlationBlock}${clinicalContextRule}
 
 Mantenha a MESMA sequência de seções abaixo, EXTREMAMENTE breve em cada campo (máximo 1-2 linhas, frases curtas e diretas, sem floreios). O CONTEÚDO de cada seção é:
 - Hipótese(s) Diagnóstica(s): hipóteses do quadro atual.

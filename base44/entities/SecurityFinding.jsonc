@@ -1,0 +1,76 @@
+{
+  "name": "SecurityFinding",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "T\u00edtulo resumido do achado de seguran\u00e7a"
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "critica",
+        "alta",
+        "media",
+        "baixa"
+      ],
+      "description": "Severidade do achado"
+    },
+    "category": {
+      "type": "string",
+      "description": "Categoria do achado (configuracao, criptografia, exposicao...)"
+    },
+    "vector": {
+      "type": "string",
+      "enum": [
+        "red",
+        "blue"
+      ],
+      "description": "Vector da an\u00e1lise: Red Team (ofensivo) ou Blue Team (defensivo)"
+    },
+    "evidence": {
+      "type": "string",
+      "description": "Evid\u00eancia t\u00e9cnica do achado"
+    },
+    "fix": {
+      "type": "string",
+      "description": "Corre\u00e7\u00e3o recomendada"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "aberto",
+        "revisao",
+        "corrigido",
+        "falso_positivo"
+      ],
+      "default": "aberto",
+      "description": "Status do achado"
+    }
+  },
+  "required": [
+    "title"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

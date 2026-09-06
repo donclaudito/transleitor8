@@ -1,0 +1,68 @@
+{
+  "name": "SecurityAuditLog",
+  "type": "object",
+  "properties": {
+    "finding_id": {
+      "type": "string",
+      "description": "ID do achado ao qual o registro de auditoria se refere"
+    },
+    "finding_title": {
+      "type": "string",
+      "description": "T\u00edtulo do achado (denormalizado \u2014 a trilha sobrevive \u00e0 exclus\u00e3o)"
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "criado",
+        "revisao",
+        "corrigido",
+        "falso_positivo",
+        "reaberto",
+        "excluido"
+      ],
+      "description": "A\u00e7\u00e3o realizada sobre o achado"
+    },
+    "old_status": {
+      "type": "string",
+      "description": "Status anterior do achado"
+    },
+    "new_status": {
+      "type": "string",
+      "description": "Novo status do achado"
+    },
+    "user_name": {
+      "type": "string",
+      "description": "Nome do usu\u00e1rio que realizou a a\u00e7\u00e3o"
+    },
+    "note": {
+      "type": "string",
+      "description": "Observa\u00e7\u00e3o adicional"
+    }
+  },
+  "required": [
+    "finding_id",
+    "action"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

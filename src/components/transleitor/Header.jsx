@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
-import { Stethoscope, History, Plus, Settings, Calculator, Wrench, Sun, Moon, BookOpen, ChevronDown, ExternalLink, Cpu, ClipboardList, ScanLine, Bot, Activity } from 'lucide-react';
+import { Stethoscope, History, Plus, Settings, Calculator, Wrench, Sun, Moon, BookOpen, ChevronDown, ExternalLink, Cpu, ClipboardList, ScanLine, Bot, Activity, ShieldAlert } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 
@@ -20,6 +20,13 @@ export default function Header({ view, setView, theme, setTheme, onNewEvolution,
   });
   const isAdmin = user?.role === 'admin';
   const activeApps = appLinks.filter(l => l.ativo !== false);
+  const { data: securityFindings = [] } = useQuery({
+    queryKey: ['security-findings-header'],
+    queryFn: () => base44.entities.SecurityFinding.filter({}),
+    enabled: isAdmin,
+    refetchInterval: 60000,
+  });
+  const openSecurityCount = securityFindings.filter(f => f.status === 'aberto' || f.status === 'revisao').length;
 
   const navButtons = [
     { id: 'history', icon: History, label: 'Histórico' },
@@ -126,6 +133,18 @@ export default function Header({ view, setView, theme, setTheme, onNewEvolution,
         className="p-2.5 rounded-xl text-muted-foreground hover:text-primary hover:bg-accent transition-all">
         <Bot className="w-4 h-4" />
       </Link>
+
+      {isAdmin && (
+        <Link to="/seguranca" title="Segurança"
+          className="relative p-2.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
+          <ShieldAlert className="w-4 h-4" />
+          {openSecurityCount > 0 && (
+            <span className="absolute top-0.5 right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center pointer-events-none">
+              {openSecurityCount > 99 ? '99+' : openSecurityCount}
+            </span>
+          )}
+        </Link>
+      )}
 
       {isAdmin && (
         <Link to="/monitoramento" title="Monitoramento de IA"

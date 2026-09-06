@@ -17,6 +17,7 @@ import GerenciarApps from '@/pages/GerenciarApps';
 import DevDocs from '@/pages/DevDocs';
 import AdminLLMs from '@/pages/AdminLLMs';
 import Monitoramento from '@/pages/Monitoramento';
+import Seguranca from '@/pages/Seguranca';
 import Passagem from '@/pages/Passagem';
 import ImagemMedica from '@/pages/ImagemMedica';
 import Elio from '@/pages/Elio';
@@ -58,6 +59,7 @@ const AuthenticatedApp = () => {
           <Route path="/dev-docs" element={<DevDocs />} />
           <Route path="/admin-llms" element={<AdminLLMs />} />
           <Route path="/monitoramento" element={<Monitoramento />} />
+          <Route path="/seguranca" element={<Seguranca />} />
           <Route path="/passagem" element={<Passagem />} />
           <Route path="/imagem-medica" element={<ImagemMedica />} />
           <Route path="/elio" element={<Elio />} />

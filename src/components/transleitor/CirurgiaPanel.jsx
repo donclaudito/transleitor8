@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronRight, PanelLeft, Search, Scissors, Activity, Stethoscope, ClipboardList, FlaskConical } from 'lucide-react';
+import CustomPanelItems from './CustomPanelItems';
+import PanelFavoritesBlock from './PanelFavoritesBlock';
+import FavoriteStar from './FavoriteStar';
+import { usePanelFavorites } from '@/hooks/usePanelFavorites';
 
 const CIRURGIA_DATA = {
   identificacao: {
@@ -143,7 +147,7 @@ function fuzzyMatch(text, query) {
   return qi === q.length;
 }
 
-function AccordionGroup({ group, selectedItems, onToggle, colorClasses, searchTerm }) {
+function AccordionGroup({ group, selectedItems, onToggle, colorClasses, searchTerm, isFavorite, toggleFavorite }) {
   const [open, setOpen] = useState(false);
   const selectedCount = group.items.filter(i => selectedItems.includes(i)).length;
   const filteredItems = group.items.filter(item => fuzzyMatch(item, searchTerm));
@@ -174,6 +178,7 @@ function AccordionGroup({ group, selectedItems, onToggle, colorClasses, searchTe
                     ? `${colorClasses.bg} ${colorClasses.border} ${colorClasses.color} ring-1 ${colorClasses.ring}`
                     : 'border-border text-muted-foreground hover:border-muted-foreground/40 hover:text-foreground'
                 }`}>
+                <FavoriteStar active={isFavorite(item)} onToggle={() => toggleFavorite(item, group.label)} />
                 {active && <span className="mr-1">✓</span>}
                 {item}
               </button>
@@ -185,7 +190,7 @@ function AccordionGroup({ group, selectedItems, onToggle, colorClasses, searchTe
   );
 }
 
-function SectionAccordion({ section, selectedItems, onToggle, searchTerm, defaultOpen }) {
+function SectionAccordion({ section, selectedItems, onToggle, searchTerm, defaultOpen, isFavorite, toggleFavorite }) {
   const [open, setOpen] = useState(defaultOpen ?? true);
   const totalSelected = section.groups.flatMap(g => g.items).filter(i => selectedItems.includes(i)).length;
   const hasMatches = !searchTerm || section.groups.some(g => g.items.some(item => fuzzyMatch(item, searchTerm)));
@@ -213,7 +218,7 @@ function SectionAccordion({ section, selectedItems, onToggle, searchTerm, defaul
           {section.groups.map(g => (
             <AccordionGroup key={g.label} group={g} selectedItems={selectedItems} onToggle={onToggle}
               colorClasses={{ bg: section.bg, border: section.border, color: section.color, ring: section.ring }}
-              searchTerm={searchTerm} />
+              searchTerm={searchTerm} isFavorite={isFavorite} toggleFavorite={toggleFavorite} />
           ))}
         </div>
       )}
@@ -225,6 +230,7 @@ export default function CirurgiaPanel({ onAppend }) {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const { isFavorite, toggleFavorite } = usePanelFavorites('cirurgia');
 
   const handleToggle = (item) => {
     setSelected(prev => prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item]);
@@ -291,6 +297,7 @@ export default function CirurgiaPanel({ onAppend }) {
               </div>
 
               <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                <PanelFavoritesBlock panel="cirurgia" onToggle={handleToggle} selectedItems={selected} />
                 {Object.entries(CIRURGIA_DATA).map(([key, section]) => (
                   <SectionAccordion
                     key={key}
@@ -299,8 +306,11 @@ export default function CirurgiaPanel({ onAppend }) {
                     onToggle={handleToggle}
                     searchTerm={searchTerm}
                     defaultOpen={key === 'identificacao'}
+                    isFavorite={isFavorite}
+                    toggleFavorite={toggleFavorite}
                   />
                 ))}
+                <CustomPanelItems panel="cirurgia" title="Cirurgia" onAppend={onAppend} />
               </div>
 
               <div className="p-4 border-t border-border flex-shrink-0 space-y-2">

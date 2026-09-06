@@ -1,5 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { ChevronDown, ChevronRight, PanelRight, Search, Sparkles } from 'lucide-react';
+import CustomPanelItems from './CustomPanelItems';
+import PanelFavoritesBlock from './PanelFavoritesBlock';
+import FavoriteStar from './FavoriteStar';
+import { usePanelFavorites } from '@/hooks/usePanelFavorites';
 
 const SYMPTOMS_DATA = {
   subjetivo: {
@@ -243,7 +247,7 @@ function getSuggestedItems(clinicalText) {
   return suggestions;
 }
 
-function AccordionGroup({ group, selectedItems, onToggle, colorClasses, searchTerm, suggestedItems }) {
+function AccordionGroup({ group, selectedItems, onToggle, colorClasses, searchTerm, suggestedItems, isFavorite, toggleFavorite }) {
   const [open, setOpen] = useState(false);
   const selectedCount = group.items.filter(i => selectedItems.includes(i)).length;
 
@@ -283,6 +287,7 @@ function AccordionGroup({ group, selectedItems, onToggle, colorClasses, searchTe
                       ? 'border-amber-400/60 text-amber-600 bg-amber-500/10 ring-1 ring-amber-400/30 animate-pulse'
                       : 'border-border text-muted-foreground hover:border-muted-foreground/40 hover:text-foreground'
                 }`}>
+                <FavoriteStar active={isFavorite(item)} onToggle={() => toggleFavorite(item, group.label)} />
                 {active && <span className="mr-1">✓</span>}
                 {suggested && !active && <Sparkles className="w-3 h-3 inline mr-1 text-amber-400" />}
                 {item}
@@ -295,7 +300,7 @@ function AccordionGroup({ group, selectedItems, onToggle, colorClasses, searchTe
   );
 }
 
-function SectionAccordion({ sectionKey, section, selectedItems, onToggle, searchTerm, suggestedItems, defaultOpen }) {
+function SectionAccordion({ sectionKey, section, selectedItems, onToggle, searchTerm, suggestedItems, defaultOpen, isFavorite, toggleFavorite }) {
   const [open, setOpen] = useState(defaultOpen || sectionKey === 'subjetivo');
   const totalSelected = section.groups.flatMap(g => g.items).filter(i => selectedItems.includes(i)).length;
 
@@ -327,7 +332,8 @@ function SectionAccordion({ sectionKey, section, selectedItems, onToggle, search
           {section.groups.map(g => (
             <AccordionGroup key={g.label} group={g} selectedItems={selectedItems} onToggle={onToggle}
               colorClasses={{ bg: section.bg, border: section.border, color: section.color, ring: section.ring }}
-              searchTerm={searchTerm} suggestedItems={suggestedItems} />
+              searchTerm={searchTerm} suggestedItems={suggestedItems}
+              isFavorite={isFavorite} toggleFavorite={toggleFavorite} />
           ))}
         </div>
       )}
@@ -339,6 +345,7 @@ export default function SymptomsPanel({ onAppend, clinicalDescription = '' }) {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const { isFavorite, toggleFavorite } = usePanelFavorites('sintomas');
 
   const suggestedItems = useMemo(() => getSuggestedItems(clinicalDescription), [clinicalDescription]);
 
@@ -417,6 +424,7 @@ export default function SymptomsPanel({ onAppend, clinicalDescription = '' }) {
 
               {/* Scrollable content */}
               <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                <PanelFavoritesBlock panel="sintomas" onToggle={handleToggle} selectedItems={selected} />
                 {Object.entries(SYMPTOMS_DATA).map(([key, section]) => (
                   <SectionAccordion
                     key={key}
@@ -426,8 +434,11 @@ export default function SymptomsPanel({ onAppend, clinicalDescription = '' }) {
                     onToggle={handleToggle}
                     searchTerm={searchTerm}
                     suggestedItems={suggestedItems}
+                    isFavorite={isFavorite}
+                    toggleFavorite={toggleFavorite}
                   />
                 ))}
+                <CustomPanelItems panel="sintomas" title="Sintomas" onAppend={onAppend} />
               </div>
 
               {/* Footer */}

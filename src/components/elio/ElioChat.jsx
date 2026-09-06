@@ -18,7 +18,7 @@ const titleFromContent = (content) => {
   return t.length > 40 ? t.slice(0, 40).trim() + '…' : t || 'Nova conversa';
 };
 
-export default function ElioChat({ conversationId, onConversationCreated }) {
+export default function ElioChat({ conversationId, onConversationCreated, selectedLLMId }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -61,6 +61,12 @@ export default function ElioChat({ conversationId, onConversationCreated }) {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages, pendingFiles]);
 
+  // Troca de modelo: inicia nova conversa local (limpa mensagens e anexos pendentes).
+  useEffect(() => {
+    setMessages([]);
+    setPendingFiles([]);
+  }, [selectedLLMId]);
+
   const handleSelectFiles = (e) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
@@ -95,6 +101,32 @@ export default function ElioChat({ conversationId, onConversationCreated }) {
   const send = async (text) => {
     const content = (text ?? input).trim();
     if (!content && !pendingFiles.length || loading || uploading) return;
+
+    // Provedor externo selecionado: conversa local da sessão via elioChat.
+    if (selectedLLMId) {
+      if (!content) return;
+      setInput('');
+      const nextMessages = [...messages, { role: 'user', content }];
+      setMessages(nextMessages);
+      setLoading(true);
+      try {
+        const res = await base44.functions.invoke('elioChat', { messages: nextMessages, llm_config_id: selectedLLMId });
+        const reply = res?.data?.text;
+        if (!reply) throw new Error(res?.data?.error || 'Resposta vazia do provedor.');
+        setMessages((prev) => [...prev, { role: 'assistant', content: reply }]);
+      } catch (e) {
+        const reason = (e?.response?.data?.error || e.message || 'erro desconhecido')
+          .replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+        setMessages((prev) => [...prev, {
+          role: 'assistant',
+          content: `<p><strong>⚠️ Erro ao responder com o provedor selecionado:</strong> ${reason}</p><p>Sua mensagem foi mantida acima — tente novamente ou volte ao modo padrão (Elvio).</p>`,
+        }]);
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
     const fileUrls = await uploadFiles();
     const finalContent = content || (pendingFiles.length ? `Enviei ${pendingFiles.length} anexo(s).` : '');
     setInput('');
@@ -172,12 +204,14 @@ export default function ElioChat({ conversationId, onConversationCreated }) {
         }
         <form onSubmit={(e) => {e.preventDefault();send();}} className="flex gap-2 items-end">
           <input ref={fileInputRef} type="file" accept={ACCEPTED_TYPES} multiple onChange={handleSelectFiles} className="hidden" />
+          {!selectedLLMId && (
           <button type="button" onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
           title="Anexar arquivo (imagem, PDF, documento)"
           className="p-3 rounded-2xl border border-border bg-card text-muted-foreground hover:text-primary hover:border-primary/40 disabled:opacity-40 transition-all btn-press flex-shrink-0">
             {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Paperclip className="w-4 h-4" />}
           </button>
+          )}
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}

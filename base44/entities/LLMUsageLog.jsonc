@@ -6,7 +6,8 @@
       "type": "string",
       "enum": [
         "evolucao",
-        "imagem"
+        "imagem",
+        "conversa"
       ],
       "description": "Fluxo de origem da chamada de IA"
     },

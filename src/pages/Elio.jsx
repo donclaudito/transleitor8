@@ -1,10 +1,34 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Stethoscope } from 'lucide-react';
+import { ArrowLeft, Stethoscope, Zap } from 'lucide-react';
+import { base44 } from '@/api/base44Client';
+import { useQuery } from '@tanstack/react-query';
 import ElioChat from '@/components/elio/ElioChat';
+import ElioModelSelector from '@/components/elio/ElioModelSelector';
+
+const STORAGE_KEY = 'elvio_selected_llm_id';
 
 export default function Elio() {
   const [activeConversationId, setActiveConversationId] = useState(null);
+  const [selectedLLMId, setSelectedLLMId] = useState(() => {
+    try { return localStorage.getItem(STORAGE_KEY) || ''; } catch { return ''; }
+  });
+
+  const { data: llmProviders = [] } = useQuery({
+    queryKey: ['llm-providers'],
+    queryFn: async () => (await base44.functions.invoke('listLLMProviders', {})).data?.providers ?? [],
+  });
+
+  const selectedProvider = llmProviders.find(p => p.id === selectedLLMId);
+
+  const changeLLM = (id) => {
+    setSelectedLLMId(id);
+    try {
+      if (id) localStorage.setItem(STORAGE_KEY, id);
+      else localStorage.removeItem(STORAGE_KEY);
+    } catch { /* persistência best-effort */ }
+    setActiveConversationId(null); // trocar de modelo inicia nova conversa
+  };
 
   const handleCreated = (id) => setActiveConversationId(id);
 
@@ -21,10 +45,21 @@ export default function Elio() {
           <h1 className="text-base font-extrabold leading-tight">Elvio</h1>
           <p className="text-[11px] text-muted-foreground -mt-0.5">Assistente clínico</p>
         </div>
+        <ElioModelSelector providers={llmProviders} selectedId={selectedLLMId} onSelect={changeLLM} />
       </header>
 
+      {selectedProvider && (
+        <div className="px-4 pt-2">
+          <p className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1.5 max-w-3xl mx-auto w-full">
+            <Zap className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+            <span>Elvio respondendo com: <span className="text-primary">{selectedProvider.provider_name}</span></span>
+            <span className="font-normal text-muted-foreground/70 hidden sm:inline">— conversa local desta sessão, sem histórico salvo</span>
+          </p>
+        </div>
+      )}
+
       <main className="flex-1 flex flex-col min-w-0">
-        <ElioChat conversationId={activeConversationId} onConversationCreated={handleCreated} />
+        <ElioChat conversationId={activeConversationId} onConversationCreated={handleCreated} selectedLLMId={selectedLLMId} />
       </main>
     </div>
   );

@@ -1,0 +1,79 @@
+{
+  "name": "FonteImaginologia",
+  "type": "object",
+  "properties": {
+    "modalidade": {
+      "type": "string",
+      "enum": [
+        "tc",
+        "us",
+        "rm",
+        "ri"
+      ],
+      "description": "Modalidade do trecho: tc (tomografia), us (ultrassonografia), rm (resson\u00e2ncia), ri (radiologia intervencionista)"
+    },
+    "populacao": {
+      "type": "string",
+      "description": "Popula\u00e7\u00e3o-alvo do documento (ex: adultos, gestantes, pediatria). Vazio = geral"
+    },
+    "tipo_documento": {
+      "type": "string",
+      "description": "Tipo do documento (guideline, consenso, manual de seguran\u00e7a, revis\u00e3o, atlas...)"
+    },
+    "nivel_confianca": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "N\u00edvel de confian\u00e7a da fonte: 1 (guidelines/consensos) a 5 (datasets)"
+    },
+    "data_publicacao": {
+      "type": "string",
+      "description": "Ano ou data de publica\u00e7\u00e3o do documento"
+    },
+    "organizacao": {
+      "type": "string",
+      "description": "Organiza\u00e7\u00e3o respons\u00e1vel pela fonte (ex: ACR, Fleischner Society, ISUOG, SIR)"
+    },
+    "documento": {
+      "type": "string",
+      "description": "Nome do documento de origem do trecho"
+    },
+    "versao": {
+      "type": "string",
+      "description": "Vers\u00e3o/edi\u00e7\u00e3o do documento (importante para sistemas RADS versionados)"
+    },
+    "trecho": {
+      "type": "string",
+      "description": "Texto do trecho (chunk) do documento, at\u00e9 ~2000 caracteres"
+    },
+    "ordem_no_documento": {
+      "type": "number",
+      "description": "Ordem do trecho dentro do documento original"
+    }
+  },
+  "required": [
+    "modalidade",
+    "organizacao",
+    "documento",
+    "nivel_confianca",
+    "trecho"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

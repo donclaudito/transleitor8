@@ -10,6 +10,7 @@ import EmergenciaPanel from './EmergenciaPanel';
 import IdCaptureButton from './IdCaptureButton';
 import ConsultasPrevias from './ConsultasPrevias';
 import PhraseSelector from './PhraseSelector';
+import InserirCapturas from './InserirCapturas';
 
 const GASTRO_QUICK_COMORBS = ['HAS', 'DM2', 'Dislipidemia', 'Tabagismo', 'DRC', 'ICC', 'DPOC', 'Obesidade', 'Alergia', 'Hepatopatia', 'Diabetes Gestacional', 'Etilismo', 'Hipotireoidismo', 'Retocolite Ulcerativa', 'HIV'];
 
@@ -231,9 +232,12 @@ export default function FormView({
 
       {/* Exames */}
       <div className="glass-card rounded-2xl p-5 space-y-3">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-          <FlaskConical className="w-3.5 h-3.5" /> Exames Complementares
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+            <FlaskConical className="w-3.5 h-3.5" /> Exames Complementares
+          </h3>
+          <InserirCapturas formData={formData} setFormData={setFormData} />
+        </div>
         <p className="text-[11px] text-muted-foreground -mt-1">Cole todos os exames (dias anteriores + atuais) para a IA analisar a evolução cronológica dos valores.</p>
         <textarea rows={3} placeholder="Resultados de exames laboratoriais e de imagem (dias anteriores + atuais)..."
           value={formData.labs} onChange={e => setFormData({ ...formData, labs: e.target.value })}

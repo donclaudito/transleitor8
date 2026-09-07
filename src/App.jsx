@@ -21,6 +21,7 @@ import Seguranca from '@/pages/Seguranca';
 import Passagem from '@/pages/Passagem';
 import ImagemMedica from '@/pages/ImagemMedica';
 import Elio from '@/pages/Elio';
+import Capturas from '@/pages/Capturas';
 import IdleTimeout from '@/components/IdleTimeout';
 
 const AuthenticatedApp = () => {
@@ -63,6 +64,7 @@ const AuthenticatedApp = () => {
           <Route path="/passagem" element={<Passagem />} />
           <Route path="/imagem-medica" element={<ImagemMedica />} />
           <Route path="/elio" element={<Elio />} />
+          <Route path="/capturas" element={<Capturas />} />
         </Route>
         <Route path="*" element={<PageNotFound />} />
       </Routes>

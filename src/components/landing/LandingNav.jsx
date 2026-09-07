@@ -1,9 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Menu, X, Stethoscope, ArrowRight } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
 
 export default function LandingNav() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { data: authed } = useQuery({
+    queryKey: ['is-authenticated'],
+    queryFn: () => base44.auth.isAuthenticated(),
+    staleTime: 60000,
+  });
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -34,6 +41,11 @@ export default function LandingNav() {
               {l.label}
             </a>
           ))}
+          {authed && (
+            <Link to="/capturas" className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary/10 text-primary border border-primary/30 text-sm font-bold hover:bg-primary/20 transition-all">
+              📄 Capturar laudo/exame
+            </Link>
+          )}
           <Link to="/transleitor" className="group inline-flex items-center gap-1.5 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-bold hover:opacity-90 transition-all shadow-lg btn-press">
             Acessar App <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
           </Link>
@@ -49,6 +61,11 @@ export default function LandingNav() {
               {l.label}
             </a>
           ))}
+          {authed && (
+            <Link to="/capturas" className="block px-5 py-2.5 rounded-xl bg-primary/10 text-primary border border-primary/30 text-sm font-bold text-center" onClick={() => setMenuOpen(false)}>
+              📄 Capturar laudo/exame
+            </Link>
+          )}
           <Link to="/transleitor" className="block px-5 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-bold text-center" onClick={() => setMenuOpen(false)}>
             Acessar App
           </Link>

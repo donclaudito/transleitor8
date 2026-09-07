@@ -9,6 +9,7 @@ import PSPanel from './PSPanel';
 import EmergenciaPanel from './EmergenciaPanel';
 import IdCaptureButton from './IdCaptureButton';
 import ConsultasPrevias from './ConsultasPrevias';
+import PhraseSelector from './PhraseSelector';
 
 const GASTRO_QUICK_COMORBS = ['HAS', 'DM2', 'Dislipidemia', 'Tabagismo', 'DRC', 'ICC', 'DPOC', 'Obesidade', 'Alergia', 'Hepatopatia', 'Diabetes Gestacional', 'Etilismo', 'Hipotireoidismo', 'Retocolite Ulcerativa', 'HIV'];
 
@@ -33,6 +34,15 @@ export default function FormView({
       const lastChar = current.slice(-1);
       const separator = ['.', ';', '\n'].includes(lastChar) ? ' ' : ', ';
       return { ...prev, clinicalDescription: current + separator + item };
+    });
+  };
+  const appendToPrescription = (item) => {
+    setFormData(prev => {
+      const current = prev.prescription.trimEnd();
+      if (!current) return { ...prev, prescription: item };
+      const lastChar = current.slice(-1);
+      const separator = ['.', ';', '\n'].includes(lastChar) ? ' ' : ', ';
+      return { ...prev, prescription: current + separator + item };
     });
   };
   const normalizedSector = (formData.sector || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -205,6 +215,9 @@ export default function FormView({
             className="w-full px-4 py-3 rounded-xl bg-muted border border-border text-sm resize-none focus:outline-none focus:border-primary/50 transition-all" />
         </div>
       )}
+
+      {/* Frases pré-definidas */}
+      <PhraseSelector onInsert={{ clinical: appendToClinical, prescription: appendToPrescription }} />
 
       {/* Descrição Clínica */}
       <div className="glass-card rounded-2xl p-5 space-y-3">

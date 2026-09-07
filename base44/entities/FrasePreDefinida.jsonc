@@ -1,0 +1,72 @@
+{
+  "name": "FrasePreDefinida",
+  "type": "object",
+  "properties": {
+    "categoria": {
+      "type": "string",
+      "enum": [
+        "exame_fisico",
+        "plano_conduta"
+      ],
+      "description": "Categoria da frase: exame_fisico (descri\u00e7\u00f5es de exame f\u00edsico) ou plano_conduta (planos de conduta)"
+    },
+    "texto": {
+      "type": "string",
+      "description": "Texto da frase pr\u00e9-definida"
+    }
+  },
+  "required": [
+    "categoria",
+    "texto"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

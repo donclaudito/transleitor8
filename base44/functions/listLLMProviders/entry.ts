@@ -15,6 +15,9 @@ export default async function(req) {
     const filters = { is_active: true, ...(supportsImage ? { supports_image: true } : {}) };
 
     const providers = await base44.asServiceRole.entities.LLMConfig.filter(filters);
+    // Ordem determinística (mais antigo primeiro) — o primeiro da lista é o
+    // mesmo padrão usado como fallback no backend.
+    providers.sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
     return Response.json({
       providers: providers.map(p => ({ id: p.id, provider_name: p.provider_name })),
     });

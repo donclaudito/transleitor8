@@ -9,7 +9,6 @@ import PSPanel from './PSPanel';
 import EmergenciaPanel from './EmergenciaPanel';
 import IdCaptureButton from './IdCaptureButton';
 import ConsultasPrevias from './ConsultasPrevias';
-import LaudoCaptureButton from './LaudoCaptureButton';
 
 const GASTRO_QUICK_COMORBS = ['HAS', 'DM2', 'Dislipidemia', 'Tabagismo', 'DRC', 'ICC', 'DPOC', 'Obesidade', 'Alergia', 'Hepatopatia', 'Diabetes Gestacional', 'Etilismo', 'Hipotireoidismo', 'Retocolite Ulcerativa', 'HIV'];
 
@@ -34,21 +33,6 @@ export default function FormView({
       const lastChar = current.slice(-1);
       const separator = ['.', ';', '\n'].includes(lastChar) ? ' ' : ', ';
       return { ...prev, clinicalDescription: current + separator + item };
-    });
-  };
-  // Texto extraído de exames fotografados (LaudoCaptureButton): insere no campo
-  // de destino — Exames (labs, em linha própria) ou Descrição Clínica.
-  const insertExtractedText = (field, text) => {
-    setFormData(prev => {
-      if (field === 'labs') {
-        const current = (prev.labs || '').trimEnd();
-        return { ...prev, labs: current ? current + '\n' + text : text };
-      }
-      const current = prev.clinicalDescription.trimEnd();
-      if (!current) return { ...prev, clinicalDescription: text };
-      const lastChar = current.slice(-1);
-      const separator = ['.', ';', '\n'].includes(lastChar) ? ' ' : ', ';
-      return { ...prev, clinicalDescription: current + separator + text };
     });
   };
   const normalizedSector = (formData.sector || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -238,7 +222,6 @@ export default function FormView({
           <FlaskConical className="w-3.5 h-3.5" /> Exames Complementares
         </h3>
         <p className="text-[11px] text-muted-foreground -mt-1">Cole todos os exames (dias anteriores + atuais) para a IA analisar a evolução cronológica dos valores.</p>
-        <LaudoCaptureButton onInsert={insertExtractedText} />
         <textarea rows={3} placeholder="Resultados de exames laboratoriais e de imagem (dias anteriores + atuais)..."
           value={formData.labs} onChange={e => setFormData({ ...formData, labs: e.target.value })}
           className="w-full px-4 py-3 rounded-xl bg-muted border border-border text-sm resize-none focus:outline-none focus:border-primary/50 transition-all" />

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -24,6 +24,15 @@ export default function Capturas() {
   });
   const pendentes = capturas.filter(c => c.status === 'pendente');
   const inseridas = capturas.filter(c => c.status === 'inserida');
+
+  // A fila atualiza ao vivo (capturas criadas em outro dispositivo/sessão incluídas),
+  // sem depender de recarregar a página.
+  useEffect(() => {
+    const unsubscribe = base44.entities.ExamAttachment.subscribe(() => {
+      queryClient.invalidateQueries({ queryKey: ['exam-attachments'] });
+    });
+    return unsubscribe;
+  }, [queryClient]);
 
   const processar = async (e, ehPdf) => {
     const file = e.target.files?.[0];

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { FileStack, X, Loader2, FlaskConical, Activity } from 'lucide-react';
@@ -26,6 +26,15 @@ export default function InserirCapturas({ formData, setFormData }) {
     queryKey: ['exam-attachments', 'pendente'],
     queryFn: () => base44.entities.ExamAttachment.filter({ status: 'pendente' }, '-created_date', 50),
   });
+
+  // Atualização ao vivo: novas capturas aparecem no contador e no modal
+  // mesmo com esta página já aberta, sem recarregar.
+  useEffect(() => {
+    const unsubscribe = base44.entities.ExamAttachment.subscribe(() => {
+      queryClient.invalidateQueries({ queryKey: ['exam-attachments'] });
+    });
+    return unsubscribe;
+  }, [queryClient]);
 
   const inserir = async (c) => {
     const campo = destino === 'labs' ? 'labs' : 'clinicalDescription';

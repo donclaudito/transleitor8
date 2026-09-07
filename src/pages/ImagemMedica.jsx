@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
@@ -22,6 +22,28 @@ const MODALITY_PRESETS = [
   { label: 'Genérico', prompt: DEFAULT_PROMPT },
 ];
 
+// Comprime a imagem localmente (máx. 1600px, JPEG) e devolve data URL base64 —
+// dispensa o upload em plataforma e envia a imagem direto ao provedor cadastrado.
+const fileToDataUrl = (file, maxDim = 1600, quality = 0.85) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = () => reject(new Error('Não foi possível carregar a imagem.'));
+      img.src = reader.result;
+    };
+    reader.onerror = () => reject(new Error('Não foi possível ler o arquivo.'));
+    reader.readAsDataURL(file);
+  });
+
 export default function ImagemMedica() {
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState('');
@@ -38,6 +60,11 @@ export default function ImagemMedica() {
     queryKey: ['llm-providers-vision'],
     queryFn: async () => (await base44.functions.invoke('listLLMProviders', { supports_image: true })).data?.providers ?? [],
   });
+
+  // Pré-seleciona o primeiro provedor de visão ativo como padrão.
+  useEffect(() => {
+    if (!providerId && visionProviders.length) setProviderId(visionProviders[0].id);
+  }, [visionProviders, providerId]);
 
   const onFile = (e) => {
     const f = e.target.files?.[0];
@@ -57,11 +84,11 @@ export default function ImagemMedica() {
     if (!file) { setError('Selecione uma imagem primeiro.'); return; }
     setLoading(true); setError(''); setResult(''); setUsageLogId(null);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const image_data_url = await fileToDataUrl(file);
       const response = await base44.functions.invoke('analyzeMedicalImage', {
-        file_url,
+        image_data_url,
         prompt,
-        ...(providerId ? { llm_config_id: providerId } : {}),
+        llm_config_id: providerId || undefined,
       });
       const text = response?.data?.text;
       if (!text) throw new Error(response?.data?.error || 'Erro ao analisar a imagem.');

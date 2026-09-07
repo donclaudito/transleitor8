@@ -21,8 +21,8 @@ const SYSTEM_MESSAGE = [
 export default async function (req) {
   const chainStart = new Date().toISOString();
   const startMs = Date.now();
-  let provider = 'gemini_3_flash';
-  let modelName = 'gemini_3_flash';
+  let provider = '';
+  let modelName = '';
   let inputs = {};
   let base44 = null;
 
@@ -31,51 +31,65 @@ export default async function (req) {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { file_url, prompt, llm_config_id } = await req.json();
+    const { file_url, image_data_url, prompt, llm_config_id } = await req.json();
 
-    if (!file_url || !prompt) {
-      return Response.json({ error: 'file_url e prompt são obrigatórios' }, { status: 400 });
+    if (!prompt) {
+      return Response.json({ error: 'prompt é obrigatório' }, { status: 400 });
     }
 
-    inputs = { file_url, prompt };
-    let rawText = '';
-    let tokens = null;
+    // Imagem enviada pelo app como data URL (base64) ou como URL pública.
+    const imageUrl = image_data_url || file_url;
+    if (!imageUrl) {
+      return Response.json({ error: 'Envie uma imagem para análise' }, { status: 400 });
+    }
 
-    if (!llm_config_id) {
-      // Provedor padrão gratuito (Gemini Vision via InvokeLLM)
-      const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
-        prompt,
-        file_urls: [file_url],
-        model: 'gemini_3_flash',
-      });
-      rawText = typeof result === 'string' ? result : JSON.stringify(result);
-    } else {
-      // Provedor externo cadastrado (OpenAI-compatible, multimodal)
-      let llm, apiKey;
-      try {
+    inputs = { image: image_data_url ? '(imagem anexada em base64)' : file_url, prompt };
+
+    // Roteamento exclusivo pelos provedores cadastrados em LLMConfig (chaves nos
+    // segredos do app): o selecionado no seletor ou, sem seleção, o primeiro
+    // provedor de visão ativo — sem uso de integrações da plataforma.
+    let llm, apiKey;
+    try {
+      if (llm_config_id) {
         ({ llm, apiKey } = await resolveProvider(base44, llm_config_id));
-      } catch (e) {
-        const status = e instanceof ProviderError ? e.status : 500;
-        waitUntil(logLLMUsage(base44, {
-          flow: 'imagem', provider, model: modelName,
-          responseTimeMs: Date.now() - startMs, status: 'erro',
-        }));
-        return Response.json({ error: e.message }, { status });
+        if (!llm.supports_image) {
+          throw new ProviderError('Este provedor não suporta análise de imagem. Selecione um modelo com visão.', 400);
+        }
+      } else {
+        const visionProviders = await base44.asServiceRole.entities.LLMConfig.filter(
+          { is_active: true, supports_image: true }
+        );
+        if (!visionProviders.length) {
+          throw new ProviderError('Nenhum provedor de análise de imagem ativo. Cadastre um modelo com suporte a imagem ou selecione um no seletor.', 400);
+        }
+        visionProviders.sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
+        llm = visionProviders[0];
+        apiKey = Deno.env.get(llm.api_key_env_var);
+        if (!apiKey) {
+          throw new ProviderError(`Chave API não configurada: ${llm.api_key_env_var}`, 500);
+        }
       }
-      provider = llm.provider_name;
-      modelName = llm.model_name;
-      const result = await callProviderLLM({
-        llm,
-        apiKey,
-        systemMessage: SYSTEM_MESSAGE,
-        userContent: [
-          { type: 'image_url', image_url: { url: file_url } },
-          { type: 'text', text: prompt },
-        ],
-      });
-      rawText = result.text;
-      tokens = result.tokens;
+    } catch (e) {
+      const status = e instanceof ProviderError ? e.status : 500;
+      waitUntil(logLLMUsage(base44, {
+        flow: 'imagem', provider, model: modelName,
+        responseTimeMs: Date.now() - startMs, status: 'erro',
+      }));
+      return Response.json({ error: e.message }, { status });
     }
+
+    provider = llm.provider_name;
+    modelName = llm.model_name;
+
+    const { text: rawText, tokens } = await callProviderLLM({
+      llm,
+      apiKey,
+      systemMessage: SYSTEM_MESSAGE,
+      userContent: [
+        { type: 'image_url', image_url: { url: imageUrl } },
+        { type: 'text', text: prompt },
+      ],
+    });
 
     const text = toHtml(rawText);
 

@@ -8,7 +8,6 @@ import HistoryView from '@/components/transleitor/HistoryView';
 import ManagementView from '@/components/transleitor/ManagementView';
 import SettingsPanel from '@/components/transleitor/SettingsPanel';
 import AllergyPopover from '@/components/transleitor/AllergyPopover';
-import SurgeryModule from '@/components/transleitor/SurgeryModule';
 import { useSettings } from '@/hooks/useSettings';
 
 const DEFAULT_SECTORS = ["UTI Adulto", "UTI Pediátrica", "Enfermaria Clínica", "Enfermaria Cirúrgica", "Pronto Socorro", "Emergência", "Consultório"];
@@ -73,7 +72,6 @@ export default function Transleitor() {
   const [activeComorbidity, setActiveComorbidity] = useState(null);
   const [showAllergyPopover, setShowAllergyPopover] = useState(false);
   const [evolutionMode, setEvolutionMode] = useState('free'); // 'soap' | 'free'
-  const [showPosOp, setShowPosOp] = useState(false);
 
   const activeLLMName = selectedLLMId
     ? llmProviders.find(p => p.id === selectedLLMId)?.provider_name || 'Desconhecido'
@@ -573,15 +571,7 @@ ${HUMANIZACAO}`;
 
   return (
     <div className="min-h-screen bg-background">
-      <Header view={view} setView={setView} theme={settings.theme} setTheme={setTheme} onNewEvolution={handleNewEvolution} activeLLMName={activeLLMName} llmProviders={llmProviders} selectedLLMId={selectedLLMId} setSelectedLLMId={setSelectedLLMId} onOpenPosOperatorio={() => setShowPosOp(true)} />
-      {showPosOp && (
-        <SurgeryModule
-          onClose={() => setShowPosOp(false)}
-          llmProviders={llmProviders}
-          theme={settings.theme}
-          onToggleTheme={() => setTheme(settings.theme === 'dark' ? 'light' : 'dark')}
-        />
-      )}
+      <Header view={view} setView={setView} theme={settings.theme} setTheme={setTheme} onNewEvolution={handleNewEvolution} activeLLMName={activeLLMName} llmProviders={llmProviders} selectedLLMId={selectedLLMId} setSelectedLLMId={setSelectedLLMId} />
       {renderContent()}
     </div>
   );

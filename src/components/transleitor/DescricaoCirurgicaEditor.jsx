@@ -164,7 +164,11 @@ export default function DescricaoCirurgicaEditor() {
     if (!nome) { avisar('erroSalvo'); return; }
     try {
       if (selecionado) {
+        // Nome editado no campo também fica salvo no procedimento (sem sobrescrever outro existente).
+        const item = itens.find(p => p.id === selecionado);
+        const renomear = nome !== item?.nome && !itens.some(p => p.nome === nome);
         const upd = await base44.entities.ProcedimentoCirurgico.update(selecionado, {
+          ...(renomear ? { nome } : {}),
           descricao, evolucao, ap, drenos,
         });
         atualizarCache(old => old.map(p => (p.id === selecionado ? upd : p)));

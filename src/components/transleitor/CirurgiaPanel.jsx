@@ -5,7 +5,7 @@ import PanelFavoritesBlock from './PanelFavoritesBlock';
 import FavoriteStar from './FavoriteStar';
 import { usePanelFavorites } from '@/hooks/usePanelFavorites';
 
-const CIRURGIA_DATA = {
+export const CIRURGIA_DATA = {
   identificacao: {
     label: 'Identificação e PO',
     icon: Scissors,

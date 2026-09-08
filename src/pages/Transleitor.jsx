@@ -8,7 +8,7 @@ import HistoryView from '@/components/transleitor/HistoryView';
 import ManagementView from '@/components/transleitor/ManagementView';
 import SettingsPanel from '@/components/transleitor/SettingsPanel';
 import AllergyPopover from '@/components/transleitor/AllergyPopover';
-import PosOperatorioModule from '@/components/transleitor/PosOperatorioModule';
+import SurgeryModule from '@/components/transleitor/SurgeryModule';
 import { useSettings } from '@/hooks/useSettings';
 
 const DEFAULT_SECTORS = ["UTI Adulto", "UTI Pediátrica", "Enfermaria Clínica", "Enfermaria Cirúrgica", "Pronto Socorro", "Emergência", "Consultório"];
@@ -574,7 +574,7 @@ ${HUMANIZACAO}`;
   return (
     <div className="min-h-screen bg-background">
       <Header view={view} setView={setView} theme={settings.theme} setTheme={setTheme} onNewEvolution={handleNewEvolution} activeLLMName={activeLLMName} llmProviders={llmProviders} selectedLLMId={selectedLLMId} setSelectedLLMId={setSelectedLLMId} onOpenPosOperatorio={() => setShowPosOp(true)} />
-      {showPosOp && <PosOperatorioModule onClose={() => setShowPosOp(false)} llmProviders={llmProviders} />}
+      {showPosOp && <SurgeryModule onClose={() => setShowPosOp(false)} llmProviders={llmProviders} />}
       {renderContent()}
     </div>
   );

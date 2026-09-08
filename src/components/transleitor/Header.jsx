@@ -125,7 +125,7 @@ export default function Header({ view, setView, theme, setTheme, onNewEvolution,
         <span className="hidden sm:inline text-xs font-extrabold">Capturar</span>
       </Link>
 
-      <button onClick={onOpenPosOperatorio} title="Evolução de Pós-Operatório"
+      <button onClick={onOpenPosOperatorio} title="Módulo de Cirurgias"
         className="p-2.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
         <Scissors className="w-4 h-4" />
       </button>

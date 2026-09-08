@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
-import { Stethoscope, History, Plus, Settings, Calculator, Wrench, Sun, Moon, BookOpen, ChevronDown, ExternalLink, Cpu, ClipboardList, ScanLine, Bot, Activity, ShieldAlert, FileText } from 'lucide-react';
+import { Stethoscope, History, Plus, Settings, Calculator, Wrench, Sun, Moon, BookOpen, ChevronDown, ExternalLink, Cpu, ClipboardList, ScanLine, Bot, Activity, ShieldAlert, FileText, Scissors } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 
-export default function Header({ view, setView, theme, setTheme, onNewEvolution, activeLLMName, llmProviders = [], selectedLLMId = '', setSelectedLLMId = () => {} }) {
+export default function Header({ view, setView, theme, setTheme, onNewEvolution, activeLLMName, llmProviders = [], selectedLLMId = '', setSelectedLLMId = () => {}, onOpenPosOperatorio = () => {} }) {
   const [appsOpen, setAppsOpen] = useState(false);
   const [llmOpen, setLlmOpen] = useState(false);
   const [appsRect, setAppsRect] = useState({ top: 0, right: 0 });
@@ -125,6 +125,11 @@ export default function Header({ view, setView, theme, setTheme, onNewEvolution,
         <span className="hidden sm:inline text-xs font-extrabold">Capturar</span>
       </Link>
 
+      <button onClick={onOpenPosOperatorio} title="Evolução de Pós-Operatório"
+        className="p-2.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
+        <Scissors className="w-4 h-4" />
+      </button>
+
       <Link to="/passagem" title="Passagem de Visita"
         className="p-2.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
         <ClipboardList className="w-4 h-4" />
@@ -135,7 +140,7 @@ export default function Header({ view, setView, theme, setTheme, onNewEvolution,
         <ScanLine className="w-4 h-4" />
       </Link>
 
-      <Link to="/elio" title="Elvio — Assistente clínico"
+      <Link to="/elio" title="Elvira — Assistente clínica"
         className="p-2.5 rounded-xl text-muted-foreground hover:text-primary hover:bg-accent transition-all">
         <Bot className="w-4 h-4" />
       </Link>

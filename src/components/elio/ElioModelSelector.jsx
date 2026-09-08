@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Bot, Check, Sparkles } from 'lucide-react';
 
-// Seletor do modelo que responde o Elvio: "Padrão (Elvio)" (agente da plataforma)
+// Seletor do modelo que responde à Elvira: "Padrão (Elvira)" (agente da plataforma)
 // ou um provedor externo ativo (LLMConfig), no estilo pill/dropdown dos seletores do app.
 export default function ElioModelSelector({ providers = [], selectedId, onSelect }) {
   const [open, setOpen] = useState(false);
@@ -19,10 +19,10 @@ export default function ElioModelSelector({ providers = [], selectedId, onSelect
           }
           setOpen(!open);
         }}
-        title="Modelo que responde o Elvio"
+        title="Modelo que responde à Elvira"
         className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center gap-1 hover:bg-primary/20 transition-all cursor-pointer"
       >
-        <Sparkles className="w-3 h-3" /> {selected ? selected.provider_name : 'Padrão (Elvio)'}
+        <Sparkles className="w-3 h-3" /> {selected ? selected.provider_name : 'Padrão (Elvira)'}
       </button>
       {open && createPortal(
         <>
@@ -34,7 +34,7 @@ export default function ElioModelSelector({ providers = [], selectedId, onSelect
                 className={`w-full text-left flex items-center gap-2.5 px-4 py-2.5 text-xs hover:bg-accent transition-colors ${!selectedId ? 'bg-primary/10 text-primary font-bold' : ''}`}
               >
                 <Bot className="w-3.5 h-3.5" />
-                <span className="flex-1 truncate">Padrão (Elvio)</span>
+                <span className="flex-1 truncate">Padrão (Elvira)</span>
                 {!selectedId && <Check className="w-3 h-3 text-green-500" />}
               </button>
               {providers.map(p => (

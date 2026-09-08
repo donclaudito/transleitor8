@@ -2,12 +2,12 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 import { waitUntil } from 'base44:runtime';
 import { resolveProvider, callProviderLLM, logLLMUsage, toHtml, ProviderError } from '../../shared/llm.ts';
 
-// Chat do Elvio (assistente clínico) roteado pelo provedor externo escolhido no
+// Chat da Elvira (assistente clínica) roteado pelo provedor externo escolhido no
 // seletor da página /elio (LLMConfig ativo). A conversa vive na sessão local do
 // frontend; esta função recebe o histórico e devolve a resposta em HTML.
 // Uso registrado em LLMUsageLog com flow 'conversa' — separado do fluxo 'evolucao'.
 const ELIO_SYSTEM_MESSAGE = [
-  'Você é o Elvio, assistente clínico do Transleitor, plataforma de documentação médica brasileira.',
+  'Você é a Elvira, assistente clínica do Transleitor, plataforma de documentação médica brasileira.',
   'Você apoia médicos: redigir evoluções, interpretar exames, sugerir condutas e planejar tratamentos.',
   '',
   'REGRAS CLÍNICAS (OBRIGATÓRIAS):',
@@ -47,7 +47,7 @@ export default async function(req) {
     modelName = llm.model_name;
 
     const transcript = msgs
-      .map(m => `${m.role === 'user' ? 'MÉDICO' : 'ELVIO'}: ${m.content}`)
+      .map(m => `${m.role === 'user' ? 'MÉDICO' : 'ELVIRA'}: ${m.content}`)
       .join('\n\n');
 
     const { text, tokens } = await callProviderLLM({

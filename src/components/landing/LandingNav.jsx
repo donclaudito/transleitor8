@@ -24,6 +24,7 @@ export default function LandingNav() {
     { label: 'Modos', href: '#modos' },
     { label: 'Setores', href: '#setores' },
     { label: 'Como Funciona', href: '#como-funciona' },
+    { label: 'Agentes', href: '#agentes' },
   ];
 
   return (

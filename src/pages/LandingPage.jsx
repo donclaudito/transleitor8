@@ -5,6 +5,7 @@ import LandingFeatures from '@/components/landing/LandingFeatures';
 import LandingModes from '@/components/landing/LandingModes';
 import LandingSectors from '@/components/landing/LandingSectors';
 import LandingHowItWorks from '@/components/landing/LandingHowItWorks';
+import LandingAgents from '@/components/landing/LandingAgents';
 import LandingStats from '@/components/landing/LandingStats';
 import LandingCTA from '@/components/landing/LandingCTA';
 
@@ -17,6 +18,7 @@ export default function LandingPage() {
       <LandingModes />
       <LandingSectors />
       <LandingHowItWorks />
+      <LandingAgents />
       <LandingStats />
       <LandingCTA />
     </div>

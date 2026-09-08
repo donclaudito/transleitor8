@@ -8,6 +8,7 @@ import HistoryView from '@/components/transleitor/HistoryView';
 import ManagementView from '@/components/transleitor/ManagementView';
 import SettingsPanel from '@/components/transleitor/SettingsPanel';
 import AllergyPopover from '@/components/transleitor/AllergyPopover';
+import PosOperatorioModule from '@/components/transleitor/PosOperatorioModule';
 import { useSettings } from '@/hooks/useSettings';
 
 const DEFAULT_SECTORS = ["UTI Adulto", "UTI Pediátrica", "Enfermaria Clínica", "Enfermaria Cirúrgica", "Pronto Socorro", "Emergência", "Consultório"];
@@ -56,6 +57,7 @@ export default function Transleitor() {
   const [activeComorbidity, setActiveComorbidity] = useState(null);
   const [showAllergyPopover, setShowAllergyPopover] = useState(false);
   const [evolutionMode, setEvolutionMode] = useState('free'); // 'soap' | 'free'
+  const [showPosOp, setShowPosOp] = useState(false);
 
   const activeLLMName = selectedLLMId
     ? llmProviders.find(p => p.id === selectedLLMId)?.provider_name || 'Desconhecido'
@@ -243,7 +245,6 @@ ANÁLISE SEQUENCIAL DOS EXAMES COMPLEMENTARES (OBRIGATÓRIA):
         ['Paciente (iniciais)', formData.patientInitials?.trim()],
         ['Leito', formData.bed?.trim()],
         ['Setor', formData.sector?.trim()],
-        ['Procedimento cirúrgico', formData.procedimento?.trim()],
         ['Comorbidades', formData.comorbidities?.trim()],
         ['Exames complementares', formData.labs?.trim()],
         ...(isGastro
@@ -556,7 +557,8 @@ ${HUMANIZACAO}`;
 
   return (
     <div className="min-h-screen bg-background">
-      <Header view={view} setView={setView} theme={settings.theme} setTheme={setTheme} onNewEvolution={handleNewEvolution} activeLLMName={activeLLMName} llmProviders={llmProviders} selectedLLMId={selectedLLMId} setSelectedLLMId={setSelectedLLMId} />
+      <Header view={view} setView={setView} theme={settings.theme} setTheme={setTheme} onNewEvolution={handleNewEvolution} activeLLMName={activeLLMName} llmProviders={llmProviders} selectedLLMId={selectedLLMId} setSelectedLLMId={setSelectedLLMId} onOpenPosOperatorio={() => setShowPosOp(true)} />
+      {showPosOp && <PosOperatorioModule onClose={() => setShowPosOp(false)} selectedLLMId={selectedLLMId} />}
       {renderContent()}
     </div>
   );

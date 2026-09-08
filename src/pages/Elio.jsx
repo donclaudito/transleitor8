@@ -42,8 +42,8 @@ export default function Elio() {
           <Stethoscope className="w-4 h-4 text-primary" />
         </div>
         <div>
-          <h1 className="text-base font-extrabold leading-tight">Elvio</h1>
-          <p className="text-[11px] text-muted-foreground -mt-0.5">Assistente clínico</p>
+          <h1 className="text-base font-extrabold leading-tight">Elvira</h1>
+          <p className="text-[11px] text-muted-foreground -mt-0.5">Assistente clínica</p>
         </div>
         <ElioModelSelector providers={llmProviders} selectedId={selectedLLMId} onSelect={changeLLM} />
       </header>
@@ -52,7 +52,7 @@ export default function Elio() {
         <div className="px-4 pt-2">
           <p className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1.5 max-w-3xl mx-auto w-full">
             <Zap className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
-            <span>Elvio respondendo com: <span className="text-primary">{selectedProvider.provider_name}</span></span>
+            <span>Elvira respondendo com: <span className="text-primary">{selectedProvider.provider_name}</span></span>
             <span className="font-normal text-muted-foreground/70 hidden sm:inline">— conversa local desta sessão, sem histórico salvo</span>
           </p>
         </div>

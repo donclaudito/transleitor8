@@ -29,7 +29,7 @@ const features = [
   },
   {
     icon: MessageSquare,
-    title: 'Elvio — assistente clínico',
+    title: 'Elvira — assistente clínica',
     def: 'Chat de IA dedicado ao raciocínio clínico.',
     func: 'Discuta casos, condutas e condutas de suporte como uma conversa, com histórico salvo por sessão.',
     benefit: 'Um colega virtual disponível 24h durante o plantão.',

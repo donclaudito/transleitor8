@@ -225,7 +225,7 @@ export default function DescricaoCirurgicaEditor() {
                   ? 'border-primary/40 bg-primary/10 text-primary'
                   : 'border-border text-muted-foreground hover:border-primary/30 hover:text-foreground'
               }`}>
-              <button onClick={() => escolher(p)} className="flex-1 min-w-0 text-left truncate">{p.nome}</button>
+              <button onClick={() => escolher(p)} title={p.nome} className="flex-1 min-w-0 text-left truncate">{p.nome}</button>
               {confirmando === p.id ? (
                 <button onClick={() => excluir(p.id)} title="Confirmar exclusão"
                   className="flex-shrink-0 p-1 rounded-md text-destructive bg-destructive/10 animate-pulse transition-all">

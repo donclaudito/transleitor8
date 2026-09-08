@@ -9,6 +9,7 @@ export default function AtendimentosMesPanel() {
   const queryClient = useQueryClient();
   const [offsetMes, setOffsetMes] = useState(0); // 0 = mês corrente; +1 = mês anterior
   const [confirmando, setConfirmando] = useState(false);
+  const [excluindo, setExcluindo] = useState(null); // nome do item aguardando confirmação de exclusão
 
   const { data: atendimentos = [] } = useQuery({
     queryKey: ['atendimentos-mes'],
@@ -33,6 +34,18 @@ export default function AtendimentosMesPanel() {
   }, {});
   const linhas = Object.entries(contagem).sort((a, b) => b[1] - a[1]);
 
+  // Exclui todos os atendimentos de um procedimento no mês exibido (confirmação em dois cliques).
+  const excluirRegistros = async (nome) => {
+    setExcluindo(null);
+    try {
+      await base44.entities.AtendimentoCirurgico.deleteMany({
+        procedimento: nome,
+        created_date: { $gte: inicio.toISOString(), $lt: fim.toISOString() },
+      });
+    } catch (_) { /* ignora — recarrega a lista real abaixo */ }
+    queryClient.invalidateQueries({ queryKey: ['atendimentos-mes'] });
+  };
+
   // Zera os atendimentos do mês exibido (confirmação em dois cliques).
   const resetar = async () => {
     setConfirmando(false);
@@ -49,7 +62,7 @@ export default function AtendimentosMesPanel() {
       <div className="flex items-center justify-between">
         <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Atendimentos</p>
         <div className="flex items-center gap-0.5">
-          <button onClick={() => { setOffsetMes(o => o + 1); setConfirmando(false); }}
+          <button onClick={() => { setOffsetMes(o => o + 1); setConfirmando(false); setExcluindo(null); }}
             title="Mês anterior" aria-label="Mês anterior"
             className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
             <ChevronLeft className="w-3.5 h-3.5" />
@@ -80,7 +93,22 @@ export default function AtendimentosMesPanel() {
           {linhas.map(([nome, n]) => (
             <div key={nome} className="flex items-center justify-between gap-1.5 text-[11px]">
               <span className="truncate text-muted-foreground" title={nome}>{nome}</span>
-              <span className="font-bold text-foreground flex-shrink-0">{n}</span>
+              <span className="flex items-center gap-1 flex-shrink-0">
+                <span className="font-bold text-foreground">{n}</span>
+                {excluindo === nome ? (
+                  <button onClick={() => excluirRegistros(nome)}
+                    title="Confirmar exclusão" aria-label={`Confirmar exclusão de ${nome}`}
+                    className="p-0.5 rounded-md text-destructive bg-destructive/10 animate-pulse transition-all">
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                ) : (
+                  <button onClick={() => { setExcluindo(nome); setTimeout(() => setExcluindo(null), 3000); }}
+                    title="Excluir atendimentos deste procedimento" aria-label={`Excluir atendimentos de ${nome}`}
+                    className="p-0.5 rounded-md text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-all">
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                )}
+              </span>
             </div>
           ))}
         </div>

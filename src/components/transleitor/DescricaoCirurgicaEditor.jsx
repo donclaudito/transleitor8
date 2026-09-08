@@ -73,7 +73,14 @@ export default function DescricaoCirurgicaEditor() {
   }, [itens]);
   const paragrafos = descricao.split(/\n\s*\n+/).filter(p => p.trim());
 
-  const escolher = (p) => { setSelecionado(p.id); setProcedimento(p.nome); };
+  const escolher = (p) => {
+    setSelecionado(p.id);
+    setProcedimento(p.nome);
+    setDescricao(p.descricao || '');
+    setEvolucao(p.evolucao || '');
+    setAp(!!p.ap);
+    setDrenos(!!p.drenos);
+  };
 
   const criarNovo = async () => {
     const nome = procedimento.trim();
@@ -151,11 +158,17 @@ export default function DescricaoCirurgicaEditor() {
     }
   };
 
-  // Salvar registra um atendimento do mês corrente (contabilizado no painel lateral).
+  // Salvar grava a descrição no procedimento selecionado e registra um atendimento do mês.
   const salvar = async () => {
     const nome = procedimento.trim();
     if (!nome) { avisar('erroSalvo'); return; }
     try {
+      if (selecionado) {
+        const upd = await base44.entities.ProcedimentoCirurgico.update(selecionado, {
+          descricao, evolucao, ap, drenos,
+        });
+        atualizarCache(old => old.map(p => (p.id === selecionado ? upd : p)));
+      }
       await base44.entities.AtendimentoCirurgico.create({ procedimento: nome });
       queryClient.invalidateQueries({ queryKey: ['atendimentos-mes'] });
       avisar('salvo');

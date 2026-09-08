@@ -5,6 +5,22 @@
     "nome": {
       "type": "string",
       "description": "Nome do procedimento na barra pessoal do m\u00e9dico"
+    },
+    "descricao": {
+      "type": "string",
+      "description": "Descri\u00e7\u00e3o da cirurgia salva para este procedimento (modelo edit\u00e1vel pelo m\u00e9dico)"
+    },
+    "evolucao": {
+      "type": "string",
+      "description": "Evolu\u00e7\u00e3o padr\u00e3o salva para este procedimento"
+    },
+    "ap": {
+      "type": "boolean",
+      "description": "Marcador AP (anatomopatol\u00f3gico confirmado) salvo para este procedimento"
+    },
+    "drenos": {
+      "type": "boolean",
+      "description": "Marcador de drenos instalados salvo para este procedimento"
     }
   },
   "required": [

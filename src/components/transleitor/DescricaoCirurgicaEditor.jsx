@@ -39,6 +39,7 @@ export default function DescricaoCirurgicaEditor() {
   const [descricao, setDescricao] = useState(EXEMPLO_LICHTENSTEIN);
   const [evolucao, setEvolucao] = useState(EVOLUCAO_PADRAO);
   const [ap, setAp] = useState(false);
+  const [drenos, setDrenos] = useState(false);
   const [selecionado, setSelecionado] = useState(undefined); // id do registro selecionado
   const [renomeando, setRenomeando] = useState(null); // nome do item em edição
   const [nomeEdicao, setNomeEdicao] = useState('');
@@ -85,6 +86,7 @@ export default function DescricaoCirurgicaEditor() {
     setDescricao('');
     setEvolucao('');
     setAp(false);
+    setDrenos(false);
   };
 
   const iniciarRenome = (id) => {
@@ -130,6 +132,7 @@ export default function DescricaoCirurgicaEditor() {
     setDescricao('');
     setEvolucao('');
     setAp(false);
+    setDrenos(false);
     setSelecionado(null);
   };
 
@@ -137,7 +140,8 @@ export default function DescricaoCirurgicaEditor() {
   const copiarDescricao = async () => {
     const texto = `Descrição da Cirurgia — ${procedimento || 'não definido'}\n\n` +
       paragrafos.map(p => frases(p).map(f => `• ${f}`).join('\n')).join('\n\n') +
-      (ap ? `\n\n• AP (anatomopatológico confirmado).` : '');
+      (ap ? `\n\n• AP (anatomopatológico confirmado).` : '') +
+      (drenos ? `\n\n• Drenos instalados no ato operatório.` : '');
     try {
       await navigator.clipboard.writeText(texto);
       avisar('desc');
@@ -259,11 +263,18 @@ export default function DescricaoCirurgicaEditor() {
           {flash === 'evol' && <span className="text-xs font-bold text-primary">✓ Copiado</span>}
         </div>
 
-        <label className="flex items-center gap-2 text-xs font-semibold text-muted-foreground cursor-pointer">
-          <input type="checkbox" checked={ap} onChange={(e) => setAp(e.target.checked)}
-            className="w-4 h-4 accent-[hsl(var(--primary))]" />
-          AP (anatomopatológico confirmado)
-        </label>
+        <div className="flex flex-wrap gap-x-5 gap-y-2">
+          <label className="flex items-center gap-2 text-xs font-semibold text-muted-foreground cursor-pointer">
+            <input type="checkbox" checked={ap} onChange={(e) => setAp(e.target.checked)}
+              className="w-4 h-4 accent-[hsl(var(--primary))]" />
+            AP (anatomopatológico confirmado)
+          </label>
+          <label className="flex items-center gap-2 text-xs font-semibold text-muted-foreground cursor-pointer">
+            <input type="checkbox" checked={drenos} onChange={(e) => setDrenos(e.target.checked)}
+              className="w-4 h-4 accent-[hsl(var(--primary))]" />
+            Drenos instalados
+          </label>
+        </div>
 
         <div className="flex flex-wrap items-center gap-2 pt-1">
           <button onClick={() => avisar('salvo')}
@@ -302,6 +313,11 @@ export default function DescricaoCirurgicaEditor() {
           {ap && (
             <ul className="list-disc pl-5">
               <li className="text-sm text-foreground leading-relaxed">AP (anatomopatológico confirmado).</li>
+            </ul>
+          )}
+          {drenos && (
+            <ul className="list-disc pl-5">
+              <li className="text-sm text-foreground leading-relaxed">Drenos instalados no ato operatório.</li>
             </ul>
           )}
           {evolucao.trim() && (

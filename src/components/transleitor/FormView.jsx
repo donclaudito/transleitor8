@@ -11,6 +11,7 @@ import IdCaptureButton from './IdCaptureButton';
 import ConsultasPrevias from './ConsultasPrevias';
 import PhraseSelector from './PhraseSelector';
 import InserirCapturas from './InserirCapturas';
+import SurgeryTemplates from './SurgeryTemplates';
 
 const GASTRO_QUICK_COMORBS = ['HAS', 'DM2', 'Dislipidemia', 'Tabagismo', 'DRC', 'ICC', 'DPOC', 'Obesidade', 'Alergia', 'Hepatopatia', 'Diabetes Gestacional', 'Etilismo', 'Hipotireoidismo', 'Retocolite Ulcerativa', 'HIV'];
 
@@ -124,6 +125,19 @@ export default function FormView({
             className="px-4 py-3 rounded-xl bg-muted border border-border text-sm focus:outline-none focus:border-primary/50 transition-all" />
         </div>
       </div>
+
+      {/* Procedimento cirúrgico + templates de evolução (apenas setor cirúrgico) */}
+      {isCirurgia && (
+        <div className="glass-card rounded-2xl p-5 space-y-3">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+            <span>🔪</span> Procedimento Cirúrgico
+          </h3>
+          <textarea rows={2} placeholder="Ex.: Hernioplastia inguinal, Colecistectomia videolaparoscópica..."
+            value={formData.procedimento || ''} onChange={e => setFormData({ ...formData, procedimento: e.target.value })}
+            className="w-full px-4 py-3 rounded-xl bg-muted border border-border text-sm resize-none focus:outline-none focus:border-primary/50 transition-all" />
+        </div>
+      )}
+      {isCirurgia && <SurgeryTemplates onPaste={appendToClinical} />}
 
       {isConsultorio && formData.consultorioType === 'retorno' && (
         <div className="glass-card rounded-2xl p-5 space-y-3">

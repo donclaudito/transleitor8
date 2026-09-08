@@ -16,6 +16,7 @@ const DEFAULT_COMORBIDITIES = ["HAS", "DM2", "Dislipidemia", "Tabagismo", "DRC",
 const DEFAULT_FORM = {
   sector: '', bed: '', patientInitials: '', comorbidities: '', labs: '', clinicalDescription: '',
   consultorioType: null, previousConsult: '', previousEvolution: '', nursingEvolution: '', prescription: '',
+  procedimento: '',
 };
 
 export default function Transleitor() {
@@ -242,6 +243,7 @@ ANÁLISE SEQUENCIAL DOS EXAMES COMPLEMENTARES (OBRIGATÓRIA):
         ['Paciente (iniciais)', formData.patientInitials?.trim()],
         ['Leito', formData.bed?.trim()],
         ['Setor', formData.sector?.trim()],
+        ['Procedimento cirúrgico', formData.procedimento?.trim()],
         ['Comorbidades', formData.comorbidities?.trim()],
         ['Exames complementares', formData.labs?.trim()],
         ...(isGastro
@@ -449,6 +451,7 @@ ${HUMANIZACAO}`;
       previousConsult: saved.previousConsult || '',
       previousEvolution: saved.previousEvolution || '',
       nursingEvolution: saved.nursingEvolution || '',
+      procedimento: saved.procedimento || '',
     });
     setCurrentSOAP(ev);
     setStreamingText('');

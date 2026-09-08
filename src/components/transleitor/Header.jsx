@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
-import { Stethoscope, History, Plus, Settings, Calculator, Wrench, Sun, Moon, BookOpen, ChevronDown, ExternalLink, Cpu, ClipboardList, ScanLine, Bot, Activity, ShieldAlert, FileText, Scissors } from 'lucide-react';
+import { Stethoscope, History, Plus, Settings, Calculator, Wrench, Sun, Moon, BookOpen, ChevronDown, ExternalLink, Cpu, ClipboardList, ScanLine, Bot, Activity, ShieldAlert, FileText, Scissors, Pencil } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 
@@ -123,6 +123,11 @@ export default function Header({ view, setView, theme, setTheme, onNewEvolution,
         className="flex items-center gap-1.5 px-2.5 py-2 rounded-xl bg-primary text-primary-foreground shadow-lg hover:opacity-90 transition-all flex-shrink-0">
         <FileText className="w-4 h-4" />
         <span className="hidden sm:inline text-xs font-extrabold">Capturar</span>
+      </Link>
+
+      <Link to="/descricao-cirurgia" title="Descrição da Cirurgia (tela completa)"
+        className="p-2.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
+        <Pencil className="w-4 h-4" />
       </Link>
 
       <button onClick={onOpenPosOperatorio} title="Módulo de Cirurgias"

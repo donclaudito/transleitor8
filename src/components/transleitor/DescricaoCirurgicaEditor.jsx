@@ -10,12 +10,27 @@ ANESTESIA: [raquianestesia + sedação]
 DECÚBITO: [supino]
 ANTISSEPSIA: [PVPI tópico em hipogástrio, região inguinal e coxa direita]
 
-DESCRIÇÃO: Após antissepsia e colocação de campos estéreis, realizada incisão oblíqua de aproximadamente [6 cm], paralela e superior ao ligamento inguinal, com dissecção por planos até a exposição da aponeurose do oblíquo externo. Abertura da aponeurose e dissecção do cordão espermático, com identificação de [hérnia indireta com saco herniário]. Saco herniário dissecado, reduzido e [ligado na base com fio de absorvível 2-0]. Implante de tela de polipropilena [6 x 11 cm], posicionada atrás do cordão espermático e fixada com [sutura contínua de nylon 2-0] ao ligamento inguinal, ao tubérculo púbico e à borda do músculo oblíquo interno, preservando as estruturas do cordão. Revisão cuidadosa da hemostasia. Aproximação da aponeurose do oblíquo externo com [nylon 2-0 contínua], plano subcutâneo com [absorvível 3-0] e pele com [nylon 4-0 em pontos simples]. Curativo oclusivo.
+DESCRIÇÃO: Após antissepsia e colocação de campos estéreis, realizada incisão oblíqua de aproximadamente [6 cm], paralela e superior ao ligamento inguinal, com dissecação por planos até a exposição da aponeurose do oblíquo externo. Abertura da aponeurose e dissecção do cordão espermático, com identificação de [hérnia indireta com saco herniário]. Saco herniário dissecado, reduzido e [ligado na base com fio de absorvível 2-0]. Implante de tela de polipropilena [6 x 11 cm], posicionada atrás do cordão espermático e fixada com [sutura contínua de nylon 2-0] ao ligamento inguinal, ao tubérculo púbico e à borda do músculo oblíquo interno, preservando as estruturas do cordão. Revisão cuidadosa da hemostasia. Aproximação da aponeurose do oblíquo externo com [nylon 2-0 contínua], plano subcutâneo com [absorvível 3-0] e pele com [nylon 4-0 em pontos simples]. Curativo oclusivo.
 
 INTERCORRÊNCIAS: [sem intercorrências]
 SANGRAMENTO: [mínimo, estimado em __ mL]`;
 
 const EVOLUCAO_PADRAO = `Paciente submetido ao procedimento descrito, sob a anestesia referida. Procedimento realizado sem intercorrências, com sangramento mínimo. Ao final, paciente encaminhado à sala de recuperação pós-anestésica em boas condições, sob monitorização.`;
+
+// Separa as frases de um parágrafo: cada ponto final e cada quebra de linha iniciam um novo item.
+const frases = (p) =>
+  p.split('\n').flatMap((l) => {
+    const out = [];
+    let start = 0;
+    for (let i = 0; i < l.length; i++) {
+      if (l[i] === '.' && (i === l.length - 1 || /\s/.test(l[i + 1]))) {
+        out.push(l.slice(start, i + 1).trim());
+        start = i + 1;
+      }
+    }
+    if (start < l.length) out.push(l.slice(start).trim());
+    return out;
+  }).filter(Boolean);
 
 export default function DescricaoCirurgicaEditor() {
   const [procedimento, setProcedimento] = useState('Hernioplastia inguinal');
@@ -24,10 +39,11 @@ export default function DescricaoCirurgicaEditor() {
   const [ap, setAp] = useState(false);
   const [criados, setCriados] = useState([]); // procedimentos adicionados via "+ Criar novo"
   const [selecionado, setSelecionado] = useState('Hernioplastia inguinal');
-  const [flash, setFlash] = useState(''); // 'copiado' | 'salvo' | 'erro'
+  const [flash, setFlash] = useState(''); // 'desc' | 'evol' | 'salvo' | 'erro'
 
   const avisar = (t) => { setFlash(t); setTimeout(() => setFlash(''), 1400); };
   const itens = [...criados, ...CATALOGO];
+  const paragrafos = descricao.split(/\n\s*\n+/).filter(p => p.trim());
 
   const escolher = (nome) => { setSelecionado(nome); setProcedimento(nome); };
 
@@ -59,19 +75,27 @@ export default function DescricaoCirurgicaEditor() {
     setSelecionado(null);
   };
 
-  const textoProntuario = () =>
-    `Descrição da Cirurgia — ${procedimento || 'não definido'}\n\n${descricao.trim()}${evolucao.trim() ? `\n\nEvolução (padrão)\n${evolucao.trim()}` : ''}`;
-
-  const copiar = async () => {
+  // Copia APENAS a Descrição da Cirurgia: título + uma frase por linha, em forma de lista.
+  const copiarDescricao = async () => {
+    const texto = `Descrição da Cirurgia — ${procedimento || 'não definido'}\n\n` +
+      paragrafos.map(p => frases(p).map(f => `• ${f}`).join('\n')).join('\n\n');
     try {
-      await navigator.clipboard.writeText(textoProntuario());
-      avisar('copiado');
+      await navigator.clipboard.writeText(texto);
+      avisar('desc');
     } catch (_) {
       avisar('erro');
     }
   };
 
-  const paragrafos = descricao.split(/\n\s*\n+/).filter(p => p.trim());
+  // Evolução padrão é separada: copia somente o texto dela.
+  const copiarEvolucao = async () => {
+    try {
+      await navigator.clipboard.writeText(evolucao.trim());
+      avisar('evol');
+    } catch (_) {
+      avisar('erro');
+    }
+  };
 
   return (
     <div className="flex-1 flex flex-col md:flex-row min-h-0">
@@ -112,7 +136,7 @@ export default function DescricaoCirurgicaEditor() {
         <div className="space-y-1.5">
           <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Descrição da Cirurgia</label>
           <textarea
-            rows={13}
+            rows={12}
             value={descricao}
             onChange={(e) => setDescricao(e.target.value)}
             placeholder="Procedimento, anestesia, decúbito, antissepsia, descrição passo a passo, intercorrências, sangramento..."
@@ -120,8 +144,15 @@ export default function DescricaoCirurgicaEditor() {
           />
         </div>
 
-        <div className="space-y-1.5">
-          <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Evolução padrão</label>
+        {/* Evolução padrão separada, com sua própria cópia */}
+        <div className="pt-3 border-t border-border space-y-1.5">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Evolução padrão</label>
+            <button onClick={copiarEvolucao}
+              className="flex items-center gap-1 text-[10px] font-bold text-primary border border-primary/40 rounded-lg px-2 py-1 hover:bg-accent transition-all">
+              <ClipboardCopy className="w-3 h-3" /> Copiar
+            </button>
+          </div>
           <textarea
             rows={4}
             value={evolucao}
@@ -129,6 +160,7 @@ export default function DescricaoCirurgicaEditor() {
             placeholder="Evolução padrão que acompanha a descrição..."
             className="w-full px-4 py-3 rounded-xl bg-muted border border-border text-sm resize-y focus:outline-none focus:border-primary/50 transition-all"
           />
+          {flash === 'evol' && <span className="text-xs font-bold text-primary">✓ Copiado</span>}
         </div>
 
         <label className="flex items-center gap-2 text-xs font-semibold text-muted-foreground cursor-pointer">
@@ -154,7 +186,7 @@ export default function DescricaoCirurgicaEditor() {
         </div>
       </section>
 
-      {/* Pré-visualização (atualiza a cada tecla) */}
+      {/* Pré-visualização (atualiza a cada tecla) — descrição em lista, uma frase por linha */}
       <section className="flex-1 min-w-0 flex flex-col min-h-0 p-4 space-y-3">
         <div className="flex-1 min-h-0 overflow-y-auto glass-card rounded-2xl p-5 print-area space-y-4 [scrollbar-width:thin]">
           <h3 className="text-sm font-extrabold break-words">
@@ -162,21 +194,31 @@ export default function DescricaoCirurgicaEditor() {
           </h3>
           {paragrafos.length > 0 ? (
             paragrafos.map((p, i) => (
-              <p key={i} className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{p}</p>
+              <ul key={i} className="list-disc pl-5 space-y-1.5">
+                {frases(p).map((f, j) => (
+                  <li key={j} className="text-sm text-foreground leading-relaxed">{f}</li>
+                ))}
+              </ul>
             ))
           ) : (
             <p className="text-sm text-muted-foreground italic">Sem descrição — escreva no editor à esquerda.</p>
           )}
           {evolucao.trim() && (
             <div className="border-t border-border pt-3 space-y-2">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Evolução (padrão)</p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Evolução (padrão)</p>
+                <button onClick={copiarEvolucao}
+                  className="flex items-center gap-1 text-[10px] font-bold text-primary border border-primary/40 rounded-lg px-2 py-1 hover:bg-accent transition-all flex-shrink-0">
+                  <ClipboardCopy className="w-3 h-3" /> Copiar
+                </button>
+              </div>
               <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{evolucao}</p>
             </div>
           )}
         </div>
 
         <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
-          <button onClick={copiar}
+          <button onClick={copiarDescricao}
             className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold hover:opacity-90 transition-all btn-press">
             <ClipboardCopy className="w-3.5 h-3.5" /> Copiar (prontuário)
           </button>
@@ -184,7 +226,7 @@ export default function DescricaoCirurgicaEditor() {
             className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-primary/40 text-primary text-xs font-bold hover:bg-accent transition-all">
             <Printer className="w-3.5 h-3.5" /> Imprimir
           </button>
-          {flash === 'copiado' && <span className="text-xs font-bold text-primary">✓ Copiado</span>}
+          {flash === 'desc' && <span className="text-xs font-bold text-primary">✓ Copiado</span>}
           {flash === 'erro' && <span className="text-xs font-bold text-destructive">Não foi possível copiar</span>}
         </div>
       </section>

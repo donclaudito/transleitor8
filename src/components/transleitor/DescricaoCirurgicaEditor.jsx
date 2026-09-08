@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Printer, ClipboardCopy, Save, Zap, Eraser, Plus, Check, Pencil, Trash2 } from 'lucide-react';
 import { CIRURGIA_DATA } from './CirurgiaPanel';
+import AtendimentosMesPanel from './AtendimentosMesPanel';
 
 // Catálogo real de procedimentos (mesma fonte do POP A).
 const CATALOGO = CIRURGIA_DATA.identificacao.groups.find(g => g.label === 'Tipo de Procedimento')?.items ?? [];
@@ -150,6 +151,19 @@ export default function DescricaoCirurgicaEditor() {
     }
   };
 
+  // Salvar registra um atendimento do mês corrente (contabilizado no painel lateral).
+  const salvar = async () => {
+    const nome = procedimento.trim();
+    if (!nome) { avisar('erroSalvo'); return; }
+    try {
+      await base44.entities.AtendimentoCirurgico.create({ procedimento: nome });
+      queryClient.invalidateQueries({ queryKey: ['atendimentos-mes'] });
+      avisar('salvo');
+    } catch (_) {
+      avisar('erroSalvo');
+    }
+  };
+
   // Evolução padrão é separada: copia somente o texto dela.
   const copiarEvolucao = async () => {
     try {
@@ -164,6 +178,7 @@ export default function DescricaoCirurgicaEditor() {
     <div className="flex-1 flex flex-col md:flex-row min-h-0">
       {/* Barra lateral: procedimentos, com rolagem própria */}
       <aside className="md:w-52 flex-shrink-0 border-b md:border-b-0 md:border-r border-border p-3 space-y-2 flex flex-col max-h-[24vh] md:max-h-none min-h-0">
+        <AtendimentosMesPanel />
         <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex-shrink-0">Procedimentos</p>
         <div className="flex-1 min-h-0 overflow-y-auto space-y-1 pr-1 [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-primary/35 [&::-webkit-scrollbar-thumb]:rounded-full">
           {carregandoItens && (
@@ -277,7 +292,7 @@ export default function DescricaoCirurgicaEditor() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2 pt-1">
-          <button onClick={() => avisar('salvo')}
+          <button onClick={salvar}
             className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold hover:opacity-90 transition-all btn-press">
             <Save className="w-3.5 h-3.5" /> Salvar
           </button>
@@ -345,6 +360,7 @@ export default function DescricaoCirurgicaEditor() {
           </button>
           {flash === 'desc' && <span className="text-xs font-bold text-primary">✓ Copiado</span>}
           {flash === 'erro' && <span className="text-xs font-bold text-destructive">Não foi possível copiar</span>}
+          {flash === 'erroSalvo' && <span className="text-xs font-bold text-destructive">Não foi possível salvar</span>}
         </div>
       </section>
     </div>

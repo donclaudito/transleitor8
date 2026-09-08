@@ -1,0 +1,193 @@
+import React, { useState } from 'react';
+import { Printer, ClipboardCopy, Save, Zap, Eraser, Plus } from 'lucide-react';
+import { CIRURGIA_DATA } from './CirurgiaPanel';
+
+// Catálogo real de procedimentos (mesma fonte do POP A).
+const CATALOGO = CIRURGIA_DATA.identificacao.groups.find(g => g.label === 'Tipo de Procedimento')?.items ?? [];
+
+const EXEMPLO_LICHTENSTEIN = `PROCEDIMENTO: Hernioplastia inguinal à direita (técnica de Lichtenstein)
+ANESTESIA: [raquianestesia + sedação]
+DECÚBITO: [supino]
+ANTISSEPSIA: [PVPI tópico em hipogástrio, região inguinal e coxa direita]
+
+DESCRIÇÃO: Após antissepsia e colocação de campos estéreis, realizada incisão oblíqua de aproximadamente [6 cm], paralela e superior ao ligamento inguinal, com dissecção por planos até a exposição da aponeurose do oblíquo externo. Abertura da aponeurose e dissecção do cordão espermático, com identificação de [hérnia indireta com saco herniário]. Saco herniário dissecado, reduzido e [ligado na base com fio de absorvível 2-0]. Implante de tela de polipropilena [6 x 11 cm], posicionada atrás do cordão espermático e fixada com [sutura contínua de nylon 2-0] ao ligamento inguinal, ao tubérculo púbico e à borda do músculo oblíquo interno, preservando as estruturas do cordão. Revisão cuidadosa da hemostasia. Aproximação da aponeurose do oblíquo externo com [nylon 2-0 contínua], plano subcutâneo com [absorvível 3-0] e pele com [nylon 4-0 em pontos simples]. Curativo oclusivo.
+
+INTERCORRÊNCIAS: [sem intercorrências]
+SANGRAMENTO: [mínimo, estimado em __ mL]`;
+
+const EVOLUCAO_PADRAO = `Paciente submetido ao procedimento descrito, sob a anestesia referida. Procedimento realizado sem intercorrências, com sangramento mínimo. Ao final, paciente encaminhado à sala de recuperação pós-anestésica em boas condições, sob monitorização.`;
+
+export default function DescricaoCirurgicaEditor() {
+  const [procedimento, setProcedimento] = useState('Hernioplastia inguinal');
+  const [descricao, setDescricao] = useState(EXEMPLO_LICHTENSTEIN);
+  const [evolucao, setEvolucao] = useState(EVOLUCAO_PADRAO);
+  const [ap, setAp] = useState(false);
+  const [criados, setCriados] = useState([]); // procedimentos adicionados via "+ Criar novo"
+  const [selecionado, setSelecionado] = useState('Hernioplastia inguinal');
+  const [flash, setFlash] = useState(''); // 'copiado' | 'salvo' | 'erro'
+
+  const avisar = (t) => { setFlash(t); setTimeout(() => setFlash(''), 1400); };
+  const itens = [...criados, ...CATALOGO];
+
+  const escolher = (nome) => { setSelecionado(nome); setProcedimento(nome); };
+
+  const criarNovo = () => {
+    const nome = procedimento.trim();
+    if (nome && !itens.includes(nome)) {
+      setCriados(prev => [...prev, nome]);
+      setSelecionado(nome);
+    } else {
+      setSelecionado(null);
+    }
+    setDescricao('');
+    setEvolucao('');
+    setAp(false);
+  };
+
+  const carregarExemplo = () => {
+    setProcedimento('Hernioplastia inguinal (Lichtenstein)');
+    setDescricao(EXEMPLO_LICHTENSTEIN);
+    setEvolucao(EVOLUCAO_PADRAO);
+    setSelecionado('Hernioplastia inguinal');
+  };
+
+  const limpar = () => {
+    setProcedimento('');
+    setDescricao('');
+    setEvolucao('');
+    setAp(false);
+    setSelecionado(null);
+  };
+
+  const textoProntuario = () =>
+    `Descrição da Cirurgia — ${procedimento || 'não definido'}\n\n${descricao.trim()}${evolucao.trim() ? `\n\nEvolução (padrão)\n${evolucao.trim()}` : ''}`;
+
+  const copiar = async () => {
+    try {
+      await navigator.clipboard.writeText(textoProntuario());
+      avisar('copiado');
+    } catch (_) {
+      avisar('erro');
+    }
+  };
+
+  const paragrafos = descricao.split(/\n\s*\n+/).filter(p => p.trim());
+
+  return (
+    <div className="flex-1 flex flex-col md:flex-row min-h-0">
+      {/* Barra lateral: procedimentos, com rolagem própria */}
+      <aside className="md:w-52 flex-shrink-0 border-b md:border-b-0 md:border-r border-border p-3 space-y-2 flex flex-col max-h-[24vh] md:max-h-none min-h-0">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex-shrink-0">Procedimentos</p>
+        <div className="flex-1 min-h-0 overflow-y-auto space-y-1 pr-1 [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-primary/35 [&::-webkit-scrollbar-thumb]:rounded-full">
+          {itens.map(nome => (
+            <button key={nome} onClick={() => escolher(nome)}
+              className={`w-full text-left px-3 py-2 rounded-lg text-xs font-semibold border transition-all ${
+                selecionado === nome
+                  ? 'border-primary/40 bg-primary/10 text-primary'
+                  : 'border-border text-muted-foreground hover:border-primary/30 hover:text-foreground'
+              }`}>
+              {nome}
+            </button>
+          ))}
+        </div>
+        <button onClick={criarNovo}
+          className="flex-shrink-0 w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold hover:opacity-90 transition-all btn-press">
+          <Plus className="w-3.5 h-3.5" /> Criar novo
+        </button>
+      </aside>
+
+      {/* Editor */}
+      <section className="flex-1 min-w-0 overflow-y-auto p-4 space-y-3 border-b md:border-b-0 md:border-r border-border [scrollbar-width:thin]">
+        <div className="space-y-1.5">
+          <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Procedimento</label>
+          <input
+            type="text"
+            value={procedimento}
+            onChange={(e) => setProcedimento(e.target.value)}
+            placeholder="Ex.: Hernioplastia inguinal (Lichtenstein)"
+            className="w-full px-4 py-2.5 rounded-xl bg-muted border border-border text-sm focus:outline-none focus:border-primary/50 transition-all"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Descrição da Cirurgia</label>
+          <textarea
+            rows={13}
+            value={descricao}
+            onChange={(e) => setDescricao(e.target.value)}
+            placeholder="Procedimento, anestesia, decúbito, antissepsia, descrição passo a passo, intercorrências, sangramento..."
+            className="w-full px-4 py-3 rounded-xl bg-muted border border-border text-sm resize-y focus:outline-none focus:border-primary/50 transition-all font-mono text-xs leading-relaxed"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Evolução padrão</label>
+          <textarea
+            rows={4}
+            value={evolucao}
+            onChange={(e) => setEvolucao(e.target.value)}
+            placeholder="Evolução padrão que acompanha a descrição..."
+            className="w-full px-4 py-3 rounded-xl bg-muted border border-border text-sm resize-y focus:outline-none focus:border-primary/50 transition-all"
+          />
+        </div>
+
+        <label className="flex items-center gap-2 text-xs font-semibold text-muted-foreground cursor-pointer">
+          <input type="checkbox" checked={ap} onChange={(e) => setAp(e.target.checked)}
+            className="w-4 h-4 accent-[hsl(var(--primary))]" />
+          AP (anatomopatológico confirmado)
+        </label>
+
+        <div className="flex flex-wrap items-center gap-2 pt-1">
+          <button onClick={() => avisar('salvo')}
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold hover:opacity-90 transition-all btn-press">
+            <Save className="w-3.5 h-3.5" /> Salvar
+          </button>
+          <button onClick={carregarExemplo}
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-primary/40 text-primary text-xs font-bold hover:bg-accent transition-all">
+            <Zap className="w-3.5 h-3.5" /> Exemplo Lichtenstein
+          </button>
+          <button onClick={limpar}
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
+            <Eraser className="w-3.5 h-3.5" /> Limpar
+          </button>
+          {flash === 'salvo' && <span className="text-xs font-bold text-primary">✓ Salvo</span>}
+        </div>
+      </section>
+
+      {/* Pré-visualização (atualiza a cada tecla) */}
+      <section className="flex-1 min-w-0 flex flex-col min-h-0 p-4 space-y-3">
+        <div className="flex-1 min-h-0 overflow-y-auto glass-card rounded-2xl p-5 print-area space-y-4 [scrollbar-width:thin]">
+          <h3 className="text-sm font-extrabold break-words">
+            Descrição da Cirurgia — <span className="text-primary">{procedimento || 'não definido'}</span>
+          </h3>
+          {paragrafos.length > 0 ? (
+            paragrafos.map((p, i) => (
+              <p key={i} className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{p}</p>
+            ))
+          ) : (
+            <p className="text-sm text-muted-foreground italic">Sem descrição — escreva no editor à esquerda.</p>
+          )}
+          {evolucao.trim() && (
+            <div className="border-t border-border pt-3 space-y-2">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Evolução (padrão)</p>
+              <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{evolucao}</p>
+            </div>
+          )}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
+          <button onClick={copiar}
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold hover:opacity-90 transition-all btn-press">
+            <ClipboardCopy className="w-3.5 h-3.5" /> Copiar (prontuário)
+          </button>
+          <button onClick={() => window.print()}
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-primary/40 text-primary text-xs font-bold hover:bg-accent transition-all">
+            <Printer className="w-3.5 h-3.5" /> Imprimir
+          </button>
+          {flash === 'copiado' && <span className="text-xs font-bold text-primary">✓ Copiado</span>}
+          {flash === 'erro' && <span className="text-xs font-bold text-destructive">Não foi possível copiar</span>}
+        </div>
+      </section>
+    </div>
+  );
+}

@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { X, Plus, Trash2, Check, Scissors, Search, Zap } from 'lucide-react';
+import { X, Plus, Trash2, Check, Scissors, Search, Zap, Sun, Moon } from 'lucide-react';
 import PopProcedimento from './PopProcedimento';
 import PopEvolucao from './PopEvolucao';
+import DescricaoCirurgicaEditor from './DescricaoCirurgicaEditor';
 
 const EM_BRANCO = { id: null, procedimento: '', evolucao: '', ap: null, resultado: '', fonte: '' };
 
@@ -14,7 +15,7 @@ const fmtDate = (d) => {
     ' ' + dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 };
 
-export default function SurgeryModule({ onClose, llmProviders = [] }) {
+export default function SurgeryModule({ onClose, llmProviders = [], theme = 'dark', onToggleTheme = () => {} }) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [reg, setReg] = useState(EM_BRANCO);
@@ -26,6 +27,7 @@ export default function SurgeryModule({ onClose, llmProviders = [] }) {
   const [salvando, setSalvando] = useState(false);
   const [flash, setFlash] = useState(''); // 'copiado' | 'salvo'
   const [erro, setErro] = useState('');
+  const [view, setView] = useState('descricao'); // 'descricao' (editor + preview) | 'evolucao' (cards + pops)
 
   // Barra lateral: registros do médico logado, mais recentes primeiro (escopo por dono no servidor).
   const { data: registros = [] } = useQuery({
@@ -146,21 +148,42 @@ export default function SurgeryModule({ onClose, llmProviders = [] }) {
     <div className="fixed inset-0 z-50">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       <div className="absolute inset-0 flex items-center justify-center p-3 sm:p-6">
-        <div className="w-full max-w-5xl h-full max-h-[94vh] flex flex-col bg-card rounded-2xl border border-border shadow-2xl overflow-hidden">
-          {/* Cabeçalho */}
+        <div className="w-full max-w-6xl h-full max-h-[94vh] flex flex-col bg-card rounded-2xl border border-border shadow-2xl overflow-hidden">
+          {/* Cabeçalho: abas + alternância de tema */}
           <div className="flex items-center gap-3 px-5 py-4 border-b border-border flex-shrink-0">
-            <span className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+            <span className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
               <Scissors className="w-4 h-4 text-primary" />
             </span>
-            <div>
+            <div className="hidden sm:block">
               <h2 className="text-sm font-extrabold">Módulo de Cirurgias</h2>
               <p className="text-[11px] text-muted-foreground">Procedimento cirúrgico e evolução de pós-operatório</p>
             </div>
-            <button onClick={onClose} className="ml-auto p-2 rounded-xl hover:bg-accent transition-colors text-muted-foreground">
+            <div className="flex gap-1 bg-muted rounded-xl p-1 border border-border mx-auto sm:mx-4 flex-shrink-0">
+              <button onClick={() => setView('descricao')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  view === 'descricao' ? 'bg-primary text-primary-foreground shadow' : 'text-muted-foreground hover:text-foreground'
+                }`}>
+                Descrição da Cirurgia
+              </button>
+              <button onClick={() => setView('evolucao')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  view === 'evolucao' ? 'bg-primary text-primary-foreground shadow' : 'text-muted-foreground hover:text-foreground'
+                }`}>
+                Evolução PO
+              </button>
+            </div>
+            <button onClick={onToggleTheme} title={theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}
+              className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent transition-all flex-shrink-0">
+              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
+            <button onClick={onClose} className="p-2 rounded-xl hover:bg-accent transition-colors text-muted-foreground flex-shrink-0">
               <X className="w-4 h-4" />
             </button>
           </div>
 
+          {view === 'descricao' ? (
+            <DescricaoCirurgicaEditor />
+          ) : (
           <div className="flex-1 flex flex-col md:flex-row min-h-0">
             {/* Barra lateral: procedimentos salvos, rolagem própria */}
             <aside className="md:w-64 flex-shrink-0 border-b md:border-b-0 md:border-r border-border p-3 space-y-2 flex flex-col max-h-[32vh] md:max-h-none min-h-0">
@@ -239,6 +262,7 @@ export default function SurgeryModule({ onClose, llmProviders = [] }) {
               </div>
             </div>
           </div>
+          )}
         </div>
       </div>
 

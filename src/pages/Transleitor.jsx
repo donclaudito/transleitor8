@@ -574,7 +574,14 @@ ${HUMANIZACAO}`;
   return (
     <div className="min-h-screen bg-background">
       <Header view={view} setView={setView} theme={settings.theme} setTheme={setTheme} onNewEvolution={handleNewEvolution} activeLLMName={activeLLMName} llmProviders={llmProviders} selectedLLMId={selectedLLMId} setSelectedLLMId={setSelectedLLMId} onOpenPosOperatorio={() => setShowPosOp(true)} />
-      {showPosOp && <SurgeryModule onClose={() => setShowPosOp(false)} llmProviders={llmProviders} />}
+      {showPosOp && (
+        <SurgeryModule
+          onClose={() => setShowPosOp(false)}
+          llmProviders={llmProviders}
+          theme={settings.theme}
+          onToggleTheme={() => setTheme(settings.theme === 'dark' ? 'light' : 'dark')}
+        />
+      )}
       {renderContent()}
     </div>
   );

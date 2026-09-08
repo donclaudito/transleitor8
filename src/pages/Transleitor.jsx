@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Header from '@/components/transleitor/Header';
@@ -32,6 +32,22 @@ export default function Transleitor() {
   const [formData, setFormData] = useState(DEFAULT_FORM);
   const { settings, setTheme, addCustomChip, removeCustomChip } = useSettings();
   const queryClient = useQueryClient();
+
+  // O módulo de pós-operatório insere a nota gerada na Descrição Clínica via evento
+  // (o módulo é um overlay global; o evento mantém o acoplamento solto).
+  useEffect(() => {
+    const handler = (e) => {
+      const texto = e.detail?.texto;
+      if (!texto) return;
+      setFormData(prev => {
+        const current = prev.clinicalDescription.trimEnd();
+        const sep = !current ? '' : ['.', ';', '\n'].includes(current.slice(-1)) ? '\n' : ', ';
+        return { ...prev, clinicalDescription: current + sep + texto };
+      });
+    };
+    window.addEventListener('transleitor:inserir-clinica', handler);
+    return () => window.removeEventListener('transleitor:inserir-clinica', handler);
+  }, []);
 
   const { data: evolutions = [] } = useQuery({
     queryKey: ['evolutions'],
@@ -558,7 +574,7 @@ ${HUMANIZACAO}`;
   return (
     <div className="min-h-screen bg-background">
       <Header view={view} setView={setView} theme={settings.theme} setTheme={setTheme} onNewEvolution={handleNewEvolution} activeLLMName={activeLLMName} llmProviders={llmProviders} selectedLLMId={selectedLLMId} setSelectedLLMId={setSelectedLLMId} onOpenPosOperatorio={() => setShowPosOp(true)} />
-      {showPosOp && <PosOperatorioModule onClose={() => setShowPosOp(false)} selectedLLMId={selectedLLMId} />}
+      {showPosOp && <PosOperatorioModule onClose={() => setShowPosOp(false)} llmProviders={llmProviders} />}
       {renderContent()}
     </div>
   );

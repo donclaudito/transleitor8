@@ -20,7 +20,11 @@
     },
     "resultado": {
       "type": "string",
-      "description": "Nota de p\u00f3s-operat\u00f3rio gerada por IA (HTML), edit\u00e1vel"
+      "description": "Nota de p\u00f3s-operat\u00f3rio gerada por IA (texto), edit\u00e1vel"
+    },
+    "fonte": {
+      "type": "string",
+      "description": "Fonte da nota gerada (ex.: IA do Base44, DeepSeek)"
     }
   },
   "required": [

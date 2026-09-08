@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { X, Plus, Trash2, Check, Wand2, Copy, Pencil, Save, Printer, Scissors, Loader2, CheckCircle2 } from 'lucide-react';
+import { X, Plus, Trash2, Check, Wand2, Save, Scissors, Loader2 } from 'lucide-react';
 import SurgeryTemplates from './SurgeryTemplates';
+import PosOperatorioNotaModal from './PosOperatorioNotaModal';
 
-const EM_BRANCO = { id: null, procedimento: '', evolucao: '', ap_confirmado: null, encaminhado: true, resultado: '' };
+const EM_BRANCO = { id: null, procedimento: '', evolucao: '', ap_confirmado: null, encaminhado: true, resultado: '', fonte: '' };
 const fmtDate = (d) => {
   const dt = new Date(d);
   return dt.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' }) +
@@ -20,13 +21,14 @@ const appendTexto = (atual, texto) => {
   return base + sep + texto;
 };
 
-export default function PosOperatorioModule({ onClose, selectedLLMId }) {
+export default function PosOperatorioModule({ onClose, llmProviders = [] }) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [reg, setReg] = useState(EM_BRANCO);
   const [confirmId, setConfirmId] = useState(null);
   const [gerando, setGerando] = useState(false);
-  const [editandoResultado, setEditandoResultado] = useState(false);
+  const [iaSelecionada, setIaSelecionada] = useState('base44'); // 'base44' | 'deepseek'
+  const [notaAberta, setNotaAberta] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [flash, setFlash] = useState(''); // 'salvo' | 'copiado'
   const [erro, setErro] = useState('');
@@ -40,10 +42,16 @@ export default function PosOperatorioModule({ onClose, selectedLLMId }) {
   });
   const meus = registros.filter(r => user && r.created_by_id === user.id);
 
+  // Pill DeepSeek: usa a lista de provedores já carregada pela página do Transleitor
+  // (a consulta começa no mount da página, então o id já está resolvido quando o médico gera).
+  const norm = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const deepseekList = llmProviders.filter(p => norm(p.provider_name).includes('deepseek'));
+  const deepseekId = (deepseekList.find(p => norm(p.provider_name).trim() === 'deepseek') || deepseekList[0])?.id || null;
+
   const atualizarCache = (fn) =>
     queryClient.setQueryData(['evolucao-pos-operatoria', user.id], (old = []) => fn(old));
 
-  const novo = () => { setReg({ ...EM_BRANCO }); setErro(''); setEditandoResultado(false); };
+  const novo = () => { setReg({ ...EM_BRANCO }); setErro(''); setNotaAberta(false); };
 
   const abrir = (r) => {
     setReg({
@@ -53,8 +61,9 @@ export default function PosOperatorioModule({ onClose, selectedLLMId }) {
       ap_confirmado: r.ap_confirmado ?? null,
       encaminhado: r.encaminhado ?? true,
       resultado: r.resultado || '',
+      fonte: r.fonte || '',
     });
-    setErro(''); setEditandoResultado(false);
+    setErro(''); setNotaAberta(false);
   };
 
   const salvar = async () => {
@@ -66,6 +75,7 @@ export default function PosOperatorioModule({ onClose, selectedLLMId }) {
       ap_confirmado: reg.ap_confirmado,
       encaminhado: reg.encaminhado,
       resultado: reg.resultado,
+      fonte: reg.fonte || '',
     };
     try {
       if (reg.id) {
@@ -107,42 +117,40 @@ export default function PosOperatorioModule({ onClose, selectedLLMId }) {
       return;
     }
     setGerando(true); setErro('');
-    const ap = reg.ap_confirmado === true ? 'AP confirmado (Sim)'
-      : reg.ap_confirmado === false ? 'AP ainda não confirmado (Não)'
-        : 'Confirmação de AP pendente';
-    const prompt = `Você é um assistente médico especialista em cirurgia geral e documentação clínica brasileira.
-Gere a nota de pós-operatório em HTML semântico (sem Markdown), técnica e pronta para prontuário. NÃO invente dados.
-
-DADOS DO CASO:
-- Procedimento cirúrgico: ${reg.procedimento.trim()}
-- Evolução de pós-operatório descrita pelo médico: ${reg.evolucao.trim()}
-- Encaminhamento: ${reg.encaminhado ? 'Paciente encaminhado à sala de recuperação pós-anestésica.' : 'Sem registro de encaminhamento à sala de recuperação.'}
-- Confirmação de anatomopatológico (AP): ${ap}
-
-REGRAS (OBRIGATÓRIAS):
-1. Use exclusivamente os dados acima — são a única fonte permitida. NÃO invente exames, sinais vitais, medicamentos ou achados.
-2. Seção sem dados correspondentes fica vazia ou é omitida — nunca escreva "(dados não fornecidos)".
-3. Redija como um médico brasileiro escreve um prontuário real: terminologia médica formal, fraseado natural. NUNCA mencione "IA", "dados fornecidos" ou "instruções".
-
-Estruture: identificação do procedimento e estado atual do paciente, condutas, e encaminhamento. Inclua a linha de encaminhamento à sala de recuperação quando indicado e a situação do AP (confirmado, não confirmado ou pendente).
-Use <p>, <strong>, <ul>/<li>. NÃO use Markdown.`;
     try {
-      let resultado;
-      if (selectedLLMId) {
-        const res = await base44.functions.invoke('generateSOAP', { prompt, llm_config_id: selectedLLMId });
-        if (res.data?.error) throw new Error(res.data.error);
-        resultado = res.data.text;
-      } else {
-        resultado = await base44.integrations.Core.InvokeLLM({ prompt, model: 'gemini_3_flash' });
-      }
-      setReg(prev => ({ ...prev, resultado }));
-      setEditandoResultado(false);
+      const res = await base44.functions.invoke('gerarEvolucaoPosOperatoria', {
+        procedimento: reg.procedimento.trim(),
+        evolucao: reg.evolucao.trim(),
+        encaminhado: reg.encaminhado,
+        ap_confirmado: reg.ap_confirmado,
+        llm_config_id: iaSelecionada === 'deepseek' ? deepseekId : null,
+      });
+      if (res.data?.error) throw new Error(res.data.error);
+      setReg(prev => ({ ...prev, resultado: res.data.text, fonte: res.data.fonte || '' }));
+      setNotaAberta(true); // abre o modal com a descrição cirúrgica completa
     } catch (e) {
-      const msg = e?.response?.data?.error || e?.message || 'Erro ao gerar a evolução.';
+      let msg = e?.response?.data?.error || e?.message || 'Erro ao gerar a nota.';
+      if (iaSelecionada === 'base44' && deepseekId && /cr[eé]dito|limit|402/i.test(msg)) {
+        // Créditos do Base44 esgotados: avisa para alternar — não troca sozinho. O texto montado permanece nos campos.
+        msg = 'A IA do Base44 está sem créditos no momento. Toque no pill "DeepSeek" ao lado e gere novamente — o texto que você montou continua aqui, nada foi perdido.';
+      } else if (/Chave API não configurada/i.test(msg)) {
+        msg += ' Cadastre a chave nos secrets do app (dashboard → variáveis de ambiente).';
+      }
       setErro(msg);
     } finally {
       setGerando(false);
     }
+  };
+
+  const inserirNaDescricaoClinica = () => {
+    window.dispatchEvent(new CustomEvent('transleitor:inserir-clinica', { detail: { texto: reg.resultado } }));
+    setFlash('inserido');
+    setTimeout(() => setFlash(''), 1600);
+  };
+
+  const excluirNota = () => {
+    setReg(prev => ({ ...prev, resultado: '', fonte: '' }));
+    setNotaAberta(false);
   };
 
   const copiar = async () => {
@@ -269,71 +277,60 @@ Use <p>, <strong>, <ul>/<li>. NÃO use Markdown.`;
                 </div>
               </div>
 
-              <button onClick={gerar} disabled={gerando}
-                className={`w-full py-3.5 rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg btn-press ${
-                  gerando ? 'bg-amber-500/15 text-amber-500 border border-amber-500/30 animate-pulse' : 'bg-primary text-primary-foreground hover:opacity-90'
-                }`}>
-                {gerando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
-                {gerando ? 'Gerando nota de pós-operatório...' : 'Gerar evolução'}
-              </button>
-              {erro && <p className="text-xs text-destructive text-center">{erro}</p>}
-
-              {/* Resultado */}
-              {reg.resultado && (
-                <div className="glass-card rounded-2xl p-5 space-y-3 print-area">
-                  <div className="flex items-center justify-between flex-wrap gap-2">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Nota de Pós-Operatório</h3>
-                    <div className="flex items-center gap-1.5">
-                      {flash && (
-                        <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-500">
-                          <CheckCircle2 className="w-3 h-3" /> {flash === 'salvo' ? 'Salvo' : 'Copiado'}
-                        </span>
-                      )}
-                      {editandoResultado ? (
-                        <>
-                          <button onClick={() => setEditandoResultado(false)}
-                            className="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border border-border text-muted-foreground hover:bg-accent transition-all">
-                            Cancelar edição
-                          </button>
-                          <button onClick={salvar} disabled={salvando}
-                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-40 transition-all">
-                            <Save className="w-3 h-3" /> {salvando ? 'Salvando...' : 'Salvar'}
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <button onClick={() => setEditandoResultado(true)} title="Editar resultado"
-                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border border-border text-muted-foreground hover:text-primary hover:bg-accent transition-all">
-                            <Pencil className="w-3 h-3" /> Editar
-                          </button>
-                          <button onClick={salvar} disabled={salvando} title="Salvar registro na barra lateral"
-                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-40 transition-all">
-                            <Save className="w-3 h-3" /> {salvando ? 'Salvando...' : 'Salvar'}
-                          </button>
-                          <button onClick={copiar} title="Copiar resultado"
-                            className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-accent transition-all">
-                            <Copy className="w-3.5 h-3.5" />
-                          </button>
-                          <button onClick={() => setReg(prev => ({ ...prev, resultado: '' }))} title="Descartar resultado"
-                            className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all">
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button onClick={() => window.print()} title="Imprimir"
-                            className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-accent transition-all">
-                            <Printer className="w-3.5 h-3.5" />
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  {editandoResultado ? (
-                    <textarea rows={10} value={reg.resultado} onChange={e => setReg({ ...reg, resultado: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl bg-muted border border-border text-xs font-mono resize-none focus:outline-none focus:border-primary/50 transition-all" />
-                  ) : (
-                    <div className="prose prose-sm dark:prose-invert max-w-none text-sm [&_code]:bg-primary/10 [&_code]:text-primary [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:font-mono [&_code]:text-xs [&_code]:font-bold"
-                      dangerouslySetInnerHTML={{ __html: reg.resultado }} />
+              <div className="space-y-2">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Gerar com:</span>
+                  <button onClick={() => setIaSelecionada('base44')}
+                    className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${iaSelecionada === 'base44' ? 'bg-primary/15 border-primary/40 text-primary' : 'border-border text-muted-foreground hover:border-primary/30'}`}>
+                    IA do Base44
+                  </button>
+                  {deepseekId && (
+                    <button onClick={() => setIaSelecionada('deepseek')} title="Usa a chave DeepSeek do app, sem consumir créditos do Base44"
+                      className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${iaSelecionada === 'deepseek' ? 'bg-primary/15 border-primary/40 text-primary' : 'border-border text-muted-foreground hover:border-primary/30'}`}>
+                      DeepSeek
+                    </button>
                   )}
                 </div>
+                <button onClick={gerar} disabled={gerando}
+                  className={`w-full py-3.5 rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg btn-press ${
+                    gerando ? 'bg-amber-500/15 text-amber-500 border border-amber-500/30 animate-pulse' : 'bg-primary text-primary-foreground hover:opacity-90'
+                  }`}>
+                  {gerando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+                  {gerando ? 'Gerando nota de pós-operatório...' : 'Gerar evolução'}
+                </button>
+                {erro && <p className="text-xs text-destructive text-center">{erro}</p>}
+              </div>
+
+              {/* Nota gerada: reabrir o modal quando ele foi fechado */}
+              {reg.resultado && !notaAberta && (
+                <div className="glass-card rounded-2xl p-4 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Nota de Pós-Operatório</h3>
+                    <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
+                      {reg.fonte ? `${reg.fonte} · ` : ''}{reg.resultado.length} caracteres — pronta para copiar ou inserir
+                    </p>
+                  </div>
+                  <button onClick={() => setNotaAberta(true)}
+                    className="flex-shrink-0 px-3 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold hover:opacity-90 transition-all btn-press">
+                    Abrir nota
+                  </button>
+                </div>
+              )}
+
+              {notaAberta && reg.resultado && (
+                <PosOperatorioNotaModal
+                  procedimento={reg.procedimento}
+                  fonte={reg.fonte}
+                  texto={reg.resultado}
+                  onChangeTexto={(t) => setReg(prev => ({ ...prev, resultado: t }))}
+                  flash={flash}
+                  salvando={salvando}
+                  onCopiar={copiar}
+                  onSalvar={salvar}
+                  onInserir={inserirNaDescricaoClinica}
+                  onExcluir={excluirNota}
+                  onClose={() => setNotaAberta(false)}
+                />
               )}
             </div>
           </div>

@@ -8,7 +8,8 @@
         "evolucao",
         "imagem",
         "conversa",
-        "imaginologia"
+        "imaginologia",
+        "posoperatorio"
       ],
       "description": "Fluxo de origem da chamada de IA"
     },

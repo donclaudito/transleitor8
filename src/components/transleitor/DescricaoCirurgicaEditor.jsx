@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
 import { Printer, ClipboardCopy, Save, Zap, Eraser, Plus, Check, Pencil, Trash2 } from 'lucide-react';
 import { CIRURGIA_DATA } from './CirurgiaPanel';
 
@@ -37,24 +39,46 @@ export default function DescricaoCirurgicaEditor() {
   const [descricao, setDescricao] = useState(EXEMPLO_LICHTENSTEIN);
   const [evolucao, setEvolucao] = useState(EVOLUCAO_PADRAO);
   const [ap, setAp] = useState(false);
-  const [procedimentos, setProcedimentos] = useState(CATALOGO); // lista editável (renomear/excluir)
-  const [selecionado, setSelecionado] = useState('Hernioplastia inguinal');
+  const [selecionado, setSelecionado] = useState(undefined); // id do registro selecionado
   const [renomeando, setRenomeando] = useState(null); // nome do item em edição
   const [nomeEdicao, setNomeEdicao] = useState('');
   const [confirmando, setConfirmando] = useState(null); // nome do item aguardando confirmação de exclusão
   const [flash, setFlash] = useState(''); // 'desc' | 'evol' | 'salvo' | 'erro'
 
   const avisar = (t) => { setFlash(t); setTimeout(() => setFlash(''), 1400); };
-  const itens = procedimentos;
+  const queryClient = useQueryClient();
+
+  // Barra pessoal do médico logado: carregada do banco (privada por usuário).
+  // Na primeira vez, semeia com o catálogo padrão para o médico começar com a lista completa.
+  const { data: itens = [], isLoading: carregandoItens } = useQuery({
+    queryKey: ['procedimentos-cirurgicos'],
+    queryFn: async () => {
+      let list = await base44.entities.ProcedimentoCirurgico.list('created_date', 200);
+      if (list.length === 0) {
+        list = await base44.entities.ProcedimentoCirurgico.bulkCreate(CATALOGO.map(nome => ({ nome })));
+      }
+      return list;
+    },
+  });
+
+  const atualizarCache = (fn) => queryClient.setQueryData(['procedimentos-cirurgicos'], (old = []) => fn(old));
+
+  useEffect(() => {
+    if (selecionado === undefined && itens.length > 0) {
+      const padrao = itens.find(p => p.nome === 'Hernioplastia inguinal');
+      setSelecionado(padrao ? padrao.id : itens[0].id);
+    }
+  }, [itens]);
   const paragrafos = descricao.split(/\n\s*\n+/).filter(p => p.trim());
 
-  const escolher = (nome) => { setSelecionado(nome); setProcedimento(nome); };
+  const escolher = (p) => { setSelecionado(p.id); setProcedimento(p.nome); };
 
-  const criarNovo = () => {
+  const criarNovo = async () => {
     const nome = procedimento.trim();
-    if (nome && !itens.includes(nome)) {
-      setProcedimentos(prev => [...prev, nome]);
-      setSelecionado(nome);
+    if (nome && !itens.some(p => p.nome === nome)) {
+      const criado = await base44.entities.ProcedimentoCirurgico.create({ nome });
+      atualizarCache(old => [...old, criado]);
+      setSelecionado(criado?.id ?? null);
     } else {
       setSelecionado(null);
     }
@@ -63,32 +87,42 @@ export default function DescricaoCirurgicaEditor() {
     setAp(false);
   };
 
-  const iniciarRenome = (nome) => {
-    setRenomeando(nome);
-    setNomeEdicao(nome);
+  const iniciarRenome = (id) => {
+    setRenomeando(id);
+    setNomeEdicao(itens.find(p => p.id === id)?.nome || '');
   };
 
-  const confirmarRenome = () => {
+  const confirmarRenome = async () => {
     const novo = nomeEdicao.trim();
-    const antigo = renomeando;
-    if (novo && novo !== antigo && !itens.includes(novo)) {
-      setProcedimentos(prev => prev.map(p => (p === antigo ? novo : p)));
-      if (selecionado === antigo) { setSelecionado(novo); setProcedimento(novo); }
-    }
+    const id = renomeando;
+    const antigo = itens.find(p => p.id === id)?.nome;
     setRenomeando(null);
+    if (!novo || novo === antigo || itens.some(p => p.nome === novo)) return;
+    try {
+      const upd = await base44.entities.ProcedimentoCirurgico.update(id, { nome: novo });
+      atualizarCache(old => old.map(p => (p.id === id ? upd : p)));
+      if (selecionado === id) setProcedimento(novo);
+    } catch (_) {
+      avisar('erro');
+    }
   };
 
-  const excluir = (nome) => {
-    setProcedimentos(prev => prev.filter(p => p !== nome));
-    if (selecionado === nome) setSelecionado(null);
+  const excluir = async (id) => {
     setConfirmando(null);
+    atualizarCache(old => old.filter(p => p.id !== id));
+    if (selecionado === id) setSelecionado(null);
+    try {
+      await base44.entities.ProcedimentoCirurgico.delete(id);
+    } catch (_) {
+      queryClient.invalidateQueries({ queryKey: ['procedimentos-cirurgicos'] });
+    }
   };
 
   const carregarExemplo = () => {
     setProcedimento('Hernioplastia inguinal (Lichtenstein)');
     setDescricao(EXEMPLO_LICHTENSTEIN);
     setEvolucao(EVOLUCAO_PADRAO);
-    setSelecionado('Hernioplastia inguinal');
+    setSelecionado(itens.find(p => p.nome === 'Hernioplastia inguinal')?.id ?? null);
   };
 
   const limpar = () => {
@@ -127,8 +161,14 @@ export default function DescricaoCirurgicaEditor() {
       <aside className="md:w-52 flex-shrink-0 border-b md:border-b-0 md:border-r border-border p-3 space-y-2 flex flex-col max-h-[24vh] md:max-h-none min-h-0">
         <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex-shrink-0">Procedimentos</p>
         <div className="flex-1 min-h-0 overflow-y-auto space-y-1 pr-1 [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-primary/35 [&::-webkit-scrollbar-thumb]:rounded-full">
-          {itens.map(nome => renomeando === nome ? (
-            <div key={nome} className="flex items-center gap-1">
+          {carregandoItens && (
+            <p className="text-[11px] text-muted-foreground text-center py-4">Carregando...</p>
+          )}
+          {!carregandoItens && itens.length === 0 && (
+            <p className="text-[11px] text-muted-foreground text-center py-4">Nenhum procedimento. Use "Criar novo".</p>
+          )}
+          {itens.map(p => renomeando === p.id ? (
+            <div key={p.id} className="flex items-center gap-1">
               <input
                 autoFocus
                 value={nomeEdicao}
@@ -142,25 +182,25 @@ export default function DescricaoCirurgicaEditor() {
               </button>
             </div>
           ) : (
-            <div key={nome}
+            <div key={p.id}
               className={`flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-semibold border transition-all ${
-                selecionado === nome
+                selecionado === p.id
                   ? 'border-primary/40 bg-primary/10 text-primary'
                   : 'border-border text-muted-foreground hover:border-primary/30 hover:text-foreground'
               }`}>
-              <button onClick={() => escolher(nome)} className="flex-1 min-w-0 text-left truncate">{nome}</button>
-              {confirmando === nome ? (
-                <button onClick={() => excluir(nome)} title="Confirmar exclusão"
+              <button onClick={() => escolher(p)} className="flex-1 min-w-0 text-left truncate">{p.nome}</button>
+              {confirmando === p.id ? (
+                <button onClick={() => excluir(p.id)} title="Confirmar exclusão"
                   className="flex-shrink-0 p-1 rounded-md text-destructive bg-destructive/10 animate-pulse transition-all">
                   <Trash2 className="w-3 h-3" />
                 </button>
               ) : (
                 <>
-                  <button onClick={() => iniciarRenome(nome)} title="Renomear"
+                  <button onClick={() => iniciarRenome(p.id)} title="Renomear"
                     className="flex-shrink-0 p-1 rounded-md hover:text-foreground hover:bg-accent transition-all">
                     <Pencil className="w-3 h-3" />
                   </button>
-                  <button onClick={() => { setConfirmando(nome); setTimeout(() => setConfirmando(null), 3000); }} title="Excluir"
+                  <button onClick={() => { setConfirmando(p.id); setTimeout(() => setConfirmando(null), 3000); }} title="Excluir"
                     className="flex-shrink-0 p-1 rounded-md hover:text-destructive hover:bg-destructive/10 transition-all">
                     <Trash2 className="w-3 h-3" />
                   </button>

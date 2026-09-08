@@ -172,6 +172,19 @@ export default function DescricaoCirurgicaEditor() {
           descricao, evolucao, ap, drenos,
         });
         atualizarCache(old => old.map(p => (p.id === selecionado ? upd : p)));
+      } else {
+        // Fluxo "Criar novo": sem procedimento selecionado, o Salvar cria o procedimento
+        // (ou grava no de mesmo nome, se já existir) e o mostra na barra.
+        const existente = itens.find(p => p.nome === nome);
+        if (existente) {
+          const upd = await base44.entities.ProcedimentoCirurgico.update(existente.id, { descricao, evolucao, ap, drenos });
+          atualizarCache(old => old.map(p => (p.id === existente.id ? upd : p)));
+          setSelecionado(existente.id);
+        } else {
+          const criado = await base44.entities.ProcedimentoCirurgico.create({ nome, descricao, evolucao, ap, drenos });
+          atualizarCache(old => [...old, criado]);
+          setSelecionado(criado?.id ?? null);
+        }
       }
       await base44.entities.AtendimentoCirurgico.create({ procedimento: nome });
       queryClient.invalidateQueries({ queryKey: ['atendimentos-mes'] });

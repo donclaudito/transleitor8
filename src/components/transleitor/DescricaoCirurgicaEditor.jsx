@@ -136,7 +136,8 @@ export default function DescricaoCirurgicaEditor() {
   // Copia APENAS a Descrição da Cirurgia: título + uma frase por linha, em forma de lista.
   const copiarDescricao = async () => {
     const texto = `Descrição da Cirurgia — ${procedimento || 'não definido'}\n\n` +
-      paragrafos.map(p => frases(p).map(f => `• ${f}`).join('\n')).join('\n\n');
+      paragrafos.map(p => frases(p).map(f => `• ${f}`).join('\n')).join('\n\n') +
+      (ap ? `\n\n• AP (anatomopatológico confirmado).` : '');
     try {
       await navigator.clipboard.writeText(texto);
       avisar('desc');
@@ -297,6 +298,11 @@ export default function DescricaoCirurgicaEditor() {
             ))
           ) : (
             <p className="text-sm text-muted-foreground italic">Sem descrição — escreva no editor à esquerda.</p>
+          )}
+          {ap && (
+            <ul className="list-disc pl-5">
+              <li className="text-sm text-foreground leading-relaxed">AP (anatomopatológico confirmado).</li>
+            </ul>
           )}
           {evolucao.trim() && (
             <div className="border-t border-border pt-3 space-y-2">

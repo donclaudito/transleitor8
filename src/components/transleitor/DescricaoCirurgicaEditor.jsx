@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Printer, ClipboardCopy, Save, Zap, Eraser, Plus } from 'lucide-react';
+import { Printer, ClipboardCopy, Save, Zap, Eraser, Plus, Check, Pencil, Trash2 } from 'lucide-react';
 import { CIRURGIA_DATA } from './CirurgiaPanel';
 
 // Catálogo real de procedimentos (mesma fonte do POP A).
@@ -37,12 +37,15 @@ export default function DescricaoCirurgicaEditor() {
   const [descricao, setDescricao] = useState(EXEMPLO_LICHTENSTEIN);
   const [evolucao, setEvolucao] = useState(EVOLUCAO_PADRAO);
   const [ap, setAp] = useState(false);
-  const [criados, setCriados] = useState([]); // procedimentos adicionados via "+ Criar novo"
+  const [procedimentos, setProcedimentos] = useState(CATALOGO); // lista editável (renomear/excluir)
   const [selecionado, setSelecionado] = useState('Hernioplastia inguinal');
+  const [renomeando, setRenomeando] = useState(null); // nome do item em edição
+  const [nomeEdicao, setNomeEdicao] = useState('');
+  const [confirmando, setConfirmando] = useState(null); // nome do item aguardando confirmação de exclusão
   const [flash, setFlash] = useState(''); // 'desc' | 'evol' | 'salvo' | 'erro'
 
   const avisar = (t) => { setFlash(t); setTimeout(() => setFlash(''), 1400); };
-  const itens = [...criados, ...CATALOGO];
+  const itens = procedimentos;
   const paragrafos = descricao.split(/\n\s*\n+/).filter(p => p.trim());
 
   const escolher = (nome) => { setSelecionado(nome); setProcedimento(nome); };
@@ -50,7 +53,7 @@ export default function DescricaoCirurgicaEditor() {
   const criarNovo = () => {
     const nome = procedimento.trim();
     if (nome && !itens.includes(nome)) {
-      setCriados(prev => [...prev, nome]);
+      setProcedimentos(prev => [...prev, nome]);
       setSelecionado(nome);
     } else {
       setSelecionado(null);
@@ -58,6 +61,27 @@ export default function DescricaoCirurgicaEditor() {
     setDescricao('');
     setEvolucao('');
     setAp(false);
+  };
+
+  const iniciarRenome = (nome) => {
+    setRenomeando(nome);
+    setNomeEdicao(nome);
+  };
+
+  const confirmarRenome = () => {
+    const novo = nomeEdicao.trim();
+    const antigo = renomeando;
+    if (novo && novo !== antigo && !itens.includes(novo)) {
+      setProcedimentos(prev => prev.map(p => (p === antigo ? novo : p)));
+      if (selecionado === antigo) { setSelecionado(novo); setProcedimento(novo); }
+    }
+    setRenomeando(null);
+  };
+
+  const excluir = (nome) => {
+    setProcedimentos(prev => prev.filter(p => p !== nome));
+    if (selecionado === nome) setSelecionado(null);
+    setConfirmando(null);
   };
 
   const carregarExemplo = () => {
@@ -103,15 +127,46 @@ export default function DescricaoCirurgicaEditor() {
       <aside className="md:w-52 flex-shrink-0 border-b md:border-b-0 md:border-r border-border p-3 space-y-2 flex flex-col max-h-[24vh] md:max-h-none min-h-0">
         <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex-shrink-0">Procedimentos</p>
         <div className="flex-1 min-h-0 overflow-y-auto space-y-1 pr-1 [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-primary/35 [&::-webkit-scrollbar-thumb]:rounded-full">
-          {itens.map(nome => (
-            <button key={nome} onClick={() => escolher(nome)}
-              className={`w-full text-left px-3 py-2 rounded-lg text-xs font-semibold border transition-all ${
+          {itens.map(nome => renomeando === nome ? (
+            <div key={nome} className="flex items-center gap-1">
+              <input
+                autoFocus
+                value={nomeEdicao}
+                onChange={(e) => setNomeEdicao(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') confirmarRenome(); if (e.key === 'Escape') setRenomeando(null); }}
+                className="flex-1 min-w-0 px-2.5 py-1.5 rounded-lg bg-muted border border-primary/50 text-xs focus:outline-none"
+              />
+              <button onClick={confirmarRenome} title="Confirmar nome"
+                className="p-1.5 rounded-lg text-primary hover:bg-accent transition-all flex-shrink-0">
+                <Check className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ) : (
+            <div key={nome}
+              className={`flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-semibold border transition-all ${
                 selecionado === nome
                   ? 'border-primary/40 bg-primary/10 text-primary'
                   : 'border-border text-muted-foreground hover:border-primary/30 hover:text-foreground'
               }`}>
-              {nome}
-            </button>
+              <button onClick={() => escolher(nome)} className="flex-1 min-w-0 text-left truncate">{nome}</button>
+              {confirmando === nome ? (
+                <button onClick={() => excluir(nome)} title="Confirmar exclusão"
+                  className="flex-shrink-0 p-1 rounded-md text-destructive bg-destructive/10 animate-pulse transition-all">
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              ) : (
+                <>
+                  <button onClick={() => iniciarRenome(nome)} title="Renomear"
+                    className="flex-shrink-0 p-1 rounded-md hover:text-foreground hover:bg-accent transition-all">
+                    <Pencil className="w-3 h-3" />
+                  </button>
+                  <button onClick={() => { setConfirmando(nome); setTimeout(() => setConfirmando(null), 3000); }} title="Excluir"
+                    className="flex-shrink-0 p-1 rounded-md hover:text-destructive hover:bg-destructive/10 transition-all">
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </>
+              )}
+            </div>
           ))}
         </div>
         <button onClick={criarNovo}

@@ -38,7 +38,7 @@ export default function Header({ view, setView, theme, setTheme, onNewEvolution,
 
   return (
     <header className="sticky top-0 z-40 glass px-3 sm:px-4 py-2.5 sm:py-3 flex items-center gap-2 sm:gap-4 overflow-x-auto flex-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&>*]:shrink-0">
-      <Link to="/" className="flex items-center gap-2 mr-auto">
+      <Link to="/menu" title="Menu" className="flex items-center gap-2 mr-auto">
         <Stethoscope className="w-5 h-5 text-primary" />
         <h1 className="text-base sm:text-lg font-extrabold tracking-tight whitespace-nowrap">Transleitor<span className="text-primary opacity-60 text-xs ml-1">7</span></h1>
       </Link>

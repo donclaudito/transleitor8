@@ -8,6 +8,7 @@ import HistoryView from '@/components/transleitor/HistoryView';
 import ManagementView from '@/components/transleitor/ManagementView';
 import SettingsPanel from '@/components/transleitor/SettingsPanel';
 import AllergyPopover from '@/components/transleitor/AllergyPopover';
+import ContextoBadge from '@/components/transleitor/ContextoBadge';
 import { useSettings } from '@/hooks/useSettings';
 
 const DEFAULT_SECTORS = ["UTI Adulto", "UTI Pediátrica", "Enfermaria Clínica", "Enfermaria Cirúrgica", "Pronto Socorro", "Emergência", "Consultório"];
@@ -29,6 +30,13 @@ export default function Transleitor() {
   const [newComorbidityName, setNewComorbidityName] = useState('');
   const [newComorbidityMeds, setNewComorbidityMeds] = useState('');
   const [formData, setFormData] = useState(DEFAULT_FORM);
+  // Contexto opcional (ambiente + especialidade) vindo do menu — removível pelo selo.
+  const [contexto, setContexto] = useState(() => {
+    const p = new URLSearchParams(window.location.search);
+    const ambiente = p.get('ambiente');
+    const especialidade = p.get('especialidade');
+    return ambiente || especialidade ? { ambiente, especialidade } : null;
+  });
   const { settings, setTheme, addCustomChip, removeCustomChip } = useSettings();
   const queryClient = useQueryClient();
 
@@ -84,6 +92,23 @@ export default function Transleitor() {
 
   const allSectors = [...new Set([...DEFAULT_SECTORS, ...customSectors.map(s => s.name)])];
   const allComorbidities = [...new Set([...DEFAULT_COMORBIDITIES, ...customComorbidities.map(c => c.name)])];
+
+  // Remove o selo e limpa os parâmetros da URL — ao recarregar, volta sem contexto.
+  const removerContexto = () => {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('ambiente');
+    url.searchParams.delete('especialidade');
+    window.history.replaceState({}, '', url.pathname);
+    setContexto(null);
+  };
+
+  // Mapeamento especialidade → setor real (por enquanto: Cirurgia → setor com "cirurg").
+  useEffect(() => {
+    if (contexto?.especialidade !== 'cirurgia' || formData.sector) return;
+    const norm = (s) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const alvo = allSectors.find(s => norm(s).includes('cirurg'));
+    if (alvo) setFormData(prev => (prev.sector ? prev : { ...prev, sector: alvo }));
+  }, [contexto, allSectors, formData.sector]);
 
   const createEvolutionMutation = useMutation({
     mutationFn: (data) => base44.entities.Evolution.create(data),
@@ -519,6 +544,9 @@ ${HUMANIZACAO}`;
         )}
         <div className="grid grid-cols-1 lg:grid-cols-2 lg:min-h-[calc(100vh-64px)]">
           <div className="overflow-y-auto border-b lg:border-b-0 lg:border-r border-border">
+            {contexto && (
+              <ContextoBadge ambiente={contexto.ambiente} especialidade={contexto.especialidade} onRemove={removerContexto} />
+            )}
             <FormView
               formData={formData} setFormData={setFormData}
               allSectors={allSectors} allComorbidities={allComorbidities}

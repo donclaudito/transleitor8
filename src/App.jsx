@@ -23,6 +23,8 @@ import ImagemMedica from '@/pages/ImagemMedica';
 import Elio from '@/pages/Elio';
 import Capturas from '@/pages/Capturas';
 import DescricaoCirurgia from '@/pages/DescricaoCirurgia';
+import Menu from '@/pages/Menu';
+import Especialidades from '@/pages/Especialidades';
 import IdleTimeout from '@/components/IdleTimeout';
 
 const AuthenticatedApp = () => {
@@ -67,6 +69,8 @@ const AuthenticatedApp = () => {
           <Route path="/elio" element={<Elio />} />
           <Route path="/capturas" element={<Capturas />} />
           <Route path="/descricao-cirurgia" element={<DescricaoCirurgia />} />
+          <Route path="/menu" element={<Menu />} />
+          <Route path="/especialidades" element={<Especialidades />} />
         </Route>
         <Route path="*" element={<PageNotFound />} />
       </Routes>

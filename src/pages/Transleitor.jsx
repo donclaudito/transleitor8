@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Header from '@/components/transleitor/Header';
@@ -10,7 +10,7 @@ import SettingsPanel from '@/components/transleitor/SettingsPanel';
 import AllergyPopover from '@/components/transleitor/AllergyPopover';
 import ContextoBadge from '@/components/transleitor/ContextoBadge';
 import VarianteHeader from '@/components/transleitor/VarianteHeader';
-import { getEspecialidade } from '@/lib/especialidades';
+import { getEspecialidade, REGRA_INTERCONSULTA } from '@/lib/especialidades';
 import { AMBIENTES } from '@/lib/clinicas';
 import { useSettings } from '@/hooks/useSettings';
 
@@ -117,12 +117,18 @@ export default function Transleitor({ variante } = {}) {
 
   // Variante de especialidade: pré-seleciona o setor padrão da área (setor real da lista)
   // quando existir — no ambiente hospitalar o médico escolhe o setor manualmente.
+  // Aplicada UMA vez por montagem: se o médico limpar o setor, não é restaurado.
+  const setorPadraoJaAplicado = useRef(false);
   useEffect(() => {
     if (!esp?.setorPadrao || formData.sector || contexto?.ambiente === 'hospital') return;
+    if (setorPadraoJaAplicado.current) return;
     const norm = (s) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     const alvo = allSectors.find(s => norm(s) === norm(esp.setorPadrao))
       ?? allSectors.find(s => norm(s).includes('consult'));
-    if (alvo) setFormData(prev => (prev.sector ? prev : { ...prev, sector: alvo }));
+    if (alvo) {
+      setorPadraoJaAplicado.current = true;
+      setFormData(prev => (prev.sector ? prev : { ...prev, sector: alvo }));
+    }
   }, [esp?.setorPadrao, allSectors, formData.sector, contexto?.ambiente]);
 
   const createEvolutionMutation = useMutation({
@@ -297,8 +303,21 @@ ANÁLISE SEQUENCIAL DOS EXAMES COMPLEMENTARES (OBRIGATÓRIA):
       // Apenas os medicamentos adicionados individualmente via popover ficam na prescrição.
       const mergedPrescription = formData.prescription?.trim() || '';
 
-      // Foco de especialidade: a persona da área da variante ativa (se houver).
-      const especialidadeHint = esp ? `\n${esp.persona_area}` : '';
+      // Foco de especialidade (variante ativa): persona da área + contexto ESPECIALIDADE × SETOR
+      // + regra de interconsulta. No fluxo geral, quando a URL indica uma especialidade
+      // (ex.: hospital ?especialidade=...), entra APENAS a regra de interconsulta —
+      // o comportamento do fluxo geral permanece o atual.
+      const setorAtual = formData.sector?.trim();
+      const contextoAtendimento = esp && setorAtual
+        ? `\n\nCONTEXTO DE ATENDIMENTO (ESPECIALIDADE × SETOR): você é o especialista em ${esp.nomeArea} evoluindo um paciente no setor/unidade "${setorAtual}". O SETOR define a ESTRUTURA, a urgência e os cuidados do ambiente (ex.: UTI, pronto socorro, emergência, enfermaria, consultório, pediatria); a sua ESPECIALIDADE define o ENFOQUE e o conhecimento aplicado. Estruture a evolução conforme o setor e aplique ao caso o raciocínio da sua especialidade (ex.: urologista em UTI aborda o paciente crítico com o olhar urológico — sepse de foco urinário, diurese, balanço hídrico, acesso urinário; em pós-operatório, pós de cirurgia urológica com sondas, débito e drenos). Use apenas os dados fornecidos e não invente achados, medidas ou doses.`
+        : '';
+      const espQuery = !esp && contexto?.especialidade ? getEspecialidade(contexto.especialidade) : null;
+      const regraInterconsulta = esp
+        ? REGRA_INTERCONSULTA(esp.nomeArea)
+        : (espQuery ? REGRA_INTERCONSULTA(espQuery.nomeArea) : '');
+      const especialidadeHint = esp
+        ? `\n${esp.persona_area}${contextoAtendimento}\n${regraInterconsulta}`
+        : regraInterconsulta;
 
       // RAG: constrói a Base de Conhecimento APENAS com os campos preenchidos.
       // Campos ausentes são omitidos (não viram "—" para não virar dado ambíguo).

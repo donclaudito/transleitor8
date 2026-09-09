@@ -11,6 +11,7 @@ import IdCaptureButton from './IdCaptureButton';
 import ConsultasPrevias from './ConsultasPrevias';
 import PhraseSelector from './PhraseSelector';
 import InserirCapturas from './InserirCapturas';
+import SectorCombobox from './SectorCombobox';
 
 const GASTRO_QUICK_COMORBS = ['HAS', 'DM2', 'Dislipidemia', 'Tabagismo', 'DRC', 'ICC', 'DPOC', 'Obesidade', 'Alergia', 'Hepatopatia', 'Diabetes Gestacional', 'Etilismo', 'Hipotireoidismo', 'Retocolite Ulcerativa', 'HIV'];
 
@@ -90,14 +91,12 @@ export default function FormView({
           />
         </div>
         <div className="flex gap-3">
-          <select
+          <SectorCombobox
             value={formData.sector}
-            onChange={e => { setFormData({ ...formData, sector: e.target.value, consultorioType: null }); setSectorError(false); }}
-            className={`flex-1 px-4 py-3 rounded-xl bg-muted border text-sm focus:outline-none transition-all ${sectorError ? 'border-red-500' : 'border-border focus:border-primary/50'}`}
-          >
-            <option value="">Setor / Unidade...</option>
-            {allSectors.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
+            sectors={allSectors}
+            invalid={sectorError}
+            onChange={(sector) => { setFormData({ ...formData, sector, consultorioType: null }); setSectorError(false); }}
+          />
           <button onClick={() => setView('manage-sectors')} className="px-3 rounded-xl border border-border text-primary hover:bg-accent transition-colors">
             <Settings2 className="w-4 h-4" />
           </button>

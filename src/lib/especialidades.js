@@ -8,6 +8,7 @@
 export const ESPECIALIDADES_CONFIG = {
   'clinica-medica': {
     slug: 'clinica-medica',
+    nomeArea: 'Clínica Médica',
     rota: '/clinica-medica',
     icone: '🩺',
     titulo: 'Transleitor — Clínica Médica',
@@ -27,6 +28,7 @@ Atue como ESPECIALISTA em Clínica Médica / Medicina Interna. Raciocine como in
 
   'urologia': {
     slug: 'urologia',
+    nomeArea: 'Urologia',
     rota: '/urologia',
     icone: '💧',
     titulo: 'Transleitor — Urologia',
@@ -46,6 +48,7 @@ Atue como ESPECIALISTA em Urologia. Raciocine como urologista:
 
   'cardiologia': {
     slug: 'cardiologia',
+    nomeArea: 'Cardiologia',
     rota: '/cardiologia',
     icone: '❤️',
     titulo: 'Transleitor — Cardiologia',
@@ -65,6 +68,7 @@ Atue como ESPECIALISTA em Cardiologia. Raciocine como cardiologista:
 
   'pneumologia': {
     slug: 'pneumologia',
+    nomeArea: 'Pneumologia',
     rota: '/pneumologia',
     icone: '🫁',
     titulo: 'Transleitor — Pneumologia',
@@ -84,6 +88,7 @@ Atue como ESPECIALISTA em Pneumologia. Raciocine como pneumologista:
 
   'gastro-endoscopia': {
     slug: 'gastro-endoscopia',
+    nomeArea: 'Gastroenterologia e Endoscopia Digestiva',
     rota: '/gastro-endoscopia',
     icone: '🔬',
     titulo: 'Transleitor — Gastro/Endoscopia',
@@ -103,6 +108,7 @@ Atue como ESPECIALISTA em Gastroenterologia e Endoscopia Digestiva. Raciocine co
 
   'dermatologia': {
     slug: 'dermatologia',
+    nomeArea: 'Dermatologia',
     rota: '/dermatologia',
     icone: '✨',
     titulo: 'Transleitor — Dermatologia',
@@ -123,6 +129,7 @@ Atue como ESPECIALISTA em Dermatologia. Raciocine como dermatologista:
 
   'ortopedia': {
     slug: 'ortopedia',
+    nomeArea: 'Ortopedia e Traumatologia',
     rota: '/ortopedia',
     icone: '🦴',
     titulo: 'Transleitor — Ortopedia',
@@ -142,6 +149,7 @@ Atue como ESPECIALISTA em Ortopedia e Traumatologia. Raciocine como ortopedista:
 
   'pediatria': {
     slug: 'pediatria',
+    nomeArea: 'Pediatria',
     rota: '/pediatria',
     icone: '👶',
     titulo: 'Transleitor — Pediatria',
@@ -161,6 +169,7 @@ Atue como ESPECIALISTA em Pediatria. Raciocine como pediatra:
 
   'oftalmologia': {
     slug: 'oftalmologia',
+    nomeArea: 'Oftalmologia',
     rota: '/oftalmologia',
     icone: '👁️',
     titulo: 'Transleitor — Oftalmologia',
@@ -180,6 +189,7 @@ Atue como ESPECIALISTA em Oftalmologia. Raciocine como oftalmologista:
 
   'endocrino': {
     slug: 'endocrino',
+    nomeArea: 'Endocrinologia',
     rota: '/endocrino',
     icone: '🧪',
     titulo: 'Transleitor — Endocrinologia',
@@ -199,6 +209,7 @@ Atue como ESPECIALISTA em Endocrinologia. Raciocine como endocrinologista:
 
   'ginecologia': {
     slug: 'ginecologia',
+    nomeArea: 'Ginecologia',
     rota: '/ginecologia',
     icone: '🌸',
     titulo: 'Transleitor — Ginecologia',
@@ -218,6 +229,7 @@ Atue como ESPECIALISTA em Ginecologia. Raciocine como ginecologista:
 
   'cirurgia-ambulatorial': {
     slug: 'cirurgia-ambulatorial',
+    nomeArea: 'Cirurgia',
     rota: '/cirurgia-ambulatorial',
     icone: '🩹',
     titulo: 'Transleitor — Cirurgia (Ambulatório)',
@@ -238,3 +250,8 @@ Atue como ESPECIALISTA em Cirurgia, em contexto de ambulatório (pré e pós-ope
 
 // Busca a configuração de uma variante pelo slug (ex.: 'urologia'). null = sem variante.
 export const getEspecialidade = (slug) => ESPECIALIDADES_CONFIG[slug] ?? null;
+
+// REGRA DE INTERCONSULTA (padrão único para TODAS as variantes — e para o fluxo geral
+// quando a especialidade é conhecida pela URL): quem redige JÁ É o especialista da área,
+// nunca solicita avaliação da própria especialidade; apoio de OUTRA área, só com motivo.
+export const REGRA_INTERCONSULTA = (nomeArea) => `\nREGRA DE INTERCONSULTA (OBRIGATÓRIA): Você é o médico especialista em ${nomeArea} e conduz este caso. NUNCA sugira "solicitar avaliação/encaminhar para ${nomeArea}" ou "avaliação da equipe de ${nomeArea}" — você JÁ é o especialista desta área e quem conduz a conduta. Quando houver necessidade clínica apoiada nos dados fornecidos, mencione avaliação/encaminhamento apenas para OUTRAS especialidades (diferentes de ${nomeArea}), com a justificativa clínica e somente quando indicado pelos dados — nunca como texto genérico ou de rotina.`;

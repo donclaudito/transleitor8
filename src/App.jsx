@@ -74,7 +74,7 @@ const AuthenticatedApp = () => {
           <Route path="/menu" element={<Menu />} />
           <Route path="/especialidades" element={<Especialidades />} />
           {Object.values(ESPECIALIDADES_CONFIG).map(esp => (
-            <Route key={esp.slug} path={esp.rota} element={<TransleitorEspecialidade slug={esp.slug} />} />
+            <Route key={esp.slug} path={esp.rota} element={<TransleitorEspecialidade key={esp.slug} slug={esp.slug} />} />
           ))}
         </Route>
         <Route path="*" element={<PageNotFound />} />

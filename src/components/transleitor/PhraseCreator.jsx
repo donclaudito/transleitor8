@@ -2,18 +2,26 @@ import React, { useState } from 'react';
 import { Save, X } from 'lucide-react';
 
 const LABELS = { exame_fisico: 'Exame Físico', plano_conduta: 'Plano de Conduta' };
+const NOVO_TITULO = '__novo_titulo__';
 
-export default function PhraseCreator({ categoria, onCreate, onClose }) {
+// Criação de frase: categoria (Exame Físico / Plano de Conduta) + TÍTULO (grupo).
+// O título é um combobox: títulos já usados, "novo título" (campo livre) ou GERAL (padrão).
+export default function PhraseCreator({ categoria, titulos = [], onCreate, onClose }) {
   const [texto, setTexto] = useState('');
+  const [tituloSel, setTituloSel] = useState('GERAL');
+  const [tituloNovo, setTituloNovo] = useState('');
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
+
+  const opcoes = ['GERAL', ...titulos.filter(t => t && t !== 'GERAL')];
 
   const salvar = async () => {
     if (!texto.trim()) return;
     setSalvando(true);
     setErro('');
     try {
-      await onCreate(texto);
+      const titulo = (tituloSel === NOVO_TITULO ? tituloNovo.trim() : tituloSel) || 'GERAL';
+      await onCreate(texto, titulo);
     } catch (e) {
       setErro('Não foi possível salvar. Tente novamente.');
     } finally {
@@ -24,7 +32,27 @@ export default function PhraseCreator({ categoria, onCreate, onClose }) {
   return (
     <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 space-y-2">
       <p className="text-[11px] font-semibold text-primary">Nova frase — {LABELS[categoria]}</p>
-      <textarea rows={3} value={texto} onChange={e => setTexto(e.target.value)} autoFocus
+      <div className="space-y-1">
+        <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Título (grupo)</label>
+        <select
+          value={tituloSel}
+          onChange={e => setTituloSel(e.target.value)}
+          className="w-full px-3 py-2 rounded-xl bg-muted border border-border text-sm focus:outline-none focus:border-primary/50 transition-all"
+        >
+          {opcoes.map(t => <option key={t} value={t}>{t}</option>)}
+          <option value={NOVO_TITULO}>➕ Novo título...</option>
+        </select>
+        {tituloSel === NOVO_TITULO && (
+          <input
+            value={tituloNovo}
+            onChange={e => setTituloNovo(e.target.value)}
+            autoFocus
+            placeholder="Nome do novo título (ex.: UROLOGIA)..."
+            className="w-full px-3 py-2 rounded-xl bg-muted border border-primary/40 text-sm focus:outline-none focus:border-primary/50 transition-all"
+          />
+        )}
+      </div>
+      <textarea rows={3} value={texto} onChange={e => setTexto(e.target.value)}
         placeholder="Digite a frase padrão (exame físico ou plano de conduta)..."
         className="w-full px-3 py-2 rounded-xl bg-muted border border-border text-sm resize-none focus:outline-none focus:border-primary/50 transition-all" />
       {erro && <p className="text-red-500 text-[11px]">{erro}</p>}

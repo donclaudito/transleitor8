@@ -10,6 +10,28 @@ const CATEGORIAS = [
   { id: 'exame_fisico', label: '🩺 Exame Físico' },
   { id: 'plano_conduta', label: '💊 Plano de Conduta' },
 ];
+const GERAL = 'GERAL';
+
+// Frases sem título (registros antigos ou campo vazio) entram no grupo GERAL.
+const tituloDe = (f) => (f.titulo && String(f.titulo).trim()) || GERAL;
+
+// Realce em negrito do trecho buscado — comparação sem acento e sem caixa.
+const CLASSES = { a: 'aàáâãä', e: 'eèéêë', i: 'iìíîï', o: 'oòóôõö', u: 'uùúûü', c: 'cç', n: 'nñ' };
+const Realce = ({ texto, busca }) => {
+  const q = (busca || '').trim();
+  if (!q) return <>{texto}</>;
+  const classe = (ch) => {
+    const base = CLASSES[ch.toLowerCase()];
+    return base ? `[${base}${base.toUpperCase()}]` : ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  };
+  let partes;
+  try {
+    partes = texto.split(new RegExp(`(${[...q].map(classe).join('')})`, 'gi'));
+  } catch (_) {
+    return <>{texto}</>;
+  }
+  return <>{partes.map((p, i) => (i % 2 === 1 ? <strong key={i} className="text-foreground">{p}</strong> : p))}</>;
+};
 
 const loadPref = (key) => {
   try {
@@ -19,15 +41,16 @@ const loadPref = (key) => {
   return null;
 };
 
-export default function PhraseSelector({ onInsert }) {
+export default function PhraseSelector({ onInsert, especialidade = null }) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
   // Preferência de UI (bloco aberto/fechado + aba ativa) é por usuário:
   // a escolha de um médico não vaza para outro na mesma máquina.
-  // Padrão para quem nunca escolheu: recolhido.
+  // Padrão para quem nunca escolheu: recolhido, nenhum título aberto.
   const storageKey = user ? `frases_predef_ui_${user.id}` : null;
   const [ui, setUi] = useState({ aberto: false, aba: 'exame_fisico' });
+  const [tituloAberto, setTituloAberto] = useState(null); // acordeão exclusivo: só um título aberto
   const [busca, setBusca] = useState('');
   const [criando, setCriando] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
@@ -59,7 +82,28 @@ export default function PhraseSelector({ onInsert }) {
   const minhas = frases.filter(f => user && f.created_by_id === user.id);
   const categoria = ui.aba;
   const daCategoria = minhas.filter(f => f.categoria === categoria);
-  const filtradas = daCategoria.filter(f => !busca || norm(f.texto).includes(norm(busca)));
+  const titulosExistentes = [...new Set(minhas.map(tituloDe))].filter(t => t !== GERAL);
+
+  // Agrupa as frases da categoria por título, na ordem em que aparecem.
+  const grupos = [];
+  daCategoria.forEach(f => {
+    const t = tituloDe(f);
+    let g = grupos.find(x => x.titulo === t);
+    if (!g) { g = { titulo: t, frases: [] }; grupos.push(g); }
+    g.frases.push(f);
+  });
+
+  // Especialidade de início (tela de variante): o título correspondente vem PRIMEIRO,
+  // com selo; os demais seguem na ordem normal. Sem especialidade, ordem normal.
+  const espNorm = especialidade ? norm(especialidade) : null;
+  const ehDaEspecialidade = (titulo) => {
+    if (!espNorm) return false;
+    const t = norm(titulo);
+    return t === espNorm || t.includes(espNorm) || espNorm.includes(t);
+  };
+  const gruposOrdenados = espNorm
+    ? [...grupos].sort((a, b) => (ehDaEspecialidade(b.titulo) ? 1 : 0) - (ehDaEspecialidade(a.titulo) ? 1 : 0))
+    : grupos;
 
   const inserir = (frase) => {
     const alvo = frase.categoria === 'plano_conduta' ? onInsert.prescription : onInsert.clinical;
@@ -68,8 +112,17 @@ export default function PhraseSelector({ onInsert }) {
     setTimeout(() => setFlashId(null), 800);
   };
 
-  const criar = async (texto) => {
-    const registro = await base44.entities.FrasePreDefinida.create({ categoria, texto: texto.trim() });
+  // ➕ Descrição Clínica: insere direto na Descrição Clínica Atual, independente da categoria.
+  const inserirClinica = (frase) => {
+    onInsert.clinical(frase.texto);
+    setFlashId(frase.id);
+    setTimeout(() => setFlashId(null), 800);
+  };
+
+  const criar = async (texto, titulo) => {
+    const registro = await base44.entities.FrasePreDefinida.create({
+      categoria, texto: texto.trim(), titulo: (titulo || '').trim() || GERAL,
+    });
     // Regra dura: só entra na lista se o dono for o médico logado.
     if (user && registro?.created_by_id === user.id) {
       queryClient.setQueryData(['frases-predefinidas', user.id], (old = []) => [...old, registro]);
@@ -120,53 +173,82 @@ export default function PhraseSelector({ onInsert }) {
             ))}
           </div>
 
-          {daCategoria.length > 3 && (
-            <div className="relative">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar frase..."
-                className="w-full pl-9 pr-3 py-2 rounded-xl bg-muted border border-border text-sm focus:outline-none focus:border-primary/50 transition-all" />
-            </div>
-          )}
-
           {criando && (
-            <PhraseCreator categoria={categoria} onCreate={criar} onClose={() => setCriando(false)} />
+            <PhraseCreator categoria={categoria} titulos={titulosExistentes} onCreate={criar} onClose={() => setCriando(false)} />
           )}
 
           {isLoading ? (
             <p className="text-[11px] text-muted-foreground">Carregando frases...</p>
-          ) : filtradas.length === 0 && !criando ? (
+          ) : gruposOrdenados.length === 0 ? (
             <p className="text-[11px] text-muted-foreground">
-              {daCategoria.length === 0
-                ? 'Nenhuma frase nesta categoria. Clique em "Nova frase" para criar a primeira.'
-                : 'Nenhuma frase encontrada para a busca.'}
+              Nenhuma frase nesta categoria. Clique em "Nova frase" para criar a primeira.
             </p>
           ) : (
             <div className="space-y-1.5">
-              {filtradas.map(f => (
-                <div key={f.id}
-                  className={`flex items-start gap-2 rounded-xl px-3 py-2 border transition-all ${
-                    flashId === f.id
-                      ? 'bg-primary/15 border-primary/40'
-                      : 'border-border hover:border-primary/30'
-                  }`}>
-                  <button onClick={() => inserir(f)} title="Inserir no campo correspondente"
-                    className="flex-1 text-left text-xs leading-relaxed cursor-pointer">
-                    {f.texto}
-                  </button>
-                  {confirmDeleteId === f.id ? (
-                    <button onClick={() => excluir(f)} title="Confirmar exclusão"
-                      className="text-red-500 hover:text-red-400 mt-0.5">
-                      <Check className="w-3.5 h-3.5" />
+              {gruposOrdenados.map(g => {
+                const aberto = tituloAberto === g.titulo;
+                const daBusca = g.frases.filter(f => !busca || norm(f.texto).includes(norm(busca)));
+                return (
+                  <div key={g.titulo}
+                    className={`rounded-xl border transition-all ${aberto ? 'border-primary/40 bg-primary/5' : 'border-border'}`}>
+                    <button onClick={() => setTituloAberto(aberto ? null : g.titulo)}
+                      className="w-full flex items-center gap-2 px-3 py-2.5 text-left">
+                      <span className="flex-1 min-w-0 text-xs font-extrabold uppercase tracking-wider truncate">{g.titulo}</span>
+                      {ehDaEspecialidade(g.titulo) && (
+                        <span className="px-1.5 py-0.5 rounded-full bg-primary/15 text-primary text-[9px] font-bold normal-case tracking-normal flex-shrink-0">
+                          sua especialidade
+                        </span>
+                      )}
+                      <span className="px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground text-[10px] font-bold flex-shrink-0">
+                        {g.frases.length}
+                      </span>
+                      <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground transition-transform flex-shrink-0 ${aberto ? 'rotate-180' : ''}`} />
                     </button>
-                  ) : (
-                    <button onClick={() => { setConfirmDeleteId(f.id); setTimeout(() => setConfirmDeleteId(null), 3000); }}
-                      title="Excluir frase"
-                      className="text-muted-foreground hover:text-red-500 mt-0.5 transition-colors">
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
-              ))}
+                    {aberto && (
+                      <div className="px-2.5 pb-2.5 space-y-1.5">
+                        {g.frases.length > 3 && (
+                          <div className="relative">
+                            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                            <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar frase..."
+                              className="w-full pl-9 pr-3 py-2 rounded-xl bg-muted border border-border text-sm focus:outline-none focus:border-primary/50 transition-all" />
+                          </div>
+                        )}
+                        {daBusca.length === 0 ? (
+                          <p className="text-[11px] text-muted-foreground px-1 py-1">Nenhuma frase encontrada para a busca.</p>
+                        ) : daBusca.map(f => (
+                          <div key={f.id}
+                            className={`flex items-start gap-1.5 rounded-xl px-3 py-2 border transition-all ${
+                              flashId === f.id
+                                ? 'bg-primary/15 border-primary/40'
+                                : 'border-border hover:border-primary/30'
+                            }`}>
+                            <button onClick={() => inserir(f)} title="Inserir no campo correspondente"
+                              className="flex-1 min-w-0 text-left text-xs leading-relaxed cursor-pointer">
+                              <Realce texto={f.texto} busca={busca} />
+                            </button>
+                            <button onClick={() => inserirClinica(f)} title="➕ Descrição Clínica"
+                              className="mt-0.5 p-1 rounded-md text-primary hover:bg-accent transition-all flex-shrink-0">
+                              <Plus className="w-3.5 h-3.5" />
+                            </button>
+                            {confirmDeleteId === f.id ? (
+                              <button onClick={() => excluir(f)} title="Confirmar exclusão"
+                                className="text-red-500 hover:text-red-400 mt-0.5">
+                                <Check className="w-3.5 h-3.5" />
+                              </button>
+                            ) : (
+                              <button onClick={() => { setConfirmDeleteId(f.id); setTimeout(() => setConfirmDeleteId(null), 3000); }}
+                                title="Excluir frase"
+                                className="text-muted-foreground hover:text-red-500 mt-0.5 transition-colors">
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </>

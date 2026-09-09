@@ -11,6 +11,7 @@ export default function SectorCombobox({ value, onChange, sectors, invalid }) {
   const [indiceAtivo, setIndiceAtivo] = useState(0);
   const containerRef = useRef(null);
   const listaRef = useRef(null);
+  const inputRef = useRef(null);
 
   const norm = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   const filtrados = query.trim() ? sectors.filter(s => norm(s).includes(norm(query))) : sectors;
@@ -44,6 +45,7 @@ export default function SectorCombobox({ value, onChange, sectors, invalid }) {
       <div className={`flex items-center gap-2 px-4 rounded-xl bg-muted border text-sm transition-all ${invalid ? 'border-red-500' : 'border-border focus-within:border-primary/50'}`}>
         <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
         <input
+          ref={inputRef}
           type="text"
           role="combobox"
           aria-expanded={open}
@@ -65,7 +67,22 @@ export default function SectorCombobox({ value, onChange, sectors, invalid }) {
             <X className="w-3.5 h-3.5" />
           </button>
         )}
-        <ChevronDown className={`w-4 h-4 text-muted-foreground flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
+        <button
+          type="button"
+          onClick={() => {
+            if (open) { setOpen(false); }
+            else {
+              setOpen(true);
+              setQuery('');
+              setIndiceAtivo(0);
+              requestAnimationFrame(() => inputRef.current?.focus());
+            }
+          }}
+          title="Abrir/fechar lista de setores"
+          className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-all"
+        >
+          <ChevronDown className={`w-4 h-4 flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
+        </button>
       </div>
       {open && (
         <div className="absolute z-30 left-0 right-0 top-full mt-1.5 max-h-60 overflow-y-auto rounded-xl border border-border bg-popover shadow-2xl" ref={listaRef}>

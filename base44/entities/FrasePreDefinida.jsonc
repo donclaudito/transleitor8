@@ -10,6 +10,10 @@
       ],
       "description": "Categoria da frase: exame_fisico (descri\u00e7\u00f5es de exame f\u00edsico) ou plano_conduta (planos de conduta)"
     },
+    "titulo": {
+      "type": "string",
+      "description": "T\u00edtulo/grupo da frase (ex.: UROLOGIA). Vazio ou ausente = grupo GERAL"
+    },
     "texto": {
       "type": "string",
       "description": "Texto da frase pr\u00e9-definida"

@@ -590,6 +590,7 @@ ${HUMANIZACAO}`;
             )}
             <FormView
               formData={formData} setFormData={setFormData}
+              especialidade={esp?.nomeArea || null}
               allSectors={allSectors} allComorbidities={allComorbidities}
               setView={setView} toggleComorbidityInForm={toggleComorbidityInForm}
               generateSOAP={generateSOAP} loading={loading}

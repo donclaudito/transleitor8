@@ -10,6 +10,8 @@ import SettingsPanel from '@/components/transleitor/SettingsPanel';
 import AllergyPopover from '@/components/transleitor/AllergyPopover';
 import ContextoBadge from '@/components/transleitor/ContextoBadge';
 import VarianteHeader from '@/components/transleitor/VarianteHeader';
+import { getEspecialidade } from '@/lib/especialidades';
+import { AMBIENTES } from '@/lib/clinicas';
 import { useSettings } from '@/hooks/useSettings';
 
 const DEFAULT_SECTORS = ["UTI Adulto", "UTI Pediátrica", "Enfermaria Clínica", "Enfermaria Cirúrgica", "Pronto Socorro", "Emergência", "Consultório"];
@@ -38,6 +40,8 @@ export default function Transleitor({ variante } = {}) {
     const especialidade = p.get('especialidade');
     return ambiente || especialidade ? { ambiente, especialidade } : null;
   });
+  // Variante de especialidade (ex.: /cardiologia): configuração da área — header e persona.
+  const esp = variante ? getEspecialidade(variante) : null;
   const { settings, setTheme, addCustomChip, removeCustomChip } = useSettings();
   const queryClient = useQueryClient();
 
@@ -111,13 +115,15 @@ export default function Transleitor({ variante } = {}) {
     if (alvo) setFormData(prev => (prev.sector ? prev : { ...prev, sector: alvo }));
   }, [contexto, allSectors, formData.sector]);
 
-  // Variante Clínica Médica: pré-seleciona o setor de consultório real da lista quando existir.
+  // Variante de especialidade: pré-seleciona o setor padrão da área (setor real da lista)
+  // quando existir — no ambiente hospitalar o médico escolhe o setor manualmente.
   useEffect(() => {
-    if (variante !== 'clinica_medica' || formData.sector) return;
+    if (!esp?.setorPadrao || formData.sector || contexto?.ambiente === 'hospital') return;
     const norm = (s) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    const alvo = allSectors.find(s => norm(s).includes('consult'));
+    const alvo = allSectors.find(s => norm(s) === norm(esp.setorPadrao))
+      ?? allSectors.find(s => norm(s).includes('consult'));
     if (alvo) setFormData(prev => (prev.sector ? prev : { ...prev, sector: alvo }));
-  }, [variante, allSectors, formData.sector]);
+  }, [esp?.setorPadrao, allSectors, formData.sector, contexto?.ambiente]);
 
   const createEvolutionMutation = useMutation({
     mutationFn: (data) => base44.entities.Evolution.create(data),
@@ -223,15 +229,6 @@ export default function Transleitor({ variante } = {}) {
     return '';
   };
 
-  // Foco de especialidade usado APENAS pela variante Clínica Médica (/clinica-medica).
-  const CLINICA_MEDICA_HINT = `FOCO DE ESPECIALIDADE — CLÍNICA MÉDICA / MEDICINA INTERNA:
-Atue como ESPECIALISTA em Clínica Médica / Medicina Interna, em consulta ambulatorial. Raciocine como internista:
-1. Estruture a consulta ambulatorial: queixa principal e HDA; revisão por sistemas quando pertinente; antecedentes pessoais e comorbidades (ex.: HAS, DM2, dislipidemia, DRC, ICC, DPOC) e seu impacto no quadro atual; medicamentos em uso (posologia e adesão); exame físico geral e dirigido; exames complementares; conduta e seguimento.
-2. Avalie o paciente de forma INTEGRADA: interações entre comorbidades, medicamentos e o quadro atual (riscos cardiovascular, renal e metabólico), ajustes de dose conforme função renal/hepática e exames necessários ao monitoramento — sempre conforme diretrizes vigentes e SOMENTE com os dados fornecidos.
-3. Sinalize interações medicamentosas relevantes e a necessidade de reavaliar condutas de longo prazo somente quando os dados sustentarem.
-4. Inclua orientações de seguimento ambulatorial: retorno programado (quando os dados permitirem estimar), sinais de alarme para retorno precoce e critérios de encaminhamento à urgência.
-5. TOM: especialista em Clínica Médica — organizado, sóbrio e completo, mas objetivo.`;
-
   const HUMANIZACAO = `
 REDAÇÃO FINAL (OBRIGATÓRIA):
 - Redija como um médico brasileiro escreve um prontuário real: terminologia médica formal, fraseado natural e VARIADO — cada seção com construção própria, sem fórmulas repetidas entre seções.
@@ -285,9 +282,9 @@ ANÁLISE SEQUENCIAL DOS EXAMES COMPLEMENTARES (OBRIGATÓRIA):
     const t0 = Date.now();
 
     try {
-      // Na variante Clínica Médica, o foco da especialidade substitui a dica de
-      // setor de consultório (que hoje traz a persona de Gastroenterologia).
-      const sectorHint = variante === 'clinica_medica' &&
+      // Em variante de especialidade, a persona da área substitui a dica de
+      // setor de consultório (que traz a persona de Gastroenterologia).
+      const sectorHint = esp &&
         (formData.sector || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim() === 'consultorio'
         ? '' : getSectorHint(formData.sector);
       const normalizedSector = (formData.sector || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -300,8 +297,8 @@ ANÁLISE SEQUENCIAL DOS EXAMES COMPLEMENTARES (OBRIGATÓRIA):
       // Apenas os medicamentos adicionados individualmente via popover ficam na prescrição.
       const mergedPrescription = formData.prescription?.trim() || '';
 
-      // Foco de especialidade: só a variante Clínica Médica usa raciocínio de internista.
-      const especialidadeHint = variante === 'clinica_medica' ? `\n${CLINICA_MEDICA_HINT}` : '';
+      // Foco de especialidade: a persona da área da variante ativa (se houver).
+      const especialidadeHint = esp ? `\n${esp.persona_area}` : '';
 
       // RAG: constrói a Base de Conhecimento APENAS com os campos preenchidos.
       // Campos ausentes são omitidos (não viram "—" para não virar dado ambíguo).
@@ -625,14 +622,14 @@ ${HUMANIZACAO}`;
   return (
     <div className="min-h-screen bg-background">
       <Header view={view} setView={setView} theme={settings.theme} setTheme={setTheme} onNewEvolution={handleNewEvolution} activeLLMName={activeLLMName} llmProviders={llmProviders} selectedLLMId={selectedLLMId} setSelectedLLMId={setSelectedLLMId} />
-      {variante === 'clinica_medica' && (
+      {esp && (
         <VarianteHeader
-          icone="🩺"
-          titulo="Transleitor — Clínica Médica"
-          subtitulo="Ambulatório / Medicina Interna"
-          ambienteSlug="clinica"
-          ambienteRotulo="Clínicas"
-          especialidadeRotulo="Clínica Médica"
+          icone={esp.icone}
+          titulo={esp.titulo}
+          subtitulo={esp.subtitulo}
+          ambienteSlug={contexto?.ambiente || esp.ambientePadrao}
+          ambienteRotulo={AMBIENTES[contexto?.ambiente || esp.ambientePadrao]?.rotulo || 'Clínicas'}
+          especialidadeRotulo={esp.especialidadeRotulo}
         />
       )}
       {renderContent()}

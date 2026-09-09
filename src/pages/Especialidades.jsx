@@ -2,11 +2,26 @@ import React from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { AMBIENTES, ESPECIALIDADES } from '@/lib/clinicas';
+import { getEspecialidade } from '@/lib/especialidades';
 
 export default function Especialidades() {
   const [searchParams] = useSearchParams();
   const ambiente = searchParams.get('ambiente') === 'clinica' ? 'clinica' : 'hospital';
   const amb = AMBIENTES[ambiente];
+
+  // Cada especialidade abre o SEU transleitor; exceção: Cirurgia de origem hospitalar
+  // segue no fluxo geral (a versão ambulatorial tem variante própria).
+  const destinoDa = (e) => {
+    if (e.slug === 'cirurgia') {
+      return ambiente === 'hospital'
+        ? '/transleitor?ambiente=hospital&especialidade=cirurgia'
+        : '/cirurgia-ambulatorial?ambiente=clinica&especialidade=cirurgia-ambulatorial';
+    }
+    const esp = getEspecialidade(e.slug);
+    return esp
+      ? `${esp.rota}?ambiente=${ambiente}&especialidade=${e.slug}`
+      : `/transleitor?ambiente=${ambiente}&especialidade=${e.slug}`;
+  };
 
   return (
     <div className="min-h-screen bg-background px-4 py-8 sm:py-12">
@@ -30,9 +45,7 @@ export default function Especialidades() {
             return (
               <Link
                 key={e.id}
-                to={e.slug === 'clinica-medica'
-                  ? `/clinica-medica?ambiente=${ambiente}&especialidade=${e.slug}`
-                  : `/transleitor?ambiente=${ambiente}&especialidade=${e.slug}`}
+                to={destinoDa(e)}
                 className="premium-card rounded-2xl p-5 flex flex-col items-center gap-3 text-center hover:border-primary/40 transition-all btn-press"
               >
                 <span className="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
@@ -54,7 +67,7 @@ export default function Especialidades() {
         )}
 
         <p className="text-xs text-muted-foreground">
-          Por enquanto, o fluxo é o mesmo para todas as especialidades.
+          Cada especialidade abre o seu próprio Transleitor, com o raciocínio da área.
         </p>
       </div>
     </div>

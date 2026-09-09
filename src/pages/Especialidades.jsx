@@ -30,7 +30,9 @@ export default function Especialidades() {
             return (
               <Link
                 key={e.id}
-                to={`/transleitor?ambiente=${ambiente}&especialidade=${e.slug}`}
+                to={e.slug === 'clinica-medica'
+                  ? `/clinica-medica?ambiente=${ambiente}&especialidade=${e.slug}`
+                  : `/transleitor?ambiente=${ambiente}&especialidade=${e.slug}`}
                 className="premium-card rounded-2xl p-5 flex flex-col items-center gap-3 text-center hover:border-primary/40 transition-all btn-press"
               >
                 <span className="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center">

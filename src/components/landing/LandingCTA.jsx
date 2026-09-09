@@ -21,7 +21,7 @@ export default function LandingCTA() {
             Gere sua primeira evolução clínica em menos de dois minutos — escolha o modo, o setor e cole os dados.
           </p>
           <Link
-            to="/transleitor"
+            to="/menu"
             className="group inline-flex items-center gap-2 px-8 py-4 bg-primary text-primary-foreground rounded-2xl text-sm font-bold hover:opacity-90 transition-all shadow-lg btn-press"
           >
             Acessar Transleitor <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />

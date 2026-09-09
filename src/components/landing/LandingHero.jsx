@@ -28,7 +28,7 @@ export default function LandingHero() {
             cronologicamente e integra exames, prescrição e comorbidades num só fluxo.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link to="/transleitor" className="group inline-flex items-center gap-2 px-8 py-4 bg-primary text-primary-foreground rounded-2xl text-sm font-bold hover:opacity-90 transition-all shadow-lg btn-press">
+            <Link to="/menu" className="group inline-flex items-center gap-2 px-8 py-4 bg-primary text-primary-foreground rounded-2xl text-sm font-bold hover:opacity-90 transition-all shadow-lg btn-press">
               Começar Agora <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </Link>
             <a href="#como-funciona" className="inline-flex items-center gap-2 px-8 py-4 border-2 border-border rounded-2xl text-sm font-bold text-foreground hover:border-primary hover:text-primary transition-colors">

@@ -47,7 +47,7 @@ export default function LandingNav() {
               📄 Capturar laudo/exame
             </Link>
           )}
-          <Link to="/transleitor" className="group inline-flex items-center gap-1.5 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-bold hover:opacity-90 transition-all shadow-lg btn-press">
+          <Link to="/menu" className="group inline-flex items-center gap-1.5 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-bold hover:opacity-90 transition-all shadow-lg btn-press">
             Acessar App <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
           </Link>
         </div>
@@ -67,7 +67,7 @@ export default function LandingNav() {
               📄 Capturar laudo/exame
             </Link>
           )}
-          <Link to="/transleitor" className="block px-5 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-bold text-center" onClick={() => setMenuOpen(false)}>
+          <Link to="/menu" className="block px-5 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-bold text-center" onClick={() => setMenuOpen(false)}>
             Acessar App
           </Link>
         </div>

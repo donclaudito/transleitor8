@@ -105,15 +105,8 @@ export default function PhraseSelector({ onInsert, especialidade = null }) {
     ? [...grupos].sort((a, b) => (ehDaEspecialidade(b.titulo) ? 1 : 0) - (ehDaEspecialidade(a.titulo) ? 1 : 0))
     : grupos;
 
+  // Cada clique numa frase ADICIONA direto à Descrição Clínica Atual (qualquer categoria).
   const inserir = (frase) => {
-    const alvo = frase.categoria === 'plano_conduta' ? onInsert.prescription : onInsert.clinical;
-    alvo(frase.texto);
-    setFlashId(frase.id);
-    setTimeout(() => setFlashId(null), 800);
-  };
-
-  // ➕ Descrição Clínica: insere direto na Descrição Clínica Atual, independente da categoria.
-  const inserirClinica = (frase) => {
     onInsert.clinical(frase.texto);
     setFlashId(frase.id);
     setTimeout(() => setFlashId(null), 800);
@@ -222,13 +215,9 @@ export default function PhraseSelector({ onInsert, especialidade = null }) {
                                 ? 'bg-primary/15 border-primary/40'
                                 : 'border-border hover:border-primary/30'
                             }`}>
-                            <button onClick={() => inserir(f)} title="Inserir no campo correspondente"
+                            <button onClick={() => inserir(f)} title="Adicionar à Descrição Clínica Atual"
                               className="flex-1 min-w-0 text-left text-xs leading-relaxed cursor-pointer">
                               <Realce texto={f.texto} busca={busca} />
-                            </button>
-                            <button onClick={() => inserirClinica(f)} title="➕ Descrição Clínica"
-                              className="mt-0.5 p-1 rounded-md text-primary hover:bg-accent transition-all flex-shrink-0">
-                              <Plus className="w-3.5 h-3.5" />
                             </button>
                             {confirmDeleteId === f.id ? (
                               <button onClick={() => excluir(f)} title="Confirmar exclusão"

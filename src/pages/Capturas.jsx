@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { ChevronLeft, Camera, Image as ImageIcon, FileUp, Loader2, Trash2, Clock, CheckCircle2 } from 'lucide-react';
-import { fileToDataUrl } from '@/lib/imageCompress';
+import { fileToDataUrl, fileToRawDataUrl } from '@/lib/imageCompress';
 
 const TIPO_LABEL = { laudo: 'Laudo', exame: 'Exame' };
 const fmtDate = (d) => new Date(d).toLocaleString('pt-BR', {
@@ -45,10 +45,19 @@ export default function Capturas() {
       let resp = null;
       if (ehPdf) {
         setEtapa('Enviando PDF...');
-        const up = await base44.integrations.Core.UploadFile({ file });
-        arquivoUrl = up?.file_url || '';
+        let payload = null;
+        try {
+          const up = await base44.integrations.Core.UploadFile({ file });
+          arquivoUrl = up?.file_url || '';
+          payload = { file_url: arquivoUrl, tipo };
+        } catch (_) {
+          // Sem créditos de integração da plataforma: envia o PDF direto e a
+          // extração roda com a DeepSeek (créditos próprios do médico).
+          setEtapa('Enviando PDF (modo DeepSeek)...');
+          payload = { pdf_data_url: await fileToRawDataUrl(file), tipo };
+        }
         setEtapa('Extraindo texto com IA...');
-        resp = await base44.functions.invoke('extrairCaptura', { file_url: arquivoUrl, tipo });
+        resp = await base44.functions.invoke('extrairCaptura', payload);
         extracao = resp?.data?.text;
       } else {
         if (!file.type.startsWith('image/')) throw new Error('Selecione um arquivo de imagem válido.');

@@ -1,5 +1,14 @@
 // Comprime a imagem localmente (máx. 1600px, JPEG) e devolve data URL base64 —
 // dispensa o upload em plataforma e envia a imagem direto ao provedor cadastrado.
+// Data URL puro (sem compressão via canvas) — usado para PDFs.
+export const fileToRawDataUrl = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error('Não foi possível ler o arquivo.'));
+    reader.readAsDataURL(file);
+  });
+
 export const fileToDataUrl = (file, maxDim = 1600, quality = 0.85) =>
   new Promise((resolve, reject) => {
     const reader = new FileReader();

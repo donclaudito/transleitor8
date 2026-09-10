@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { BookOpen, Search, Plus, Trash2, Check, ChevronDown } from 'lucide-react';
+import { BookOpen, Search, Plus, Trash2, Check, ChevronDown, Filter } from 'lucide-react';
 import PhraseCreator from './PhraseCreator';
 
 const norm = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -106,7 +106,11 @@ export default function PhraseSelector({ onInsert, especialidade = null, context
 
   // Especialidade de início (tela de variante): o título correspondente vem PRIMEIRO,
   // com selo; os demais seguem na ordem normal. Sem especialidade, ordem normal.
-  const espNorm = especialidade ? norm(especialidade) : null;
+  // Especialidade da tela: nome da variante (ex.: Urologia) ou o slug do contexto
+  // selecionado no menu (fluxo hospitalar via URL) — em ambos, o grupo da própria
+  // especialidade vem primeiro com selo "sua especialidade".
+  const espNorm = especialidade ? norm(especialidade)
+    : (ctx.especialidade && ctx.especialidade !== 'geral' ? norm(ctx.especialidade) : null);
   const ehDaEspecialidade = (titulo) => {
     if (!espNorm) return false;
     const t = norm(titulo);
@@ -167,7 +171,7 @@ export default function PhraseSelector({ onInsert, especialidade = null, context
           )}
           <ChevronDown className={`w-3.5 h-3.5 transition-transform ${ui.aberto ? 'rotate-180' : ''}`} />
         </button>
-        <button onClick={() => setCriando(true)}
+        <button onClick={() => { setCriando(true); updateUi({ aberto: true }); }}
           className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg border border-border text-primary hover:bg-accent transition-all">
           <Plus className="w-3.5 h-3.5" /> Nova evolução
         </button>
@@ -183,9 +187,12 @@ export default function PhraseSelector({ onInsert, especialidade = null, context
               </button>
             ))}
           </div>
-          <p className="text-[10px] text-muted-foreground -mt-1">
-            Mostrando evoluções de: <strong>{contextoRotulo}</strong>
-          </p>
+          <div className="flex items-center gap-1.5 -mt-1">
+            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-bold">
+              <Filter className="w-3 h-3" /> {contextoRotulo}
+            </span>
+            <span className="text-[10px] text-muted-foreground">somente evoluções desta área</span>
+          </div>
 
           {criando && (
             <PhraseCreator categoria={categoria} titulos={titulosExistentes} contextoRotulo={contextoRotulo} onCreate={criar} onClose={() => setCriando(false)} />

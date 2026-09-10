@@ -18,7 +18,7 @@ const dataHoje = () =>
 
 // corpoHtml entra como está (HTML de confiança gerado pelo app);
 // textos puros devem passar por textoParaHtml antes.
-export function imprimirDocumento({ titulo, subtitulo = '', corpoHtml, marca = 'Transleitor' }) {
+export function imprimirDocumento({ titulo, subtitulo = '', corpoHtml, marca = 'Dr. Claudio Orenstein — CREMESP 58120' }) {
   const html = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -77,7 +77,7 @@ export function imprimirDocumento({ titulo, subtitulo = '', corpoHtml, marca = '
   ${subtitulo ? `<p class="subtitulo">${escapar(subtitulo)}</p>` : ''}
   <div class="conteudo">${corpoHtml}</div>
   <div class="rodape">
-    <span>Documento gerado eletronicamente pelo ${escapar(marca)}</span>
+    <span>Documento gerado eletronicamente pelo Transleitor</span>
     <span>${dataHoje()}</span>
   </div>
 </body>

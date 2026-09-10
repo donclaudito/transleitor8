@@ -4,6 +4,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import PassagemVisita from './PassagemVisita';
 import AccuracyRating from '@/components/monitoramento/AccuracyRating';
+import { imprimirDocumento, textoParaHtml } from '@/lib/imprimirDocumento';
 
 export default function ResultView({ currentSOAP, onUpdate, usageLogId, selectedLLMId = '', llmProviders = [], onQuickSave = null }) {
   const [copied, setCopied] = useState(false);
@@ -72,6 +73,21 @@ export default function ResultView({ currentSOAP, onUpdate, usageLogId, selected
     return tmp.textContent.replace(/\n{3,}/g, '\n\n').trim();
   };
 
+  // Impressão em leiaute de PDF moderno (A4, cabeçalho e rodapé) — a evolução
+  // gerada + prescrição saem alinhados, independentes do CSS da tela.
+  const imprimir = () => {
+    const sub = [
+      currentSOAP.sector,
+      currentSOAP.patient_initials && `Paciente ${currentSOAP.patient_initials}`,
+      currentSOAP.bed && `Leito ${currentSOAP.bed}`,
+    ].filter(Boolean).join(' · ');
+    const corpo = currentSOAP.soap_text
+      + (currentSOAP.prescription
+        ? `<h2>Prescrição</h2><p class="receita">${currentSOAP.prescription.replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]))}</p>`
+        : '');
+    imprimirDocumento({ titulo: 'Evolução Clínica', subtitulo: sub, corpoHtml: corpo });
+  };
+
   const salvarPreDef = async () => {
     const texto = (editing ? editText : htmlParaTexto(currentSOAP.soap_text)).trim();
     if (!texto || !onQuickSave) return;
@@ -114,7 +130,7 @@ export default function ResultView({ currentSOAP, onUpdate, usageLogId, selected
               <button onClick={copyToClipboard} className="p-2 rounded-xl text-muted-foreground hover:text-primary hover:bg-accent transition-colors">
                 {copied ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
               </button>
-              <button onClick={() => window.print()} className="p-2 rounded-xl text-muted-foreground hover:text-primary hover:bg-accent transition-colors">
+              <button onClick={imprimir} className="p-2 rounded-xl text-muted-foreground hover:text-primary hover:bg-accent transition-colors">
                 <Printer className="w-4 h-4" />
               </button>
             </>

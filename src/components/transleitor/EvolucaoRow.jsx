@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Check, Trash2, Star, Copy, Printer } from 'lucide-react';
+import { imprimirDocumento, textoParaHtml } from '@/lib/imprimirDocumento';
 
 // Realce em negrito do trecho buscado — comparação sem acento e sem caixa.
 const CLASSES = { a: 'aàáâãä', e: 'eèéêë', i: 'iìíîï', o: 'oòóôõö', u: 'uùúûü', c: 'cç', n: 'nñ' };
@@ -42,20 +43,11 @@ export default function EvolucaoRow({ frase, busca = '', flash = false, mostrarT
     setTimeout(() => setCopiado(false), 2000);
   };
 
-  // Impressão limpa: cria a área de impressão (classe já definida no CSS global),
-  // imprime e remove — só o texto da evolução vai para o papel.
+  // Impressão em leiaute de PDF moderno (iframe isolado, A4) — só o título
+  // e o texto da evolução vão para o papel.
   const imprimir = () => {
-    const div = document.createElement('div');
-    div.className = 'print-area';
-    div.style.padding = '24px';
-    div.style.fontSize = '12pt';
-    div.style.lineHeight = '1.7';
-    const titulo = frase.titulo && frase.titulo !== 'GERAL' ? frase.titulo : '';
-    const esc = frase.texto.replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]));
-    div.innerHTML = `${titulo ? `<p style="font-weight:700; margin:0 0 12px;">${titulo}</p>` : ''}<div style="white-space:pre-wrap;">${esc}</div>`;
-    document.body.appendChild(div);
-    window.print();
-    document.body.removeChild(div);
+    const titulo = frase.titulo && frase.titulo !== 'GERAL' ? frase.titulo : 'Evolução pré-definida';
+    imprimirDocumento({ titulo, corpoHtml: textoParaHtml(frase.texto) });
   };
 
   useEffect(() => {

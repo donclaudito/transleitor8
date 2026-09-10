@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { BookOpen, Search, Plus, Trash2, Check, ChevronDown, ArrowRight } from 'lucide-react';
+import { BookOpen, Search, Plus, Trash2, Check, ChevronDown } from 'lucide-react';
 import PhraseCreator from './PhraseCreator';
 
 const norm = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -44,8 +44,8 @@ const loadPref = (key) => {
 };
 
 // contexto = { ambiente: 'hospital'|'clinica', especialidade: slug } da tela atual.
-// Cada médico vê apenas as frases do CONTEXTO ATUAL + as suas frases GERAIS (vale
-// em qualquer área). Registros antigos sem ambiente/especialidade contam como gerais.
+// Cada médico vê apenas as evoluções do CONTEXTO ATUAL — sem grupo GERAIS: cada
+// evolução aparece somente no ambiente/especialidade em que foi criada.
 export default function PhraseSelector({ onInsert, especialidade = null, contexto }) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -87,15 +87,12 @@ export default function PhraseSelector({ onInsert, especialidade = null, context
   });
 
   const minhas = frases.filter(f => user && f.created_by_id === user.id);
-  // Contexto da frase: registros antigos (sem ambiente/especialidade) contam como "geral".
-  const ambDe = (f) => f.ambiente || 'geral';
-  const espDe = (f) => f.especialidade || 'geral';
-  const doContexto = minhas.filter(f => ambDe(f) === ctx.ambiente && espDe(f) === ctx.especialidade);
-  const gerais = minhas.filter(f => ambDe(f) === 'geral' && espDe(f) === 'geral');
-  const visiveis = doContexto.length + gerais.length;
+  // Sem grupo GERAIS: cada evolução aparece APENAS no ambiente/especialidade em que
+  // foi criada — nada é compartilhado entre contextos.
+  const doContexto = minhas.filter(f => f.ambiente === ctx.ambiente && f.especialidade === ctx.especialidade);
+  const visiveis = doContexto.length;
   const categoria = ui.aba;
   const daCategoria = doContexto.filter(f => f.categoria === categoria);
-  const geraisDaCategoria = gerais.filter(f => f.categoria === categoria);
   const titulosExistentes = [...new Set(doContexto.map(tituloDe))].filter(t => t !== GERAL);
 
   // Agrupa as frases do contexto por título, na ordem em que aparecem.
@@ -118,12 +115,7 @@ export default function PhraseSelector({ onInsert, especialidade = null, context
   const gruposContexto = espNorm
     ? [...grupos].sort((a, b) => (ehDaEspecialidade(b.titulo) ? 1 : 0) - (ehDaEspecialidade(a.titulo) ? 1 : 0))
     : grupos;
-  // Frases GERAIS do médico (valem em qualquer ambiente/especialidade) ficam num grupo
-  // próprio no fim — nunca misturadas com as do contexto atual.
-  const gruposFinais = [
-    ...gruposContexto,
-    ...(geraisDaCategoria.length > 0 ? [{ titulo: 'GERAIS', frases: geraisDaCategoria, geral: true }] : []),
-  ];
+  const gruposFinais = gruposContexto;
 
   const contextoRotulo = `${AMBIENTE_ROTULO[ctx.ambiente] || ctx.ambiente} · ${ctx.especialidade === 'geral' ? 'Geral' : ctx.especialidade.replace(/-/g, ' ')}`;
 
@@ -134,11 +126,11 @@ export default function PhraseSelector({ onInsert, especialidade = null, context
     setTimeout(() => setFlashId(null), 800);
   };
 
-  const criar = async (texto, titulo, geral) => {
+  const criar = async (texto, titulo) => {
     const registro = await base44.entities.FrasePreDefinida.create({
       categoria, texto: texto.trim(), titulo: (titulo || '').trim() || GERAL,
-      ambiente: geral ? 'geral' : ctx.ambiente,
-      especialidade: geral ? 'geral' : ctx.especialidade,
+      ambiente: ctx.ambiente,
+      especialidade: ctx.especialidade,
     });
     // Regra dura: só entra na lista se o dono for o médico logado.
     if (user && registro?.created_by_id === user.id) {
@@ -158,18 +150,6 @@ export default function PhraseSelector({ onInsert, especialidade = null, context
     queryClient.invalidateQueries({ queryKey: ['frases-predefinidas', user.id] });
   };
 
-  // Frase GERAL (ou antiga, sem contexto) passa a pertencer ao contexto atual da tela.
-  // É o caminho de migração das frases criadas antes do escopo por contexto.
-  const atribuirAoContexto = async (frase) => {
-    if (!user || frase.created_by_id !== user.id) return;
-    await base44.entities.FrasePreDefinida.update(frase.id, {
-      ambiente: ctx.ambiente, especialidade: ctx.especialidade,
-    });
-    queryClient.setQueryData(['frases-predefinidas', user.id], (old = []) =>
-      old.map(f => (f.id === frase.id ? { ...f, ambiente: ctx.ambiente, especialidade: ctx.especialidade } : f)));
-    queryClient.invalidateQueries({ queryKey: ['frases-predefinidas', user.id] });
-  };
-
   if (!user) return null;
 
   return (
@@ -179,7 +159,7 @@ export default function PhraseSelector({ onInsert, especialidade = null, context
           onClick={() => updateUi({ aberto: !ui.aberto })}
           className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
         >
-          <BookOpen className="w-3.5 h-3.5" /> Frases Pré-definidas
+          <BookOpen className="w-3.5 h-3.5" /> Evoluções Pré-definidas
           {visiveis > 0 && (
             <span className="px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold normal-case tracking-normal">
               {visiveis}
@@ -189,7 +169,7 @@ export default function PhraseSelector({ onInsert, especialidade = null, context
         </button>
         <button onClick={() => setCriando(true)}
           className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg border border-border text-primary hover:bg-accent transition-all">
-          <Plus className="w-3.5 h-3.5" /> Nova frase
+          <Plus className="w-3.5 h-3.5" /> Nova evolução
         </button>
       </div>
 
@@ -204,7 +184,7 @@ export default function PhraseSelector({ onInsert, especialidade = null, context
             ))}
           </div>
           <p className="text-[10px] text-muted-foreground -mt-1">
-            Mostrando frases de: <strong>{contextoRotulo}</strong>
+            Mostrando evoluções de: <strong>{contextoRotulo}</strong>
           </p>
 
           {criando && (
@@ -212,14 +192,12 @@ export default function PhraseSelector({ onInsert, especialidade = null, context
           )}
 
           {isLoading ? (
-            <p className="text-[11px] text-muted-foreground">Carregando frases...</p>
+            <p className="text-[11px] text-muted-foreground">Carregando evoluções...</p>
           ) : (
             <>
               {gruposContexto.length === 0 && (
                 <p className="text-[11px] text-muted-foreground">
-                  Você ainda não tem frases neste ambiente/especialidade — crie as suas.
-                  As suas frases antigas (sem contexto) estão no grupo GERAIS: abra-o e
-                  toque em → para atribuí-las a este contexto.
+                  Você ainda não tem evoluções salvas neste ambiente/especialidade — crie as suas.
                 </p>
               )}
               {gruposFinais.length > 0 && (
@@ -233,11 +211,7 @@ export default function PhraseSelector({ onInsert, especialidade = null, context
                         <button onClick={() => setTituloAberto(aberto ? null : g.titulo)}
                           className="w-full flex items-center gap-2 px-3 py-2.5 text-left">
                           <span className="flex-1 min-w-0 text-xs font-extrabold uppercase tracking-wider truncate">{g.titulo}</span>
-                          {g.geral ? (
-                            <span className="px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground text-[9px] font-bold normal-case tracking-normal flex-shrink-0">
-                              GERAL — vale em qualquer área
-                            </span>
-                          ) : ehDaEspecialidade(g.titulo) && (
+                          {ehDaEspecialidade(g.titulo) && (
                             <span className="px-1.5 py-0.5 rounded-full bg-primary/15 text-primary text-[9px] font-bold normal-case tracking-normal flex-shrink-0">
                               sua especialidade
                             </span>
@@ -252,12 +226,12 @@ export default function PhraseSelector({ onInsert, especialidade = null, context
                             {g.frases.length > 3 && (
                               <div className="relative">
                                 <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                                <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar frase..."
+                                <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar evolução..."
                                   className="w-full pl-9 pr-3 py-2 rounded-xl bg-muted border border-border text-sm focus:outline-none focus:border-primary/50 transition-all" />
                               </div>
                             )}
                             {daBusca.length === 0 ? (
-                              <p className="text-[11px] text-muted-foreground px-1 py-1">Nenhuma frase encontrada para a busca.</p>
+                              <p className="text-[11px] text-muted-foreground px-1 py-1">Nenhuma evolução encontrada para a busca.</p>
                             ) : daBusca.map(f => (
                               <div key={f.id}
                                 className={`flex items-start gap-1.5 rounded-xl px-3 py-2 border transition-all ${
@@ -269,13 +243,6 @@ export default function PhraseSelector({ onInsert, especialidade = null, context
                                   className="flex-1 min-w-0 text-left text-xs leading-relaxed cursor-pointer">
                                   <Realce texto={f.texto} busca={busca} />
                                 </button>
-                                {g.geral && (
-                                  <button onClick={() => atribuirAoContexto(f)}
-                                    title={`Atribuir ao contexto atual (${contextoRotulo})`}
-                                    className="text-muted-foreground hover:text-primary mt-0.5 transition-colors">
-                                    <ArrowRight className="w-3.5 h-3.5" />
-                                  </button>
-                                )}
                                 {confirmDeleteId === f.id ? (
                                   <button onClick={() => excluir(f)} title="Confirmar exclusão"
                                     className="text-red-500 hover:text-red-400 mt-0.5">
@@ -283,7 +250,7 @@ export default function PhraseSelector({ onInsert, especialidade = null, context
                                   </button>
                                 ) : (
                                   <button onClick={() => { setConfirmDeleteId(f.id); setTimeout(() => setConfirmDeleteId(null), 3000); }}
-                                    title="Excluir frase"
+                                    title="Excluir evolução"
                                     className="text-muted-foreground hover:text-red-500 mt-0.5 transition-colors">
                                     <Trash2 className="w-3.5 h-3.5" />
                                   </button>

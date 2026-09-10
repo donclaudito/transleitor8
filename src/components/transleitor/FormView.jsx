@@ -218,7 +218,7 @@ export default function FormView({
         </div>
       )}
 
-      {/* Frases pré-definidas */}
+      {/* Evoluções pré-definidas */}
       <PhraseSelector especialidade={especialidade} contexto={contextoFrases} onInsert={{ clinical: appendToClinical, prescription: appendToPrescription }} />
 
       {/* Descrição Clínica */}

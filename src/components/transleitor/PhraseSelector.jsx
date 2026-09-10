@@ -171,7 +171,7 @@ export default function PhraseSelector({ onInsert, especialidade = null, context
           )}
           <ChevronDown className={`w-3.5 h-3.5 transition-transform ${ui.aberto ? 'rotate-180' : ''}`} />
         </button>
-        <button onClick={() => { setCriando(true); updateUi({ aberto: true }); }}
+        <button onClick={() => setCriando(true)}
           className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg border border-border text-primary hover:bg-accent transition-all">
           <Plus className="w-3.5 h-3.5" /> Nova evolução
         </button>

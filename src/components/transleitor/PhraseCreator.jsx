@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 import { Save, X } from 'lucide-react';
 
-const LABELS = { evolucao: 'Evolução', exame_fisico: 'Exame Físico', plano_conduta: 'Plano de Conduta', receita: 'Receita' };
+const LABELS = { evolucao: 'Evolução', exame_fisico: 'Exame Físico', plano_conduta: 'Plano de Conduta', receita: 'Receita', orientacoes: 'Orientações' };
+const PLACEHOLDERS = {
+  receita: 'Cole ou digite a receita completa (medicamentos, posologia, orientações)...',
+  orientacoes: 'Cole ou digite as orientações ao paciente (cuidados, sinais de alarme, retorno)...',
+};
 const NOVO_TITULO = '__novo_titulo__';
 
 // Criação de evolução pré-definida: categoria + TÍTULO (grupo) + CONTEXTO. A evolução
@@ -54,7 +58,7 @@ export default function PhraseCreator({ categoria, titulos = [], contextoRotulo,
         )}
       </div>
       <textarea rows={6} value={texto} onChange={e => setTexto(e.target.value)}
-        placeholder={categoria === 'receita' ? 'Cole ou digite a receita completa (medicamentos, posologia, orientações)...' : 'Cole ou digite a evolução completa (texto inteiro)...'}
+        placeholder={PLACEHOLDERS[categoria] || 'Cole ou digite a evolução completa (texto inteiro)...'}
         className="w-full px-3 py-2 rounded-xl bg-muted border border-border text-sm focus:outline-none focus:border-primary/50 transition-all" />
       <p className="text-[10px] text-muted-foreground">
         Gravada em: <strong>{contextoRotulo}</strong>

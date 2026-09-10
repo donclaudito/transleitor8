@@ -8,9 +8,10 @@
         "exame_fisico",
         "plano_conduta",
         "evolucao",
-        "receita"
+        "receita",
+        "orientacoes"
       ],
-      "description": "Categoria da frase: exame_fisico, plano_conduta, evolucao (texto completo salvo do editor) ou receita (ambulat\u00f3rio \u2014 entra na Prescri\u00e7\u00e3o)"
+      "description": "Categoria da frase: exame_fisico, plano_conduta, evolucao (texto completo salvo do editor), receita (ambulat\u00f3rio \u2014 entra na Prescri\u00e7\u00e3o) ou orientacoes (orienta\u00e7\u00f5es ao paciente)"
     },
     "titulo": {
       "type": "string",

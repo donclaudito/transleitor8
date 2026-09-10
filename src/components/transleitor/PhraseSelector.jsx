@@ -12,6 +12,7 @@ const CATEGORIAS_HOSPITAL = [
   { id: 'evolucao', label: '📝 Evolução' },
   { id: 'exame_fisico', label: '🩺 Exame Físico' },
   { id: 'plano_conduta', label: '💊 Plano de Conduta' },
+  { id: 'orientacoes', label: '📋 Orientações' },
 ];
 // No ambulatório, a pestana de Exame Físico dá lugar a Receitas — modelos de
 // receita/conduta que entram direto no campo Prescrição da consulta.
@@ -19,6 +20,7 @@ const CATEGORIAS_CLINICA = [
   { id: 'evolucao', label: '📝 Evolução' },
   { id: 'receita', label: '📜 Receitas' },
   { id: 'plano_conduta', label: '💊 Plano de Conduta' },
+  { id: 'orientacoes', label: '📋 Orientações' },
 ];
 const GERAL = 'GERAL';
 const AMBIENTE_ROTULO = { hospital: 'Hospital', clinica: 'Ambulatório' };

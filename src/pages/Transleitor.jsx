@@ -20,7 +20,7 @@ const DEFAULT_COMORBIDITIES = ["HAS", "DM2", "Dislipidemia", "Tabagismo", "DRC",
 const DEFAULT_FORM = {
   sector: '', bed: '', patientInitials: '', comorbidities: '', labs: '', clinicalDescription: '',
   consultorioType: null, previousConsult: '', previousEvolution: '', nursingEvolution: '', prescription: '',
-  procedimento: '',
+  procedimento: '', orientacoes: '',
 };
 
 export default function Transleitor({ variante, config } = {}) {
@@ -49,6 +49,10 @@ export default function Transleitor({ variante, config } = {}) {
     ambiente: contexto?.ambiente || esp?.ambientePadrao || 'hospital',
     especialidade: variante || contexto?.especialidade || 'geral',
   };
+  // Modo CONSULTÓRIO (ambulatório): ambiente clínica ou setor de consultório/gastro —
+  // layout próprio na tela e contexto de geração SEM evolução de enfermagem.
+  const normSectorAtual = (formData.sector || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const modoConsultorio = contextoFrases.ambiente === 'clinica' || normSectorAtual.trim() === 'consultorio' || normSectorAtual.includes('gastro');
   const { settings, setTheme, addCustomChip, removeCustomChip } = useSettings();
   const queryClient = useQueryClient();
 
@@ -316,9 +320,9 @@ ANÁLISE SEQUENCIAL DOS EXAMES COMPLEMENTARES (OBRIGATÓRIA):
         ? '' : getSectorHint(formData.sector);
       const normalizedSector = (formData.sector || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
       const isGastro = normalizedSector.includes('gastro');
-      const isConsultorio = normalizedSector.trim() === 'consultorio' || isGastro;
+      const isConsultorio = modoConsultorio;
       const consultorioLine = isConsultorio && formData.consultorioType
-        ? `Contexto: consulta ${isGastro ? 'gastroenterológica ' : ''}ambulatorial (${formData.consultorioType === 'retorno' ? 'retorno' : 'primeira consulta'}).${isGastro ? '\nNa Descrição Clínica, exames rotulados como "Exames anexados" já possuem resultado disponível — trate como achados; exames rotulados como "Exames solicitados" são pedidos novos, ainda sem resultado — trate como conduta/planejamento, jamais como achado.' : ''}${!isGastro && formData.consultorioType === 'retorno' && formData.previousConsult?.trim() ? `\nConsulta anterior:\n${formData.previousConsult.trim()}` : ''}`
+        ? `Contexto: consulta ${isGastro ? 'gastroenterológica ' : ''}ambulatorial (${formData.consultorioType === 'retorno' ? 'retorno' : 'primeira consulta'}).${isGastro ? '\nNa Descrição Clínica, exames rotulados como "Exames anexados" já possuem resultado disponível — trate como achados; exames rotulados como "Exames solicitados" são pedidos novos, ainda sem resultado — trate como conduta/planejamento, jamais como achado.' : ''}${!isGastro && formData.consultorioType === 'retorno' && formData.previousConsult?.trim() ? `\nConsulta anterior:\n${formData.previousConsult.trim()}` : ''}${modoConsultorio ? '\nEstrutura de consulta ambulatorial: NÃO use estrutura de internação (sem evolução de enfermagem); incorpore ao plano as "Orientações e retorno" fornecidas (orientações ao paciente, sinais de alarme e retorno programado).' : ''}`
         : '';
 
       // Apenas os medicamentos adicionados individualmente via popover ficam na prescrição.
@@ -348,8 +352,11 @@ ANÁLISE SEQUENCIAL DOS EXAMES COMPLEMENTARES (OBRIGATÓRIA):
         ['Setor', formData.sector?.trim()],
         ['Comorbidades', formData.comorbidities?.trim()],
         ['Exames complementares', formData.labs?.trim()],
-        ...(isGastro
-          ? [['Consulta anterior', formData.previousConsult?.trim()]]
+        ...(modoConsultorio
+          ? [
+              ['Consulta anterior', formData.previousConsult?.trim()],
+              ['Orientações e retorno', formData.orientacoes?.trim()],
+            ]
           : [
               ['Evoluções médicas anteriores', formData.previousEvolution?.trim()],
               ['Evolução de enfermagem', formData.nursingEvolution?.trim()],
@@ -378,7 +385,7 @@ REGRAS (OBRIGATÓRIAS):
 3. Na avaliação do quadro atual, sinalize explicitamente as MUDANÇAS CLÍNICAS RELEVANTES desde a consulta anterior.
 4. Use exclusivamente os dados fornecidos — NÃO invente informações.` : '';
 
-      const correlationBlock = isGastro
+      const correlationBlock = modoConsultorio
         ? gastroCorrelationBlock
         : (formData.previousEvolution?.trim() ? `\n\nÂNCORA DE CORRELAÇÃO CRUZADA (use TODAS as Evoluções Médicas Anteriores como referência obrigatória):
 1. ANÁLISE CRONOLÓGICA: ordene as evoluções anteriores por data/tempo e reconstrua a LINHA DO TEMPO clínica do paciente. Destaque a progressão dia a dia — melhora, piora ou estabilidade de sintomas, sinais vitais e estado geral entre as evoluções.
@@ -554,6 +561,7 @@ ${HUMANIZACAO}`;
       previousEvolution: saved.previousEvolution || '',
       nursingEvolution: saved.nursingEvolution || '',
       procedimento: saved.procedimento || '',
+      orientacoes: saved.orientacoes || '',
     });
     setCurrentSOAP(ev);
     setStreamingText('');
@@ -602,7 +610,7 @@ ${HUMANIZACAO}`;
               <ContextoBadge ambiente={contexto.ambiente} especialidade={contexto.especialidade} onRemove={removerContexto} />
             )}
             <FormView
-              formData={formData} setFormData={setFormData}
+              formData={formData} setFormData={setFormData} modoConsultorio={modoConsultorio}
               especialidade={esp?.nomeArea || null}
               contextoFrases={contextoFrases}
               allSectors={allSectors} allComorbidities={allComorbidities}

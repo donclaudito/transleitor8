@@ -12,6 +12,17 @@ const PANEL_LABELS = {
   emergencia: 'Avaliação Cirúrgica',
   sintomas: 'Sintomas',
   gastro: 'Gastro',
+  urologia: 'Urologia',
+  cardiologia: 'Cardiologia',
+  pneumologia: 'Pneumologia',
+  dermatologia: 'Dermatologia',
+  ortopedia: 'Ortopedia',
+  pediatria: 'Pediatria',
+  oftalmologia: 'Oftalmologia',
+  endocrino: 'Endocrinologia',
+  ginecologia: 'Ginecologia',
+  'clinica-medica': 'Clínica Médica',
+  'cirurgia-ambulatorial': 'Cirurgia (Ambulatório)',
 };
 
 // Bloco "⭐ Meus itens" de cada pestana: itens personalizados do médico logado,

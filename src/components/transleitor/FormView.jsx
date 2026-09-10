@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Activity, Wand2, Settings2, FlaskConical, User, Cpu } from 'lucide-react';
+import { Activity, Wand2, Settings2, FlaskConical, User, Cpu, Stethoscope } from 'lucide-react';
 import SymptomsPanel from './SymptomsPanel';
 import ComorbidityPopover from './ComorbidityPopover';
 import GastroPanel from './GastroPanel';
@@ -12,6 +12,7 @@ import ConsultasPrevias from './ConsultasPrevias';
 import PhraseSelector from './PhraseSelector';
 import InserirCapturas from './InserirCapturas';
 import SectorCombobox from './SectorCombobox';
+import EspecialidadePanel from './EspecialidadePanel';
 
 const GASTRO_QUICK_COMORBS = ['HAS', 'DM2', 'Dislipidemia', 'Tabagismo', 'DRC', 'ICC', 'DPOC', 'Obesidade', 'Alergia', 'Hepatopatia', 'Diabetes Gestacional', 'Etilismo', 'Hipotireoidismo', 'Retocolite Ulcerativa', 'HIV'];
 
@@ -23,6 +24,7 @@ export default function FormView({
   evolutionMode = 'free', setEvolutionMode = () => {},
   especialidade = null,
   contextoFrases = null,
+  modoConsultorio = false,
 }) {
   const [sectorError, setSectorError] = useState(false);
   const [showPrevias, setShowPrevias] = useState(false);
@@ -51,7 +53,8 @@ export default function FormView({
   };
   const normalizedSector = (formData.sector || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   const isGastro = normalizedSector.includes('gastro');
-  const isConsultorio = normalizedSector.trim() === 'consultorio' || isGastro;
+  const isConsultorio = modoConsultorio || normalizedSector.trim() === 'consultorio' || isGastro;
+  const espSlug = contextoFrases?.especialidade || 'geral';
   const norm = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
   const existingComorbSet = new Set(allComorbidities.map(norm));
   const gastroQuickComorbs = GASTRO_QUICK_COMORBS.filter(c => !existingComorbSet.has(norm(c)));
@@ -63,11 +66,20 @@ export default function FormView({
   return (
     <>
     <SymptomsPanel onAppend={appendToClinical} clinicalDescription={formData.clinicalDescription} />
-    {isConsultorio && <GastroPanel onAppend={appendToClinical} />}
-    {isCirurgia && <CirurgiaPanel onAppend={appendToClinical} />}
-    {isUTI && <UTIPanel onAppend={appendToClinical} />}
-    {isPS && <PSPanel onAppend={appendToClinical} />}
-    {isEmergencia && <EmergenciaPanel onAppend={appendToClinical} />}
+    {isConsultorio ? (
+      espSlug === 'geral' || espSlug === 'gastro-endoscopia' ? (
+        <GastroPanel onAppend={appendToClinical} />
+      ) : (
+        <EspecialidadePanel slug={espSlug} nomeArea={especialidade} onAppend={appendToClinical} />
+      )
+    ) : (
+      <>
+        {isCirurgia && <CirurgiaPanel onAppend={appendToClinical} />}
+        {isUTI && <UTIPanel onAppend={appendToClinical} />}
+        {isPS && <PSPanel onAppend={appendToClinical} />}
+        {isEmergencia && <EmergenciaPanel onAppend={appendToClinical} />}
+      </>
+    )}
     {activeComorbidity && (
       <ComorbidityPopover
         comorbidityName={activeComorbidity.comorbidity_name}
@@ -78,6 +90,17 @@ export default function FormView({
       />
     )}
     <div className="space-y-6 p-4 md:p-6">
+      {/* Banner do modo consultório — página claramente diferente da hospitalar */}
+      {isConsultorio && (
+        <div className="premium-gradient rounded-2xl px-4 py-3 flex items-center gap-3 text-primary-foreground shadow-md">
+          <Stethoscope className="w-5 h-5 flex-shrink-0" />
+          <div className="min-w-0">
+            <p className="text-sm font-extrabold uppercase tracking-wide">Consulta Ambulatorial</p>
+            <p className="text-[11px] opacity-85 truncate">{especialidade || 'Ambulatório'} — 1ª consulta ou retorno</p>
+          </div>
+        </div>
+      )}
+
       {/* Identificação */}
       <div className="glass-card rounded-2xl p-5 space-y-4">
         <div className="flex items-center justify-between">
@@ -119,7 +142,7 @@ export default function FormView({
         )}
 
         <div className="grid grid-cols-2 gap-3">
-          <input placeholder="Leito / Sala" value={formData.bed} onChange={e => setFormData({ ...formData, bed: e.target.value })}
+          <input placeholder={isConsultorio ? 'Sala' : 'Leito / Sala'} value={formData.bed} onChange={e => setFormData({ ...formData, bed: e.target.value })}
             className="px-4 py-3 rounded-xl bg-muted border border-border text-sm focus:outline-none focus:border-primary/50 transition-all" />
           <input placeholder="Iniciais Pac." value={formData.patientInitials} onChange={e => setFormData({ ...formData, patientInitials: e.target.value })}
             className="px-4 py-3 rounded-xl bg-muted border border-border text-sm focus:outline-none focus:border-primary/50 transition-all" />
@@ -194,7 +217,7 @@ export default function FormView({
         </div>
       </div>
 
-      {!isGastro && (
+      {!isConsultorio && (
         <div className="glass-card rounded-2xl p-5 space-y-3">
           <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
             <span>📋</span> Evoluções Médicas Anteriores
@@ -206,7 +229,7 @@ export default function FormView({
         </div>
       )}
 
-      {!isGastro && (
+      {!isConsultorio && (
         <div className="glass-card rounded-2xl p-5 space-y-3">
           <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
             <span>🩺</span> Evolução de Enfermagem
@@ -224,9 +247,9 @@ export default function FormView({
       {/* Descrição Clínica */}
       <div className="glass-card rounded-2xl p-5 space-y-3">
         <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-          <Activity className="w-3.5 h-3.5" /> Descrição Clínica Atual
+          <Activity className="w-3.5 h-3.5" /> {isConsultorio ? 'Queixa Atual / HDA + Exame' : 'Descrição Clínica Atual'}
         </h3>
-        <textarea rows={6} placeholder="Descreva o quadro clínico livremente..."
+        <textarea rows={6} placeholder={isConsultorio ? 'Descreva a queixa, a história da doença atual e os achados do exame...' : 'Descreva o quadro clínico livremente...'}
           value={formData.clinicalDescription} onChange={e => setFormData({ ...formData, clinicalDescription: e.target.value })}
           className="w-full px-4 py-3 rounded-xl bg-muted border border-border text-sm resize-none focus:outline-none focus:border-primary/50 transition-all" />
       </div>
@@ -248,13 +271,26 @@ export default function FormView({
       {/* Prescrição */}
       <div className="glass-card rounded-2xl p-5 space-y-3">
         <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-          <span>💊</span> Prescrição Atual
+          <span>💊</span> {isConsultorio ? 'Prescrição / Conduta' : 'Prescrição Atual'}
         </h3>
-        <p className="text-[11px] text-muted-foreground -mt-1">Cole a prescrição vigente do paciente para a IA integrar ao contexto.</p>
+        <p className="text-[11px] text-muted-foreground -mt-1">{isConsultorio ? 'Prescrição da consulta e condutas para a IA integrar ao contexto.' : 'Cole a prescrição vigente do paciente para a IA integrar ao contexto.'}</p>
         <textarea rows={4} placeholder="Cole aqui a prescrição atual..."
           value={formData.prescription || ''} onChange={e => setFormData({ ...formData, prescription: e.target.value })}
           className="w-full px-4 py-3 rounded-xl bg-muted border border-border text-sm resize-none focus:outline-none focus:border-primary/50 transition-all" />
       </div>
+
+      {/* Orientações e retorno — exclusivo do modo consultório */}
+      {isConsultorio && (
+        <div className="glass-card rounded-2xl p-5 space-y-3">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+            <span>ℹ️</span> Orientações e Retorno
+          </h3>
+          <p className="text-[11px] text-muted-foreground -mt-1">Orientações dadas ao paciente e plano de retorno — entram na conduta/plano gerado.</p>
+          <textarea rows={3} placeholder="Orientações, sinais de alarme e retorno programado..."
+            value={formData.orientacoes || ''} onChange={e => setFormData({ ...formData, orientacoes: e.target.value })}
+            className="w-full px-4 py-3 rounded-xl bg-muted border border-border text-sm resize-none focus:outline-none focus:border-primary/50 transition-all" />
+        </div>
+      )}
 
       {/* Seletor de IA (visível quando há provedores cadastrados) */}
       {llmProviders.length > 0 && (

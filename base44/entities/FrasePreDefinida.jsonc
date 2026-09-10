@@ -7,9 +7,10 @@
       "enum": [
         "exame_fisico",
         "plano_conduta",
-        "evolucao"
+        "evolucao",
+        "receita"
       ],
-      "description": "Categoria da frase: exame_fisico, plano_conduta ou evolucao (texto completo salvo do editor)"
+      "description": "Categoria da frase: exame_fisico, plano_conduta, evolucao (texto completo salvo do editor) ou receita (ambulat\u00f3rio \u2014 entra na Prescri\u00e7\u00e3o)"
     },
     "titulo": {
       "type": "string",

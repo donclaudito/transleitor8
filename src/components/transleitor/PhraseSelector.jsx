@@ -8,9 +8,16 @@ import PhraseCreator from './PhraseCreator';
 import EvolucaoRow from './EvolucaoRow';
 
 const norm = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-const CATEGORIAS = [
+const CATEGORIAS_HOSPITAL = [
   { id: 'evolucao', label: '📝 Evolução' },
   { id: 'exame_fisico', label: '🩺 Exame Físico' },
+  { id: 'plano_conduta', label: '💊 Plano de Conduta' },
+];
+// No ambulatório, a pestana de Exame Físico dá lugar a Receitas — modelos de
+// receita/conduta que entram direto no campo Prescrição da consulta.
+const CATEGORIAS_CLINICA = [
+  { id: 'evolucao', label: '📝 Evolução' },
+  { id: 'receita', label: '📜 Receitas' },
   { id: 'plano_conduta', label: '💊 Plano de Conduta' },
 ];
 const GERAL = 'GERAL';
@@ -69,7 +76,9 @@ export default function PhraseSelector({ onInsert, especialidade = null, context
   const minhas = frases.filter(f => user && f.created_by_id === user.id);
   const doContexto = minhas.filter(f => f.ambiente === ctx.ambiente && f.especialidade === ctx.especialidade);
   const visiveis = doContexto.length;
-  const categoria = ui.aba;
+  // Pestanas por ambiente: ambulatório mostra Receitas no lugar de Exame Físico.
+  const categorias = ctx.ambiente === 'clinica' ? CATEGORIAS_CLINICA : CATEGORIAS_HOSPITAL;
+  const categoria = categorias.some(c => c.id === ui.aba) ? ui.aba : 'evolucao';
 
   // Favoritas da aba atual: sempre no topo, fora dos acordeões.
   const favoritas = doContexto.filter(f => f.favorita && f.categoria === categoria);
@@ -106,9 +115,14 @@ export default function PhraseSelector({ onInsert, especialidade = null, context
 
   const contextoRotulo = `${AMBIENTE_ROTULO[ctx.ambiente] || ctx.ambiente} · ${ctx.especialidade === 'geral' ? 'Geral' : ctx.especialidade.replace(/-/g, ' ')}`;
 
-  // Cada clique numa evolução ADICIONA direto à Descrição Clínica Atual.
+  // Cada clique numa evolução ADICIONA direto à Descrição Clínica Atual;
+  // receitas entram no campo Prescrição da consulta.
   const inserir = (frase) => {
-    onInsert.clinical(frase.texto);
+    if (frase.categoria === 'receita' && onInsert.prescription) {
+      onInsert.prescription(frase.texto);
+    } else {
+      onInsert.clinical(frase.texto);
+    }
     setFlashId(frase.id);
     setTimeout(() => setFlashId(null), 800);
   };
@@ -170,7 +184,7 @@ export default function PhraseSelector({ onInsert, especialidade = null, context
       {ui.aberto && (
         <>
           <div className="flex gap-1 bg-muted rounded-xl p-1">
-            {CATEGORIAS.map(c => (
+            {categorias.map(c => (
               <button key={c.id} onClick={() => updateUi({ aba: c.id })}
                 className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${categoria === c.id ? 'bg-primary text-primary-foreground shadow-md' : 'text-muted-foreground hover:text-foreground'}`}>
                 {c.label}

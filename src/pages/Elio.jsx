@@ -82,8 +82,8 @@ export default function Elio() {
           className="lg:hidden p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
           <Menu className="w-4 h-4" />
         </button>
-        <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-          <Stethoscope className="w-4 h-4 text-primary" />
+        <div className="w-9 h-9 rounded-xl premium-gradient text-primary-foreground flex items-center justify-center shadow-lg flex-shrink-0">
+          <Stethoscope className="w-5 h-5" />
         </div>
         <div>
           <h1 className="text-base font-extrabold leading-tight">Elvira</h1>

@@ -23,7 +23,7 @@ const DEFAULT_FORM = {
   procedimento: '',
 };
 
-export default function Transleitor({ variante } = {}) {
+export default function Transleitor({ variante, config } = {}) {
   const [view, setView] = useState('form');
   const [loading, setLoading] = useState(false);
   const [streamingText, setStreamingText] = useState('');
@@ -41,7 +41,14 @@ export default function Transleitor({ variante } = {}) {
     return ambiente || especialidade ? { ambiente, especialidade } : null;
   });
   // Variante de especialidade (ex.: /cardiologia): configuração da área — header e persona.
-  const esp = variante ? getEspecialidade(variante) : null;
+  const esp = variante ? (config ?? getEspecialidade(variante)) : null;
+
+  // Contexto atual (ambiente + especialidade) das Frases Pré-definidas: as frases do médico
+  // são filtradas/gravadas por contexto — cada ambiente/especialidade tem o seu conjunto.
+  const contextoFrases = {
+    ambiente: contexto?.ambiente || esp?.ambientePadrao || 'hospital',
+    especialidade: variante || contexto?.especialidade || 'geral',
+  };
   const { settings, setTheme, addCustomChip, removeCustomChip } = useSettings();
   const queryClient = useQueryClient();
 
@@ -566,14 +573,6 @@ ${HUMANIZACAO}`;
         extraPlaceholder="Medicamentos crônicos (separados por vírgula)..."
         extraValue={newComorbidityMeds} onExtraChange={e => setNewComorbidityMeds(e.target.value)} />;
     }
-    if (view === 'scores' || view === 'tools') {
-      return (
-        <div className="p-6 text-center text-muted-foreground">
-          <p className="text-sm">Módulo de {view === 'scores' ? 'Escores Clínicos' : 'Ferramentas'} — em breve.</p>
-        </div>
-      );
-    }
-
     // Default: split form + result
     return (
       <>
@@ -591,6 +590,7 @@ ${HUMANIZACAO}`;
             <FormView
               formData={formData} setFormData={setFormData}
               especialidade={esp?.nomeArea || null}
+              contextoFrases={contextoFrases}
               allSectors={allSectors} allComorbidities={allComorbidities}
               setView={setView} toggleComorbidityInForm={toggleComorbidityInForm}
               generateSOAP={generateSOAP} loading={loading}

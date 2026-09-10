@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
-import { Stethoscope, History, Plus, Settings, Calculator, Wrench, Sun, Moon, BookOpen, ChevronDown, ExternalLink, Cpu, ClipboardList, ScanLine, Bot, Activity, ShieldAlert, FileText, Pencil } from 'lucide-react';
+import { Stethoscope, History, Plus, Settings, Sun, Moon, BookOpen, ChevronDown, ExternalLink, Cpu, ClipboardList, ScanLine, Bot, Activity, ShieldAlert, FileText, Pencil } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 
@@ -30,8 +30,6 @@ export default function Header({ view, setView, theme, setTheme, onNewEvolution,
 
   const navButtons = [
     { id: 'history', icon: History, label: 'Histórico' },
-    { id: 'scores', icon: Calculator, label: 'Escores' },
-    { id: 'tools', icon: Wrench, label: 'Ferramentas' },
     { id: 'new', icon: Plus, label: 'Nova', action: onNewEvolution },
     { id: 'settings', icon: Settings, label: 'Config' },
   ];

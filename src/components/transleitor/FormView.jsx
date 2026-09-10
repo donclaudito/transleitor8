@@ -22,6 +22,7 @@ export default function FormView({
   activeComorbidity = null, onCloseComorbidity = () => {}, onAddToPrescription = () => {},
   evolutionMode = 'free', setEvolutionMode = () => {},
   especialidade = null,
+  contextoFrases = null,
 }) {
   const [sectorError, setSectorError] = useState(false);
   const [showPrevias, setShowPrevias] = useState(false);
@@ -218,7 +219,7 @@ export default function FormView({
       )}
 
       {/* Frases pré-definidas */}
-      <PhraseSelector especialidade={especialidade} onInsert={{ clinical: appendToClinical, prescription: appendToPrescription }} />
+      <PhraseSelector especialidade={especialidade} contexto={contextoFrases} onInsert={{ clinical: appendToClinical, prescription: appendToPrescription }} />
 
       {/* Descrição Clínica */}
       <div className="glass-card rounded-2xl p-5 space-y-3">

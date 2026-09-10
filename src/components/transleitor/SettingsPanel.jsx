@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Sun, Moon, Plus, X } from 'lucide-react';
+import MinhasEspecialidadesCard from './MinhasEspecialidadesCard';
 
 export default function SettingsPanel({ settings, setTheme, addCustomChip, removeCustomChip, onBack }) {
   const [newChip, setNewChip] = useState('');
@@ -51,6 +52,8 @@ export default function SettingsPanel({ settings, setTheme, addCustomChip, remov
           ))}
         </div>
       </div>
+
+      <MinhasEspecialidadesCard />
     </div>
   );
 }

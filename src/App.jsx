@@ -12,7 +12,6 @@ import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import LandingPage from '@/pages/LandingPage';
 import Transleitor from '@/pages/Transleitor';
-import TemplatesSOAP from '@/pages/TemplatesSOAP';
 import GerenciarApps from '@/pages/GerenciarApps';
 import DevDocs from '@/pages/DevDocs';
 import AdminLLMs from '@/pages/AdminLLMs';
@@ -26,6 +25,7 @@ import DescricaoCirurgia from '@/pages/DescricaoCirurgia';
 import Menu from '@/pages/Menu';
 import Especialidades from '@/pages/Especialidades';
 import TransleitorEspecialidade from '@/pages/TransleitorEspecialidade';
+import TransleitorMinhaEspecialidade from '@/pages/TransleitorMinhaEspecialidade';
 import { ESPECIALIDADES_CONFIG } from '@/lib/especialidades';
 import IdleTimeout from '@/components/IdleTimeout';
 
@@ -60,7 +60,6 @@ const AuthenticatedApp = () => {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
           <Route path="/transleitor" element={<Transleitor />} />
-          <Route path="/templates" element={<TemplatesSOAP />} />
           <Route path="/gerenciar-apps" element={<GerenciarApps />} />
           <Route path="/dev-docs" element={<DevDocs />} />
           <Route path="/admin-llms" element={<AdminLLMs />} />
@@ -73,6 +72,7 @@ const AuthenticatedApp = () => {
           <Route path="/descricao-cirurgia" element={<DescricaoCirurgia />} />
           <Route path="/menu" element={<Menu />} />
           <Route path="/especialidades" element={<Especialidades />} />
+          <Route path="/especialidade/:slug" element={<TransleitorMinhaEspecialidade />} />
           {Object.values(ESPECIALIDADES_CONFIG).map(esp => (
             <Route key={esp.slug} path={esp.rota} element={<TransleitorEspecialidade key={esp.slug} slug={esp.slug} />} />
           ))}

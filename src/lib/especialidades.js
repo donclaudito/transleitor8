@@ -251,6 +251,28 @@ Atue como ESPECIALISTA em Cirurgia, em contexto de ambulatório (pré e pós-ope
 // Busca a configuração de uma variante pelo slug (ex.: 'urologia'). null = sem variante.
 export const getEspecialidade = (slug) => ESPECIALIDADES_CONFIG[slug] ?? null;
 
+// Config de UMA especialidade CRIADA pelo médico (entidade MinhaEspecialidade): mesmo
+// formato das padrão — a persona segue o nome da área, com TODAS as regras transversais
+// do app (só dados fornecidos, nunca inventar, sem auto-solicitação da própria área).
+export const configDeMinhaEspecialidade = (reg) => ({
+  slug: reg.slug,
+  nomeArea: reg.nome,
+  rota: `/especialidade/${reg.slug}`,
+  icone: '🏷️',
+  titulo: `Transleitor — ${reg.nome}`,
+  subtitulo: reg.ambiente === 'hospital' ? 'Atendimento hospitalar' : 'Consulta / Retorno',
+  ambientePadrao: reg.ambiente === 'hospital' ? 'hospital' : 'clinica',
+  especialidadeRotulo: reg.nome,
+  setorPadrao: reg.ambiente === 'hospital' ? null : 'Consultório',
+  persona_area: `FOCO DE ESPECIALIDADE — ${reg.nome.toUpperCase()}:
+Atue como ESPECIALISTA em ${reg.nome}. Raciocine como especialista em ${reg.nome}:
+1. Estruture o atendimento: queixa principal e HDA dirigida; antecedentes e comorbidades; medicamentos em uso (posologia e adesão); exame físico geral e dirigido conforme descrito; exames complementares; conduta e seguimento.
+2. Aplique ao caso o raciocínio específico da área de ${reg.nome} — sempre com os dados fornecidos, sem inventar achados, valores, doses ou condutas.
+3. Sinalize sinais de alarme apenas quando sustentados pelos dados fornecidos e defina retorno/seguimento com base apenas no informado.
+4. ADAPTE O CONTEXTO: consulta/retorno ambulatorial ou internação, conforme o setor e os dados fornecidos.
+5. TOM: especialista em ${reg.nome} — técnico, objetivo e claro.`,
+});
+
 // REGRA DE INTERCONSULTA (padrão único para TODAS as variantes — e para o fluxo geral
 // quando a especialidade é conhecida pela URL): quem redige JÁ É o especialista da área,
 // nunca solicita avaliação da própria especialidade; apoio de OUTRA área, só com motivo.

@@ -1,40 +1,37 @@
 {
-  "name": "FrasePreDefinida",
+  "name": "MinhaEspecialidade",
   "type": "object",
   "properties": {
-    "categoria": {
+    "slug": {
       "type": "string",
-      "enum": [
-        "exame_fisico",
-        "plano_conduta"
-      ],
-      "description": "Categoria da frase: exame_fisico (descri\u00e7\u00f5es de exame f\u00edsico) ou plano_conduta (planos de conduta)"
+      "description": "Identificador normalizado sem acento (ex.: acupuntura)"
     },
-    "titulo": {
+    "nome": {
       "type": "string",
-      "description": "T\u00edtulo/grupo da frase (ex.: UROLOGIA). Vazio ou ausente = grupo GERAL"
-    },
-    "texto": {
-      "type": "string",
-      "description": "Texto da frase pr\u00e9-definida"
+      "description": "Nome exibido da especialidade (ex.: Acupuntura)"
     },
     "ambiente": {
       "type": "string",
       "enum": [
         "hospital",
         "clinica",
-        "geral"
+        "ambos"
       ],
-      "description": "Ambiente da frase: hospital, clinica (ambulat\u00f3rio) ou geral (vale em qualquer ambiente). Registros antigos sem ambiente s\u00e3o tratados como geral"
+      "description": "Onde a especialidade aparece no menu: hospital, clinica (ambulat\u00f3rio) ou ambos"
     },
-    "especialidade": {
-      "type": "string",
-      "description": "Slug da especialidade da frase (ex.: urologia) ou 'geral' (vale em qualquer especialidade). Registros antigos sem valor s\u00e3o tratados como geral"
+    "criada": {
+      "type": "boolean",
+      "description": "true = especialidade criada pelo m\u00e9dico; false = personaliza\u00e7\u00e3o de uma especialidade padr\u00e3o (ocultar/mostrar)"
+    },
+    "ativa": {
+      "type": "boolean",
+      "default": true,
+      "description": "Se a especialidade aparece no menu deste m\u00e9dico"
     }
   },
   "required": [
-    "categoria",
-    "texto"
+    "slug",
+    "nome"
   ],
   "rls": {
     "create": {

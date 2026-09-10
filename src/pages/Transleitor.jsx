@@ -10,6 +10,7 @@ import SettingsPanel from '@/components/transleitor/SettingsPanel';
 import AllergyPopover from '@/components/transleitor/AllergyPopover';
 import ContextoBadge from '@/components/transleitor/ContextoBadge';
 import VarianteHeader from '@/components/transleitor/VarianteHeader';
+import ExportarEvolucoes from '@/components/transleitor/ExportarEvolucoes';
 import { getEspecialidade, REGRA_INTERCONSULTA } from '@/lib/especialidades';
 import { AMBIENTES } from '@/lib/clinicas';
 import { useSettings } from '@/hooks/useSettings';
@@ -674,6 +675,7 @@ ${HUMANIZACAO}`;
           especialidadeRotulo={esp.especialidadeRotulo}
         />
       )}
+      {esp && <ExportarEvolucoes />}
       {renderContent()}
     </div>
   );

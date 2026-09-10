@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, MessageSquare, Pencil, Trash2, Check, X, Loader2 } from 'lucide-react';
@@ -19,6 +19,7 @@ export default function ElioSidebar({ activeConversationId, onNew, onSelect }) {
   const [draftName, setDraftName] = useState('');
   const [renames, setRenames] = useState(() => readMap(RENAMES_KEY));
   const [archived, setArchived] = useState(() => readSet(ARCHIVED_KEY));
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
   const { data: conversations = [], isLoading } = useQuery({
     queryKey: ['elio-conversations'],
@@ -54,13 +55,20 @@ export default function ElioSidebar({ activeConversationId, onNew, onSelect }) {
   const cancelEdit = () => setEditingId(null);
 
   const removeConversation = (c) => {
-    if (!confirm(`Excluir a conversa "${titleOf(c)}"?`)) return;
     const next = new Set(archived);
     next.add(c.id);
     setArchived(next);
     localStorage.setItem(ARCHIVED_KEY, JSON.stringify([...next]));
+    setConfirmDeleteId(null);
     if (activeConversationId === c.id) onNew();
   };
+
+  // Confirmação de exclusão expira sozinha após 3s
+  useEffect(() => {
+    if (!confirmDeleteId) return;
+    const t = setTimeout(() => setConfirmDeleteId(null), 3000);
+    return () => clearTimeout(t);
+  }, [confirmDeleteId]);
 
   return (
     <div className="flex flex-col h-full">
@@ -104,10 +112,17 @@ export default function ElioSidebar({ activeConversationId, onNew, onSelect }) {
                       className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-muted text-muted-foreground hover:text-foreground transition-all">
                       <Pencil className="w-3.5 h-3.5" />
                     </button>
-                    <button onClick={() => removeConversation(c)} title="Excluir"
-                      className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all">
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    {confirmDeleteId === c.id ? (
+                      <button onClick={() => removeConversation(c)} title="Confirmar exclusão"
+                        className="p-1 rounded hover:bg-destructive/10 text-destructive transition-all">
+                        <Check className="w-3.5 h-3.5" />
+                      </button>
+                    ) : (
+                      <button onClick={() => setConfirmDeleteId(c.id)} title="Excluir"
+                        className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </>
                 )}
               </div>

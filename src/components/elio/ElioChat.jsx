@@ -58,6 +58,7 @@ export default function ElioChat({ conversationId, onConversationCreated, select
       }
     }).catch(() => {});
     const unsub = base44.agents.subscribeToConversation(conversationId, (data) => {
+      const msgs = data.messages || [];
       // ignora eventos vazios/antigos que apagariam o histórico já carregado
       setMessages((prev) => (msgs.length >= prev.length ? msgs : prev));
       armHangTimer();

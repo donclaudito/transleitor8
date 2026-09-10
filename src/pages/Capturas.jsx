@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { ChevronLeft, Camera, Image as ImageIcon, FileUp, Loader2, Trash2, Clock, CheckCircle2 } from 'lucide-react';
 import { fileToDataUrl, fileToRawDataUrl } from '@/lib/imageCompress';
+import { ESPECIALIDADES_CONFIG } from '@/lib/especialidades';
 
 const TIPO_LABEL = { laudo: 'Laudo', exame: 'Exame' };
 const fmtDate = (d) => new Date(d).toLocaleString('pt-BR', {
@@ -16,12 +17,31 @@ export default function Capturas() {
   const [etapa, setEtapa] = useState('');
   const [erro, setErro] = useState('');
   const [confirmarId, setConfirmarId] = useState(null);
+  const [especialidadeSel, setEspecialidadeSel] = useState('');
+  const [llmSel, setLlmSel] = useState('');
   const queryClient = useQueryClient();
 
   const { data: capturas = [], isLoading } = useQuery({
     queryKey: ['exam-attachments'],
     queryFn: () => base44.entities.ExamAttachment.list('-created_date', 100),
   });
+  const { data: llmProviders = [] } = useQuery({
+    queryKey: ['llm-providers'],
+    queryFn: async () => (await base44.functions.invoke('listLLMProviders', {})).data?.providers ?? [],
+  });
+  const { data: minhasEspecialidades = [] } = useQuery({
+    queryKey: ['minhas-especialidades-capturas'],
+    queryFn: () => base44.entities.MinhaEspecialidade.filter({ ativa: true }),
+  });
+  const opcoesEspecialidade = [
+    ...Object.values(ESPECIALIDADES_CONFIG).map(e => ({ slug: e.slug, label: `${e.icone} ${e.especialidadeRotulo}` })),
+    ...minhasEspecialidades.filter(e => !ESPECIALIDADES_CONFIG[e.slug]).map(e => ({ slug: e.slug, label: e.nome })),
+  ];
+  const rotuloEspecialidade = (slug) => {
+    const cfg = ESPECIALIDADES_CONFIG[slug];
+    if (cfg) return `${cfg.icone} ${cfg.especialidadeRotulo}`;
+    return minhasEspecialidades.find(e => e.slug === slug)?.nome || slug;
+  };
   const pendentes = capturas.filter(c => c.status === 'pendente');
   const inseridas = capturas.filter(c => c.status === 'inserida');
 
@@ -49,12 +69,12 @@ export default function Capturas() {
         try {
           const up = await base44.integrations.Core.UploadFile({ file });
           arquivoUrl = up?.file_url || '';
-          payload = { file_url: arquivoUrl, tipo };
+          payload = { file_url: arquivoUrl, tipo, llm_config_id: llmSel || undefined };
         } catch (_) {
           // Sem créditos de integração da plataforma: envia o PDF direto e a
           // extração roda com a DeepSeek (créditos próprios do médico).
           setEtapa('Enviando PDF (modo DeepSeek)...');
-          payload = { pdf_data_url: await fileToRawDataUrl(file), tipo };
+          payload = { pdf_data_url: await fileToRawDataUrl(file), tipo, llm_config_id: llmSel || undefined };
         }
         setEtapa('Extraindo texto com IA...');
         resp = await base44.functions.invoke('extrairCaptura', payload);
@@ -63,7 +83,7 @@ export default function Capturas() {
         if (!file.type.startsWith('image/')) throw new Error('Selecione um arquivo de imagem válido.');
         setEtapa('Extraindo texto com IA...');
         const imageDataUrl = await fileToDataUrl(file);
-        resp = await base44.functions.invoke('extrairCaptura', { image_data_url: imageDataUrl, tipo });
+        resp = await base44.functions.invoke('extrairCaptura', { image_data_url: imageDataUrl, tipo, llm_config_id: llmSel || undefined });
         extracao = resp?.data?.text;
         // Armazenamento do arquivo é best-effort: falha não bloqueia a captura.
         try {
@@ -78,6 +98,7 @@ export default function Capturas() {
         tipo_arquivo: ehPdf ? 'pdf' : 'imagem',
         extracao,
         status: 'pendente',
+        especialidade_destino: especialidadeSel || undefined,
       });
       queryClient.invalidateQueries({ queryKey: ['exam-attachments'] });
     } catch (err) {
@@ -107,6 +128,9 @@ export default function Capturas() {
           {pendente ? 'Na fila' : 'Inserida'}
         </span>
         <span className="px-2 py-0.5 rounded-full bg-accent font-bold">{TIPO_LABEL[c.tipo] || c.tipo}</span>
+        {c.especialidade_destino && (
+          <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">{rotuloEspecialidade(c.especialidade_destino)}</span>
+        )}
         {c.tipo_arquivo === 'pdf' ? <span>📄 PDF</span> : <ImageIcon className="w-3 h-3" />}
         <span className="font-semibold">{fmtDate(c.created_date)}</span>
         <button
@@ -155,6 +179,32 @@ export default function Capturas() {
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${tipo === 'exame' ? 'bg-primary text-primary-foreground shadow' : 'text-muted-foreground hover:text-foreground'}`}>
                 🧪 Exame
               </button>
+            </div>
+          </div>
+
+          {/* Destino da captura e modelo de IA usados na extração */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Especialidade de destino</label>
+              <select
+                value={especialidadeSel}
+                onChange={(e) => setEspecialidadeSel(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl bg-muted border border-border text-sm focus:outline-none focus:border-primary/50 transition-all"
+              >
+                <option value="">Sem destino específico</option>
+                {opcoesEspecialidade.map(o => <option key={o.slug} value={o.slug}>{o.label}</option>)}
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Modelo de IA</label>
+              <select
+                value={llmSel}
+                onChange={(e) => setLlmSel(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl bg-muted border border-border text-sm focus:outline-none focus:border-primary/50 transition-all"
+              >
+                <option value="">Automático (padrão)</option>
+                {llmProviders.map(p => <option key={p.id} value={p.id}>{p.provider_name}</option>)}
+              </select>
             </div>
           </div>
 

@@ -23,12 +23,13 @@ async function extractPdfText(bytes) {
   return (text || '').trim();
 }
 
-// Fallback DeepSeek: transcreve/anonimiza o texto bruto com os créditos próprios do médico.
-async function transcribeWithDeepSeek(textoBruto, tipoTexto) {
-  const apiKey = secrets.get('DEEPSEEK_API_KEY');
-  if (!apiKey) throw new Error('Fallback indisponível: chave DeepSeek não configurada (DEEPSEEK_API_KEY).');
+// Fallback externo: transcreve/anonimiza o texto bruto com os créditos próprios do médico
+// — usa o modelo selecionado na captura ou a DeepSeek como padrão.
+const DEEPSEEK_FALLBACK = { provider_name: 'DeepSeek', api_url: 'https://api.deepseek.com/chat/completions', model_name: 'deepseek-chat' };
+
+async function transcribeWithLLM(llm, apiKey, textoBruto, tipoTexto) {
   const { text, tokens } = await callProviderLLM({
-    llm: { api_url: 'https://api.deepseek.com/chat/completions', model_name: 'deepseek-chat' },
+    llm,
     apiKey,
     systemMessage: SYSTEM_MESSAGE,
     userContent: `Transcreva integralmente este documento (${tipoTexto}), anonimizado.\n\nCONTEÚDO EXTRAÍDO DO PDF (preserve a ordem, valores e unidades):\n${textoBruto}`,
@@ -48,7 +49,7 @@ export default async function (req) {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { image_data_url, file_url, pdf_data_url, tipo } = await req.json();
+    const { image_data_url, file_url, pdf_data_url, tipo, llm_config_id } = await req.json();
     if (!image_data_url && !file_url && !pdf_data_url) {
       return Response.json({ error: 'Envie uma imagem ou um PDF.' }, { status: 400 });
     }
@@ -58,16 +59,25 @@ export default async function (req) {
 
     if (image_data_url) {
       // Foto/imagem: roteamento pelo primeiro provedor de visão ativo (ordem de criação).
-      const visionProviders = await base44.asServiceRole.entities.LLMConfig.filter(
-        { is_active: true, supports_image: true }
-      );
-      if (!visionProviders.length) {
-        return Response.json({
-          error: 'Nenhum provedor de análise de imagem ativo. Cadastre um modelo com suporte a imagem em Provedores de IA.',
-        }, { status: 400 });
+      let llm = null;
+      if (llm_config_id) {
+        // Modelo escolhido pelo médico na captura: precisa estar ativo e suportar imagem.
+        llm = await base44.asServiceRole.entities.LLMConfig.get(llm_config_id);
+        if (!llm || !llm.is_active || !llm.supports_image) {
+          return Response.json({ error: 'O modelo selecionado não está ativo ou não suporta análise de imagem.' }, { status: 400 });
+        }
+      } else {
+        const visionProviders = await base44.asServiceRole.entities.LLMConfig.filter(
+          { is_active: true, supports_image: true }
+        );
+        if (!visionProviders.length) {
+          return Response.json({
+            error: 'Nenhum provedor de análise de imagem ativo. Cadastre um modelo com suporte a imagem em Provedores de IA.',
+          }, { status: 400 });
+        }
+        visionProviders.sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
+        llm = visionProviders[0];
       }
-      visionProviders.sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
-      const llm = visionProviders[0];
       const apiKey = secrets.get(llm.api_key_env_var);
       if (!apiKey) {
         return Response.json({ error: `Chave API não configurada: ${llm.api_key_env_var}` }, { status: 500 });
@@ -102,7 +112,8 @@ export default async function (req) {
       // PDF: prioriza a integração nativa (InvokeLLM com anexo). Sem créditos da
       // plataforma (402) ou em outro erro, cai para a DeepSeek: texto extraído do
       // PDF localmente + transcrição com os créditos próprios do médico.
-      let nativoFalhou = file_url ? false : true; // pdf_data_url já vem do modo sem upload
+      // Modelo escolhido na captura: pula a integração nativa e usa o provedor selecionado.
+      let nativoFalhou = !file_url || !!llm_config_id;
       if (file_url) {
         try {
           provider = 'plataforma';
@@ -132,9 +143,23 @@ export default async function (req) {
             error: 'Não foi possível extrair texto deste PDF (provavelmente digitalizado em imagem). Tente fotografar as páginas.',
           }, { status: 400 });
         }
-        provider = 'DeepSeek';
-        modelName = 'deepseek-chat';
-        const resposta = await transcribeWithDeepSeek(textoBruto, tipoTexto);
+        let llmFallback = DEEPSEEK_FALLBACK;
+        let apiKeyFallback = secrets.get('DEEPSEEK_API_KEY');
+        if (llm_config_id) {
+          const llmSel = await base44.asServiceRole.entities.LLMConfig.get(llm_config_id);
+          if (!llmSel || !llmSel.is_active) {
+            return Response.json({ error: 'O modelo selecionado não está ativo.' }, { status: 400 });
+          }
+          llmFallback = llmSel;
+          apiKeyFallback = secrets.get(llmSel.api_key_env_var);
+          if (!apiKeyFallback) {
+            return Response.json({ error: `Chave API não configurada: ${llmSel.api_key_env_var}` }, { status: 500 });
+          }
+        }
+        if (!apiKeyFallback) throw new Error('Fallback indisponível: chave DeepSeek não configurada (DEEPSEEK_API_KEY).');
+        provider = llmFallback.provider_name;
+        modelName = llmFallback.model_name;
+        const resposta = await transcribeWithLLM(llmFallback, apiKeyFallback, textoBruto, tipoTexto);
         extracao = resposta.text;
         tokens = resposta.tokens;
       }

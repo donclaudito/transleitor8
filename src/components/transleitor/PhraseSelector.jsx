@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
@@ -160,7 +161,7 @@ export default function PhraseSelector({ onInsert, especialidade = null, context
           )}
           <ChevronDown className={`w-3.5 h-3.5 transition-transform ${ui.aberto ? 'rotate-180' : ''}`} />
         </button>
-        <button onClick={() => setCriando(true)}
+        <button onClick={() => { if (!ui.aberto) updateUi({ aberto: true }); setCriando(true); }}
           className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg border border-border text-primary hover:bg-accent transition-all">
           <Plus className="w-3.5 h-3.5" /> Nova evolução
         </button>
@@ -197,8 +198,19 @@ export default function PhraseSelector({ onInsert, especialidade = null, context
             )}
           </div>
 
-          {criando && (
-            <PhraseCreator categoria={categoria} titulos={titulosExistentes} contextoRotulo={contextoRotulo} onCreate={criar} onClose={() => setCriando(false)} />
+          {criando && createPortal(
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+              onClick={() => setCriando(false)}
+            >
+              <div
+                className="w-full max-w-lg max-h-[90vh] overflow-y-auto glass-card rounded-2xl p-5"
+                onClick={e => e.stopPropagation()}
+              >
+                <PhraseCreator categoria={categoria} titulos={titulosExistentes} contextoRotulo={contextoRotulo} onCreate={criar} onClose={() => setCriando(false)} />
+              </div>
+            </div>,
+            document.body
           )}
 
           {isLoading ? (

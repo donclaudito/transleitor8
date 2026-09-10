@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { BookOpen, Search, Plus, Trash2, Check, ChevronDown } from 'lucide-react';
+import { BookOpen, Search, Plus, Trash2, Check, ChevronDown, ArrowRight } from 'lucide-react';
 import PhraseCreator from './PhraseCreator';
 
 const norm = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -82,7 +82,8 @@ export default function PhraseSelector({ onInsert, especialidade = null, context
     queryKey: ['frases-predefinidas', user?.id],
     queryFn: () => base44.entities.FrasePreDefinida.filter({ created_by_id: user.id }),
     enabled: !!user,
-    staleTime: Infinity,
+    // Sem staleTime infinito: ao trocar de rota/contexto o componente remonta e busca de
+    // novo — frases criadas em outro dispositivo/contexto aparecem sem recarregar a página.
   });
 
   const minhas = frases.filter(f => user && f.created_by_id === user.id);
@@ -142,6 +143,7 @@ export default function PhraseSelector({ onInsert, especialidade = null, context
     // Regra dura: só entra na lista se o dono for o médico logado.
     if (user && registro?.created_by_id === user.id) {
       queryClient.setQueryData(['frases-predefinidas', user.id], (old = []) => [...old, registro]);
+      queryClient.invalidateQueries({ queryKey: ['frases-predefinidas', user.id] });
     } else {
       queryClient.invalidateQueries({ queryKey: ['frases-predefinidas', user.id] });
     }
@@ -153,6 +155,19 @@ export default function PhraseSelector({ onInsert, especialidade = null, context
     if (!user || frase.created_by_id !== user.id) return; // exclusão só de frases próprias
     queryClient.setQueryData(['frases-predefinidas', user.id], (old = []) => old.filter(f => f.id !== frase.id));
     await base44.entities.FrasePreDefinida.delete(frase.id);
+    queryClient.invalidateQueries({ queryKey: ['frases-predefinidas', user.id] });
+  };
+
+  // Frase GERAL (ou antiga, sem contexto) passa a pertencer ao contexto atual da tela.
+  // É o caminho de migração das frases criadas antes do escopo por contexto.
+  const atribuirAoContexto = async (frase) => {
+    if (!user || frase.created_by_id !== user.id) return;
+    await base44.entities.FrasePreDefinida.update(frase.id, {
+      ambiente: ctx.ambiente, especialidade: ctx.especialidade,
+    });
+    queryClient.setQueryData(['frases-predefinidas', user.id], (old = []) =>
+      old.map(f => (f.id === frase.id ? { ...f, ambiente: ctx.ambiente, especialidade: ctx.especialidade } : f)));
+    queryClient.invalidateQueries({ queryKey: ['frases-predefinidas', user.id] });
   };
 
   if (!user) return null;
@@ -203,6 +218,8 @@ export default function PhraseSelector({ onInsert, especialidade = null, context
               {gruposContexto.length === 0 && (
                 <p className="text-[11px] text-muted-foreground">
                   Você ainda não tem frases neste ambiente/especialidade — crie as suas.
+                  As suas frases antigas (sem contexto) estão no grupo GERAIS: abra-o e
+                  toque em → para atribuí-las a este contexto.
                 </p>
               )}
               {gruposFinais.length > 0 && (
@@ -218,7 +235,7 @@ export default function PhraseSelector({ onInsert, especialidade = null, context
                           <span className="flex-1 min-w-0 text-xs font-extrabold uppercase tracking-wider truncate">{g.titulo}</span>
                           {g.geral ? (
                             <span className="px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground text-[9px] font-bold normal-case tracking-normal flex-shrink-0">
-                              todos os ambientes
+                              GERAL — vale em qualquer área
                             </span>
                           ) : ehDaEspecialidade(g.titulo) && (
                             <span className="px-1.5 py-0.5 rounded-full bg-primary/15 text-primary text-[9px] font-bold normal-case tracking-normal flex-shrink-0">
@@ -252,6 +269,13 @@ export default function PhraseSelector({ onInsert, especialidade = null, context
                                   className="flex-1 min-w-0 text-left text-xs leading-relaxed cursor-pointer">
                                   <Realce texto={f.texto} busca={busca} />
                                 </button>
+                                {g.geral && (
+                                  <button onClick={() => atribuirAoContexto(f)}
+                                    title={`Atribuir ao contexto atual (${contextoRotulo})`}
+                                    className="text-muted-foreground hover:text-primary mt-0.5 transition-colors">
+                                    <ArrowRight className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
                                 {confirmDeleteId === f.id ? (
                                   <button onClick={() => excluir(f)} title="Confirmar exclusão"
                                     className="text-red-500 hover:text-red-400 mt-0.5">

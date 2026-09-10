@@ -18,6 +18,13 @@ const titleFromContent = (content) => {
   return t.length > 40 ? t.slice(0, 40).trim() + '…' : t || 'Nova conversa';
 };
 
+const msgsKey = (id) => `elio_msgs_${id}`;
+const readStoredMsgs = (id) => {
+  try { return JSON.parse(sessionStorage.getItem(msgsKey(id)) || '[]'); } catch { return []; }
+};
+// Erros de crédito/limite da plataforma (402) acionam o modo local — nunca travam o chat.
+const erroDeCredito = (e) => /limit|402|credit|cr[eé]dito|integration|automation/i.test(String(e?.response?.data?.error || e?.message || e || ''));
+
 export default function ElioChat({ conversationId, onConversationCreated, selectedLLMId }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -27,6 +34,9 @@ export default function ElioChat({ conversationId, onConversationCreated, select
   const scrollRef = useRef(null);
   const fileInputRef = useRef(null);
   const fallbackTimerRef = useRef(null);
+  const fallbackRef = useRef(false); // créditos esgotados: modo local pelo resto da sessão
+  const convIdRef = useRef(conversationId); // conversa ativa para fechamentos antigos (timer)
+  const msgOriginRef = useRef(null); // conversa à qual pertencem as mensagens em tela
   const queryClient = useQueryClient();
 
   const clearFallbackTimer = () => {
@@ -35,7 +45,11 @@ export default function ElioChat({ conversationId, onConversationCreated, select
 
   // Fallback DeepSeek: com os créditos da integração principal esgotados, a resposta
   // vem pelos créditos próprios do médico (elioChat sem provedor selecionado).
-  const responderComFallback = async (historia) => {
+  const responderComFallback = async (historia, convId = convIdRef.current) => {
+    // Uma vez detectado, o modo local vale para o resto da sessão: a consulta clínica
+    // continua respondendo sem novas tentativas (que falhariam) na plataforma.
+    fallbackRef.current = true;
+    msgOriginRef.current = convId || null;
     clearFallbackTimer();
     queryClient.invalidateQueries({ queryKey: ['elio-conversations'] });
     setMessages(prev => (historia.length >= prev.length ? historia : prev));
@@ -46,7 +60,7 @@ export default function ElioChat({ conversationId, onConversationCreated, select
       if (!reply) throw new Error(res?.data?.error || 'Resposta vazia do provedor.');
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: `<p><em>⚡ Créditos da integração principal esgotados — resposta gerada com DeepSeek (seus créditos; histórico não fica salvo nesta sessão).</em></p>${reply}`,
+        content: `<p><em>⚡ Créditos da integração principal esgotados — resposta gerada com DeepSeek (seus créditos; histórico fica apenas nesta sessão).</em></p>${reply}`,
       }]);
     } catch (e) {
       const reason = String(e?.response?.data?.error || e?.message || 'erro desconhecido')
@@ -73,7 +87,20 @@ export default function ElioChat({ conversationId, onConversationCreated, select
     armHangTimer();
     // Retomar conversa: carrega o histórico completo de imediato (a assinatura cuida das novidades)
     base44.agents.getConversation(conversationId).then((c) => {
-      const msgs = c?.messages || [];
+      const server = c?.messages || [];
+      // Sem histórico na plataforma (créditos esgotados), retoma o que foi conversado
+      // localmente nesta sessão — o clique na barra lateral recarrega o chat.
+      const stored = readStoredMsgs(conversationId);
+      const fromStored = stored.length > server.length;
+      const msgs = fromStored ? stored : server;
+      msgOriginRef.current = conversationId;
+      if (fromStored) {
+        if (hangTimer) clearTimeout(hangTimer);
+        clearFallbackTimer();
+        setMessages(msgs);
+        setLoading(false);
+        return;
+      }
       if (!msgs.length) {
         // conversa vazia retomada: nada pendente, encerra o loading
         if (hangTimer) clearTimeout(hangTimer);
@@ -90,10 +117,11 @@ export default function ElioChat({ conversationId, onConversationCreated, select
         clearFallbackTimer();
         setLoading(false);
       }
-    }).catch(() => {});
+    }).catch(() => setLoading(false));
     const unsub = base44.agents.subscribeToConversation(conversationId, (data) => {
       const msgs = data.messages || [];
       // ignora eventos vazios/antigos que apagariam o histórico já carregado
+      msgOriginRef.current = conversationId;
       setMessages((prev) => (msgs.length >= prev.length ? msgs : prev));
       armHangTimer();
       if (!msgs.length) return;
@@ -114,6 +142,16 @@ export default function ElioChat({ conversationId, onConversationCreated, select
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages, pendingFiles]);
+
+  // Conversa ativa em ref: timers assíncronos leem o valor atualizado.
+  useEffect(() => { convIdRef.current = conversationId; }, [conversationId]);
+
+  // Histórico da sessão: grava as mensagens desta conversa para que o clique na
+  // barra lateral retome o chat mesmo sem persistência da plataforma.
+  useEffect(() => {
+    if (!conversationId || !messages.length || msgOriginRef.current !== conversationId) return;
+    try { sessionStorage.setItem(msgsKey(conversationId), JSON.stringify(messages)); } catch { /* best-effort */ }
+  }, [messages, conversationId]);
 
   // Troca de modelo: inicia nova conversa local (limpa mensagens e anexos pendentes).
   useEffect(() => {
@@ -181,6 +219,17 @@ export default function ElioChat({ conversationId, onConversationCreated, select
       return;
     }
 
+    // Créditos do provedor principal esgotados nesta sessão: segue direto no modo
+    // local, sem novas tentativas na plataforma — a consulta não pode parar.
+    if (fallbackRef.current) {
+      if (!content) return;
+      setInput('');
+      setPendingFiles([]);
+      const next = [...messages, { role: 'user', content }];
+      await responderComFallback(next, conversationId);
+      return;
+    }
+
     let fileUrls = [];
     if (pendingFiles.length) {
       try {
@@ -201,7 +250,7 @@ export default function ElioChat({ conversationId, onConversationCreated, select
     setPendingFiles([]);
     setLoading(true);
     const proximaHistoria = [...messages, { role: 'user', content: finalContent }];
-    const erroDeCredito = (e) => /limit|402|cr[eé]dito|integration/i.test(String(e?.response?.data?.error || e?.message || e || ''));
+    let novaConvId = null;
     try {
       if (!conversationId) {
         const meta = { name: titleFromContent(finalContent) };
@@ -213,6 +262,7 @@ export default function ElioChat({ conversationId, onConversationCreated, select
           agent_name: 'elio',
           metadata: meta
         });
+        novaConvId = conv.id;
         onConversationCreated?.(conv.id);
         await base44.agents.addMessage(conv, { role: 'user', content: finalContent, file_urls: fileUrls });
       } else {
@@ -220,9 +270,18 @@ export default function ElioChat({ conversationId, onConversationCreated, select
         await base44.agents.addMessage(conv, { role: 'user', content: finalContent, file_urls: fileUrls });
       }
     } catch (e) {
-      // Créditos da integração principal esgotados: a Elvira responde com a DeepSeek.
-      if (erroDeCredito(e)) { await responderComFallback(proximaHistoria); return; }
-      throw e;
+      // Créditos da integração principal esgotados: a Elvira responde com a DeepSeek
+      // e o modo local passa a valer para o resto da sessão.
+      if (erroDeCredito(e)) { await responderComFallback(proximaHistoria, novaConvId || conversationId); return; }
+      // Nenhum outro erro pode travar a consulta: avisa e mantém o chat utilizável.
+      clearFallbackTimer();
+      setLoading(false);
+      const reason = String(e?.response?.data?.error || e?.message || e || 'erro desconhecido')
+        .replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+      msgOriginRef.current = conversationId;
+      setMessages(prev => [...prev, { role: 'user', content: finalContent },
+        { role: 'assistant', content: `<p><strong>⚠️ Erro ao enviar:</strong> ${reason}</p><p>Tente novamente em instantes.</p>` }]);
+      return;
     }
     queryClient.invalidateQueries({ queryKey: ['elio-conversations'] });
     // Se a plataforma não responder (créditos esgotados), cai para a DeepSeek.

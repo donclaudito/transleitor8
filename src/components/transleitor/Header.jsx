@@ -139,6 +139,7 @@ export default function Header({ view, setView, theme, setTheme, onNewEvolution,
       </Link>
 
       <Link to="/elio" title="Elvira — Assistente clínica"
+        onClick={() => { try { sessionStorage.setItem('elvira_origem', window.location.pathname); } catch { /* best-effort */ } }}
         className="p-2.5 rounded-xl text-muted-foreground hover:text-primary hover:bg-accent transition-all">
         <Bot className="w-4 h-4" />
       </Link>

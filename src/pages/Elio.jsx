@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Stethoscope, Zap } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
@@ -9,6 +9,14 @@ import ElioModelSelector from '@/components/elio/ElioModelSelector';
 const STORAGE_KEY = 'elvio_selected_llm_id';
 
 export default function Elio() {
+  const navigate = useNavigate();
+  // Seta volta SEMPRE à tela exata de onde a Elvira foi aberta (ex.: Gastro/Endoscopia),
+  // registrada pelo cabeçalho ao abrir; se aberta direto, cai no Menu.
+  const voltar = () => {
+    let origem = null;
+    try { origem = sessionStorage.getItem('elvira_origem'); sessionStorage.removeItem('elvira_origem'); } catch { /* best-effort */ }
+    navigate(origem || '/menu');
+  };
   const [activeConversationId, setActiveConversationId] = useState(null);
   const [selectedLLMId, setSelectedLLMId] = useState(() => {
     try { return localStorage.getItem(STORAGE_KEY) || ''; } catch { return ''; }
@@ -35,9 +43,9 @@ export default function Elio() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="sticky top-0 z-40 glass px-4 py-3 flex items-center gap-3">
-        <Link to="/transleitor" className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
+        <button onClick={voltar} title="Voltar" className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
           <ArrowLeft className="w-4 h-4" />
-        </Link>
+        </button>
         <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
           <Stethoscope className="w-4 h-4 text-primary" />
         </div>

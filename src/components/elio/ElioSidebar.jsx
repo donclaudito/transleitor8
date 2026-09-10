@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, MessageSquare, Pencil, Trash2, Check, X, Loader2 } from 'lucide-react';
 
 const RENAMES_KEY = 'elio_renames';
@@ -14,6 +14,7 @@ const readSet = (key) => {
 };
 
 export default function ElioSidebar({ activeConversationId, onNew, onSelect }) {
+  const queryClient = useQueryClient();
   const [editingId, setEditingId] = useState(null);
   const [draftName, setDraftName] = useState('');
   const [renames, setRenames] = useState(() => readMap(RENAMES_KEY));
@@ -36,13 +37,18 @@ export default function ElioSidebar({ activeConversationId, onNew, onSelect }) {
     setDraftName(titleOf(c));
   };
 
-  const saveEdit = (id) => {
+  // Renomear persiste no servidor (sincroniza entre dispositivos); fallback local se falhar
+  const saveEdit = async (id) => {
     const name = draftName.trim();
     setEditingId(null);
     if (!name) return;
     const next = { ...renames, [id]: name };
-    setRenames(next);
-    localStorage.setItem(RENAMES_KEY, JSON.stringify(next));
+    setRenames(next); // feedback imediato enquanto persiste
+    try {
+      await base44.agents.updateConversation(id, { metadata: { name } });
+      localStorage.setItem(RENAMES_KEY, JSON.stringify(next));
+      queryClient.invalidateQueries({ queryKey: ['elio-conversations'] });
+    } catch { /* mantém apenas o fallback local */ }
   };
 
   const cancelEdit = () => setEditingId(null);

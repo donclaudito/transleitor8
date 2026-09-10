@@ -39,9 +39,23 @@ export default function ElioChat({ conversationId, onConversationCreated, select
       hangTimer = setTimeout(() => setLoading(false), 90000);
     };
     armHangTimer();
+    // Retomar conversa: carrega o histórico completo de imediato (a assinatura cuida das novidades)
+    base44.agents.getConversation(conversationId).then((c) => {
+      const msgs = c?.messages || [];
+      if (!msgs.length) return;
+      setMessages((prev) => (msgs.length >= prev.length ? msgs : prev));
+      const last = msgs[msgs.length - 1];
+      const hasContent = last.role === 'assistant' && last.content && String(last.content).trim().length > 0;
+      const isError = ['failed', 'error'].includes(last.status);
+      if (hasContent || isError) {
+        if (hangTimer) clearTimeout(hangTimer);
+        setLoading(false);
+      }
+    }).catch(() => {});
     const unsub = base44.agents.subscribeToConversation(conversationId, (data) => {
       const msgs = data.messages || [];
-      setMessages(msgs);
+      // ignora eventos vazios/antigos que apagariam o histórico já carregado
+      setMessages((prev) => (msgs.length >= prev.length ? msgs : prev));
       armHangTimer();
       if (!msgs.length) return;
       const last = msgs[msgs.length - 1];

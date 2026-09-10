@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Stethoscope, Zap } from 'lucide-react';
+import { ArrowLeft, Stethoscope, Zap, Menu, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import ElioChat from '@/components/elio/ElioChat';
 import ElioModelSelector from '@/components/elio/ElioModelSelector';
+import ElioSidebar from '@/components/elio/ElioSidebar';
 
 const STORAGE_KEY = 'elvio_selected_llm_id';
 
@@ -40,11 +41,31 @@ export default function Elio() {
 
   const handleCreated = (id) => setActiveConversationId(id);
 
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // Retomar conversa do agente Elvira: se um provedor externo estava ativo, volta ao modo padrão
+  const handleSelectConversation = (id) => {
+    if (selectedLLMId) {
+      setSelectedLLMId('');
+      try { localStorage.removeItem(STORAGE_KEY); } catch { /* best-effort */ }
+    }
+    setActiveConversationId(id);
+    setDrawerOpen(false);
+  };
+  const handleNewConversation = () => {
+    setActiveConversationId(null);
+    setDrawerOpen(false);
+  };
+
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="h-screen bg-background flex flex-col">
       <header className="sticky top-0 z-40 glass px-4 py-3 flex items-center gap-3">
         <button onClick={voltar} title="Voltar" className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
           <ArrowLeft className="w-4 h-4" />
+        </button>
+        <button onClick={() => setDrawerOpen(true)} title="Conversas"
+          className="lg:hidden p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
+          <Menu className="w-4 h-4" />
         </button>
         <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
           <Stethoscope className="w-4 h-4 text-primary" />
@@ -66,9 +87,32 @@ export default function Elio() {
         </div>
       )}
 
-      <main className="flex-1 flex flex-col min-w-0">
-        <ElioChat conversationId={activeConversationId} onConversationCreated={handleCreated} selectedLLMId={selectedLLMId} />
-      </main>
+      <div className="flex-1 flex min-h-0">
+        {/* Barra lateral de conversas — sempre visível no desktop */}
+        <aside className="hidden lg:flex w-72 shrink-0 flex-col border-r border-border bg-card/50">
+          <ElioSidebar activeConversationId={activeConversationId} onNew={handleNewConversation} onSelect={handleSelectConversation} />
+        </aside>
+
+        <main className="flex-1 flex flex-col min-w-0 min-h-0">
+          <ElioChat conversationId={activeConversationId} onConversationCreated={handleCreated} selectedLLMId={selectedLLMId} />
+        </main>
+
+        {/* Gaveta de conversas no tablet/celular */}
+        {drawerOpen && (
+          <>
+            <div className="fixed inset-0 z-[45] bg-black/40 lg:hidden" onClick={() => setDrawerOpen(false)} />
+            <aside className="fixed top-0 left-0 bottom-0 z-50 w-72 bg-card border-r border-border flex flex-col lg:hidden">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Conversas</span>
+                <button onClick={() => setDrawerOpen(false)} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <ElioSidebar activeConversationId={activeConversationId} onNew={handleNewConversation} onSelect={handleSelectConversation} />
+            </aside>
+          </>
+        )}
+      </div>
     </div>
   );
 }

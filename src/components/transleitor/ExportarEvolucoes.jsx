@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
@@ -48,7 +47,6 @@ const dataHora = (iso) => {
 
 export default function ExportarEvolucoes() {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [aberto, setAberto] = useState(false);
   const [inicio, setInicio] = useState(primeiroDiaMes());
   const [fim, setFim] = useState(hojeStr());
@@ -89,7 +87,6 @@ export default function ExportarEvolucoes() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     setAberto(false);
-    navigate('/menu');
   };
 
   return (
@@ -158,7 +155,7 @@ export default function ExportarEvolucoes() {
               <Download className="w-4 h-4" /> Gerar planilha
             </button>
             <p className="text-[10px] text-muted-foreground text-center -mt-2">
-              Após exportar, você volta ao Menu.
+              A planilha é salva nos downloads — você continua nesta tela.
             </p>
           </div>
         </div>,

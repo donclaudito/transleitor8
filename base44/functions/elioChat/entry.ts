@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
-import { waitUntil } from 'base44:runtime';
+import { waitUntil, secrets } from 'base44:runtime';
 import { resolveProvider, callProviderLLM, logLLMUsage, toHtml, ProviderError } from '../../shared/llm.ts';
 
 // Chat da Elvira (assistente clínica) roteado pelo provedor externo escolhido no
@@ -31,7 +31,6 @@ export default async function(req) {
 
     const body = await req.json().catch(() => ({}));
     const { llm_config_id, messages } = body || {};
-    if (!llm_config_id) return Response.json({ error: 'llm_config_id é obrigatório' }, { status: 400 });
 
     const history = Array.isArray(messages) ? messages : [];
     const msgs = history
@@ -42,7 +41,19 @@ export default async function(req) {
       return Response.json({ error: 'Histórico inválido: a última mensagem deve ser do usuário' }, { status: 400 });
     }
 
-    const { llm, apiKey } = await resolveProvider(base44, llm_config_id);
+    // Sem provedor selecionado (fallback automático da Elvira): DeepSeek com a chave
+    // do médico — mantém o chat funcionando quando os créditos da plataforma acabam.
+    let llm;
+    let apiKey;
+    if (llm_config_id) {
+      ({ llm, apiKey } = await resolveProvider(base44, llm_config_id));
+    } else {
+      apiKey = secrets.get('DEEPSEEK_API_KEY');
+      if (!apiKey) {
+        return Response.json({ error: 'Fallback indisponível: chave DeepSeek não configurada (DEEPSEEK_API_KEY).' }, { status: 500 });
+      }
+      llm = { provider_name: 'DeepSeek', api_url: 'https://api.deepseek.com/chat/completions', model_name: 'deepseek-chat' };
+    }
     provider = llm.provider_name;
     modelName = llm.model_name;
 

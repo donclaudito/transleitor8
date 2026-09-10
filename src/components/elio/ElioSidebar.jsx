@@ -31,7 +31,7 @@ export default function ElioSidebar({ activeConversationId, onNew, onSelect }) {
   });
 
   const titleOf = (c) => renames[c.id] || c.metadata?.name || 'Nova conversa';
-  const visible = conversations.filter(c => !archived.has(c.id));
+  const visible = conversations.filter(c => !archived.has(c.id) && !c.metadata?.archived);
 
   const startEdit = (c) => {
     setEditingId(c.id);
@@ -46,7 +46,8 @@ export default function ElioSidebar({ activeConversationId, onNew, onSelect }) {
     const next = { ...renames, [id]: name };
     setRenames(next); // feedback imediato enquanto persiste
     try {
-      await base44.agents.updateConversation(id, { metadata: { name } });
+      const conv = conversations.find(x => x.id === id);
+      await base44.agents.updateConversation(id, { metadata: { ...(conv?.metadata || {}), name } });
       localStorage.setItem(RENAMES_KEY, JSON.stringify(next));
       queryClient.invalidateQueries({ queryKey: ['elio-conversations'] });
     } catch { /* mantém apenas o fallback local */ }
@@ -54,13 +55,19 @@ export default function ElioSidebar({ activeConversationId, onNew, onSelect }) {
 
   const cancelEdit = () => setEditingId(null);
 
-  const removeConversation = (c) => {
+  // Excluir persiste o arquivamento no servidor (sincroniza entre dispositivos);
+  // o registro local fica como fallback imediato caso a persistência falhe.
+  const removeConversation = async (c) => {
     const next = new Set(archived);
     next.add(c.id);
     setArchived(next);
     localStorage.setItem(ARCHIVED_KEY, JSON.stringify([...next]));
     setConfirmDeleteId(null);
     if (activeConversationId === c.id) onNew();
+    try {
+      await base44.agents.updateConversation(c.id, { metadata: { ...(c.metadata || {}), archived: true } });
+      queryClient.invalidateQueries({ queryKey: ['elio-conversations'] });
+    } catch { /* mantém apenas o arquivamento local */ }
   };
 
   // Confirmação de exclusão expira sozinha após 3s
@@ -109,7 +116,7 @@ export default function ElioSidebar({ activeConversationId, onNew, onSelect }) {
                       <span className={`block truncate text-sm ${active ? 'font-bold' : 'font-medium'}`}>{titleOf(c)}</span>
                     </button>
                     <button onClick={() => startEdit(c)} title="Renomear"
-                      className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-muted text-muted-foreground hover:text-foreground transition-all">
+                      className="p-1 rounded opacity-100 lg:opacity-0 lg:group-hover:opacity-100 hover:bg-muted text-muted-foreground hover:text-foreground transition-all">
                       <Pencil className="w-3.5 h-3.5" />
                     </button>
                     {confirmDeleteId === c.id ? (
@@ -119,7 +126,7 @@ export default function ElioSidebar({ activeConversationId, onNew, onSelect }) {
                       </button>
                     ) : (
                       <button onClick={() => setConfirmDeleteId(c.id)} title="Excluir"
-                        className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all">
+                        className="p-1 rounded opacity-100 lg:opacity-0 lg:group-hover:opacity-100 hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     )}

@@ -26,7 +26,39 @@ export default function ElioChat({ conversationId, onConversationCreated, select
   const [uploading, setUploading] = useState(false);
   const scrollRef = useRef(null);
   const fileInputRef = useRef(null);
+  const fallbackTimerRef = useRef(null);
   const queryClient = useQueryClient();
+
+  const clearFallbackTimer = () => {
+    if (fallbackTimerRef.current) { clearTimeout(fallbackTimerRef.current); fallbackTimerRef.current = null; }
+  };
+
+  // Fallback DeepSeek: com os créditos da integração principal esgotados, a resposta
+  // vem pelos créditos próprios do médico (elioChat sem provedor selecionado).
+  const responderComFallback = async (historia) => {
+    clearFallbackTimer();
+    queryClient.invalidateQueries({ queryKey: ['elio-conversations'] });
+    setMessages(prev => (historia.length >= prev.length ? historia : prev));
+    setLoading(true);
+    try {
+      const res = await base44.functions.invoke('elioChat', { messages: historia });
+      const reply = res?.data?.text;
+      if (!reply) throw new Error(res?.data?.error || 'Resposta vazia do provedor.');
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: `<p><em>⚡ Créditos da integração principal esgotados — resposta gerada com DeepSeek (seus créditos; histórico não fica salvo nesta sessão).</em></p>${reply}`,
+      }]);
+    } catch (e) {
+      const reason = String(e?.response?.data?.error || e?.message || 'erro desconhecido')
+        .replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: `<p><strong>⚠️ Erro ao responder:</strong> ${reason}</p>`,
+      }]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!conversationId) {setMessages([]);return;}
@@ -45,6 +77,7 @@ export default function ElioChat({ conversationId, onConversationCreated, select
       if (!msgs.length) {
         // conversa vazia retomada: nada pendente, encerra o loading
         if (hangTimer) clearTimeout(hangTimer);
+        clearFallbackTimer();
         setLoading(false);
         return;
       }
@@ -54,6 +87,7 @@ export default function ElioChat({ conversationId, onConversationCreated, select
       const isError = ['failed', 'error'].includes(last.status);
       if (hasContent || isError) {
         if (hangTimer) clearTimeout(hangTimer);
+        clearFallbackTimer();
         setLoading(false);
       }
     }).catch(() => {});
@@ -69,11 +103,12 @@ export default function ElioChat({ conversationId, onConversationCreated, select
       const endedEmpty = last.role === 'assistant' && !last.content && !(last.tool_calls && last.tool_calls.length);
       if (hasContent || isError || endedEmpty) {
         if (hangTimer) clearTimeout(hangTimer);
+        clearFallbackTimer();
         setLoading(false);
         queryClient.invalidateQueries({ queryKey: ['elio-conversations'] });
       }
     });
-    return () => {unsub();if (hangTimer) clearTimeout(hangTimer);};
+    return () => {unsub();if (hangTimer) clearTimeout(hangTimer);clearFallbackTimer();};
   }, [conversationId]);
 
   useEffect(() => {
@@ -146,23 +181,53 @@ export default function ElioChat({ conversationId, onConversationCreated, select
       return;
     }
 
-    const fileUrls = await uploadFiles();
+    let fileUrls = [];
+    if (pendingFiles.length) {
+      try {
+        fileUrls = await uploadFiles();
+      } catch (_) {
+        // Armazenamento da plataforma sem créditos: avisa e mantém o chat utilizável.
+        setInput('');
+        setPendingFiles([]);
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: '<p><strong>⚠️ Anexos indisponíveis agora</strong> (armazenamento da plataforma sem créditos de integração). Envie sua mensagem sem anexo ou tente novamente quando os créditos forem renovados.</p>',
+        }]);
+        return;
+      }
+    }
     const finalContent = content || (pendingFiles.length ? `Enviei ${pendingFiles.length} anexo(s).` : '');
     setInput('');
     setPendingFiles([]);
     setLoading(true);
-    if (!conversationId) {
-      const conv = await base44.agents.createConversation({
-        agent_name: 'elio',
-        metadata: { name: titleFromContent(finalContent) }
-      });
-      onConversationCreated?.(conv.id);
-      await base44.agents.addMessage(conv, { role: 'user', content: finalContent, file_urls: fileUrls });
-    } else {
-      const conv = await base44.agents.getConversation(conversationId);
-      await base44.agents.addMessage(conv, { role: 'user', content: finalContent, file_urls: fileUrls });
+    const proximaHistoria = [...messages, { role: 'user', content: finalContent }];
+    const erroDeCredito = (e) => /limit|402|cr[eé]dito|integration/i.test(String(e?.response?.data?.error || e?.message || e || ''));
+    try {
+      if (!conversationId) {
+        const meta = { name: titleFromContent(finalContent) };
+        try {
+          const origemCtx = sessionStorage.getItem('elvira_origem');
+          if (origemCtx) meta.origem = origemCtx; // contexto de onde a consulta foi iniciada
+        } catch { /* best-effort */ }
+        const conv = await base44.agents.createConversation({
+          agent_name: 'elio',
+          metadata: meta
+        });
+        onConversationCreated?.(conv.id);
+        await base44.agents.addMessage(conv, { role: 'user', content: finalContent, file_urls: fileUrls });
+      } else {
+        const conv = await base44.agents.getConversation(conversationId);
+        await base44.agents.addMessage(conv, { role: 'user', content: finalContent, file_urls: fileUrls });
+      }
+    } catch (e) {
+      // Créditos da integração principal esgotados: a Elvira responde com a DeepSeek.
+      if (erroDeCredito(e)) { await responderComFallback(proximaHistoria); return; }
+      throw e;
     }
     queryClient.invalidateQueries({ queryKey: ['elio-conversations'] });
+    // Se a plataforma não responder (créditos esgotados), cai para a DeepSeek.
+    clearFallbackTimer();
+    fallbackTimerRef.current = setTimeout(() => responderComFallback(proximaHistoria), 30000);
   };
 
   return (

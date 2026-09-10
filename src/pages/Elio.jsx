@@ -13,9 +13,15 @@ export default function Elio() {
   const navigate = useNavigate();
   // Seta volta SEMPRE à tela exata de onde a Elvira foi aberta (ex.: Gastro/Endoscopia),
   // registrada pelo cabeçalho ao abrir; se aberta direto, cai no Menu.
+  // Volta à tela exata de onde a Elvira foi aberta nesta sessão; sem origem na sessão,
+  // usa o contexto gravado na própria conversa (onde a consulta foi iniciada).
   const voltar = () => {
     let origem = null;
     try { origem = sessionStorage.getItem('elvira_origem'); sessionStorage.removeItem('elvira_origem'); } catch { /* best-effort */ }
+    if (!origem) {
+      const conv = conversas.find(c => c.id === activeConversationId);
+      origem = conv?.metadata?.origem || null;
+    }
     navigate(origem || '/menu');
   };
   const [activeConversationId, setActiveConversationId] = useState(null);
@@ -26,6 +32,15 @@ export default function Elio() {
   const { data: llmProviders = [] } = useQuery({
     queryKey: ['llm-providers'],
     queryFn: async () => (await base44.functions.invoke('listLLMProviders', {})).data?.providers ?? [],
+  });
+
+  // Conversas do agente: retoma o contexto de origem de cada atendimento no botão voltar.
+  const { data: conversas = [] } = useQuery({
+    queryKey: ['elio-conversations'],
+    queryFn: async () => {
+      const list = await base44.agents.listConversations({ agent_name: 'elio' });
+      return Array.isArray(list) ? list : (list?.conversations || []);
+    },
   });
 
   const selectedProvider = llmProviders.find(p => p.id === selectedLLMId);

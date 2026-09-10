@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Save, X } from 'lucide-react';
 
-const LABELS = { exame_fisico: 'Exame Físico', plano_conduta: 'Plano de Conduta' };
+const LABELS = { evolucao: 'Evolução', exame_fisico: 'Exame Físico', plano_conduta: 'Plano de Conduta' };
 const NOVO_TITULO = '__novo_titulo__';
 
 // Criação de evolução pré-definida: categoria + TÍTULO (grupo) + CONTEXTO. A evolução

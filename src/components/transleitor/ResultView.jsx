@@ -1,15 +1,17 @@
 import React, { useState, useRef } from 'react';
-import { Copy, Printer, CheckCircle2, Pencil, Save } from 'lucide-react';
+import { Copy, Printer, CheckCircle2, Pencil, Save, BookmarkPlus } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import PassagemVisita from './PassagemVisita';
 import AccuracyRating from '@/components/monitoramento/AccuracyRating';
 
-export default function ResultView({ currentSOAP, onUpdate, usageLogId, selectedLLMId = '', llmProviders = [] }) {
+export default function ResultView({ currentSOAP, onUpdate, usageLogId, selectedLLMId = '', llmProviders = [], onQuickSave = null }) {
   const [copied, setCopied] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState('');
   const [saving, setSaving] = useState(false);
+  const [salvoPreDef, setSalvoPreDef] = useState(false);
+  const [salvandoPreDef, setSalvandoPreDef] = useState(false);
   const contentRef = useRef(null);
 
   const copyToClipboard = () => {
@@ -58,6 +60,29 @@ export default function ResultView({ currentSOAP, onUpdate, usageLogId, selected
   const cancelEdit = () => {
     setEditing(false);
     setEditText('');
+  };
+
+  // Salvamento rápido: converte o HTML da evolução em texto puro e grava nas
+  // Evoluções Pré-definidas do contexto atual (categoria 'evolucao').
+  const htmlParaTexto = (html) => {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html || '';
+    tmp.querySelectorAll('br').forEach(el => el.replaceWith('\n'));
+    tmp.querySelectorAll('p, li, h2, h3').forEach(el => el.after(document.createTextNode('\n')));
+    return tmp.textContent.replace(/\n{3,}/g, '\n\n').trim();
+  };
+
+  const salvarPreDef = async () => {
+    const texto = (editing ? editText : htmlParaTexto(currentSOAP.soap_text)).trim();
+    if (!texto || !onQuickSave) return;
+    setSalvandoPreDef(true);
+    try {
+      await onQuickSave(texto);
+      setSalvoPreDef(true);
+      setTimeout(() => setSalvoPreDef(false), 2500);
+    } finally {
+      setSalvandoPreDef(false);
+    }
   };
 
   if (!currentSOAP) return null;
@@ -120,6 +145,13 @@ export default function ResultView({ currentSOAP, onUpdate, usageLogId, selected
           {copied ? <CheckCircle2 className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
           {copied ? 'Copiado!' : 'Copiar'}
         </button>
+        {onQuickSave && (
+          <button onClick={salvarPreDef} disabled={salvandoPreDef} title="Salvar o texto atual nas Evoluções Pré-definidas"
+            className="py-3 px-4 border border-border rounded-2xl font-bold text-sm hover:bg-accent transition-all flex items-center justify-center gap-2 text-muted-foreground">
+            {salvoPreDef ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : <BookmarkPlus className="w-4 h-4" />}
+            {salvoPreDef ? 'Salvo!' : salvandoPreDef ? 'Salvando...' : 'Salvar evolução'}
+          </button>
+        )}
       </div>
 
       {usageLogId && (

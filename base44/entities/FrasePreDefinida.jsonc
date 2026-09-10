@@ -6,9 +6,10 @@
       "type": "string",
       "enum": [
         "exame_fisico",
-        "plano_conduta"
+        "plano_conduta",
+        "evolucao"
       ],
-      "description": "Categoria da frase: exame_fisico (descri\u00e7\u00f5es de exame f\u00edsico) ou plano_conduta (planos de conduta)"
+      "description": "Categoria da frase: exame_fisico, plano_conduta ou evolucao (texto completo salvo do editor)"
     },
     "titulo": {
       "type": "string",
@@ -30,6 +31,11 @@
     "especialidade": {
       "type": "string",
       "description": "Slug da especialidade da frase (ex.: urologia) ou 'geral' (vale em qualquer especialidade). Registros antigos sem valor s\u00e3o tratados como geral"
+    },
+    "favorita": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se a evolu\u00e7\u00e3o est\u00e1 marcada como favorita (aparece sempre no topo da lista)"
     }
   },
   "required": [

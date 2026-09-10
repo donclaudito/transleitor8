@@ -209,6 +209,20 @@ export default function Transleitor({ variante, config } = {}) {
     }));
   }, []);
 
+  // Salvamento rápido do editor: grava o texto da evolução atual nas
+  // Evoluções Pré-definidas do contexto (categoria 'evolucao').
+  const salvarEvolucaoPreDefinida = async (texto) => {
+    const registro = await base44.entities.FrasePreDefinida.create({
+      categoria: 'evolucao',
+      texto,
+      titulo: 'GERAL',
+      ambiente: contextoFrases.ambiente,
+      especialidade: contextoFrases.especialidade,
+    });
+    queryClient.invalidateQueries({ queryKey: ['frases-predefinidas'] });
+    return registro;
+  };
+
   const handleAddSector = async (e) => {
     e.preventDefault();
     if (!newSectorName.trim()) return;
@@ -553,7 +567,7 @@ ${HUMANIZACAO}`;
         onDelete={(id) => deleteEvolutionMutation.mutate(id)} />;
     }
     if (view === 'result') {
-      return <ResultView currentSOAP={currentSOAP} onUpdate={updateEvolution} usageLogId={usageLogId} selectedLLMId={selectedLLMId} llmProviders={llmProviders} />;
+      return <ResultView currentSOAP={currentSOAP} onUpdate={updateEvolution} usageLogId={usageLogId} selectedLLMId={selectedLLMId} llmProviders={llmProviders} onQuickSave={salvarEvolucaoPreDefinida} />;
     }
     if (view === 'settings') {
       return <SettingsPanel settings={settings} setTheme={setTheme}

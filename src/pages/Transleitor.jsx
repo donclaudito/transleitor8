@@ -393,7 +393,10 @@ REGRAS (OBRIGATÓRIAS):
 19. NÃO cruze registros de outras categorias (enfermagem/fisioterapia, evoluções anteriores, consultas) entre si, SALVO CONTRADIÇÃO que mude a conduta — nesse caso, aponte em UMA linha.
 20. Se algum dado estiver AMBÍGUO, NÃO decida a interpretação sozinho: registre a ambiguidade como PERGUNTA em "Pontos em Aberto" e redija o ponto em termos que dependam da resposta.
 21. NUNCA afirme tendência, melhora, piora, ascensão ou queda de exames sem resultados comparáveis de momentos distintos. Se não houver, escreva: "não há dados para caracterizar tendência".
-22. NUNCA afirme que houve ou não melhora clínica com base em registro único.`;
+22. NUNCA afirme que houve ou não melhora clínica com base em registro único.
+23. PROIBIDO ENCURTAR OU GENERALIZAR termos clínicos com valor prognóstico ("descompensado", "instável", "refratário", "em ascensão", "sem resposta"): se fornecidos, mantenha.
+24. As seções "Condutas possíveis" e "Plano Terapêutico" devem conter TODAS as condutas fornecidas nos registros — nunca omita uma conduta principal.
+25. RECUPERAR: compare os registros de enfermagem, fisioterapia e evolução médica e aponte CONTRADIÇÕES — uma linha cada, máximo 3, apenas as que mudam a conduta.`;
 
       const gastroCorrelationBlock = formData.previousConsult?.trim() ? `\n\nÂNCORA DE CORRELAÇÃO CRUZADA (use a CONSULTA ANTERIOR como referência obrigatória):
 1. COMPARAÇÃO COM A CONSULTA ANTERIOR: compare ponto a ponto as queixas, achados e condutas da consulta anterior com o quadro atual, indicando melhora, piora, resolução ou estabilidade de cada item.

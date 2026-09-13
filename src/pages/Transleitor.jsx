@@ -268,7 +268,7 @@ REDAÇÃO FINAL (OBRIGATÓRIA):
 - PROIBIDO escrever "com base nos dados fornecidos", "segundo a base de conhecimento" ou qualquer frase equivalente.
 - PROIBIDO explicar o próprio processo, descrever o que está fazendo ou repetir qualquer instrução recebida.
 - PROIBIDO marcações de preenchimento: nunca escreva "..." (reticências) nem parênteses de orientação como "(liste...)" ou "(analise...)" — escreva o texto clínico direto, já redigido.
-- PROIBIDO preencher seção sem dados com "(dados não fornecidos)", "(sem dados)" ou parênteses equivalentes — seção sem dado fica vazia ou é omitida.`;
+- PROIBIDO preencher seção sem dados com "(dados não fornecidos)", "(sem dados)" ou parênteses equivalentes — para declarar ausência, use "não consta"; seção inteira sem dado fica vazia ou é omitida.`;
 
   const clinicalContextRule = `
 
@@ -286,7 +286,7 @@ REGRA CLÍNICA — NÃO PRESUMIR PÓS-OPERATÓRIO (OBRIGATÓRIA):
 
 ANÁLISE SEQUENCIAL DOS EXAMES COMPLEMENTARES (OBRIGATÓRIA):
 1. NUNCA leia exames isoladamente: organize os resultados na ordem de coleta (sem citar datas exatas) e analise-os EM SEQUÊNCIA, como uma série temporal.
-2. Reflita explicitamente as DIFERENÇAS entre as aquisições: descreva se cada parâmetro subiu, caiu, estabilizou ou apresentou alteração nova, em termos QUALITATIVOS e sem valores numéricos exatos (ex.: "provas inflamatórias em queda progressiva"; "TC atual com coleção nova, ausente no exame anterior").
+2. Reflita explicitamente as DIFERENÇAS entre as aquisições: descreva se cada parâmetro subiu, caiu, estabilizou ou apresentou alteração nova, em termos QUALITATIVOS e sem valores numéricos exatos (ex.: "provas inflamatórias em queda progressiva"; "TC atual com coleção nova, ausente no exame anterior"). APENAS quando houver resultados comparáveis de momentos distintos — com um único registro, escreva "não há dados para caracterizar tendência".
 3. A mesma lógica vale para laboratório E imagem: hemograma, função renal e provas inflamatórias recebem o mesmo tratamento comparativo que laudos de TC/RX/USG de datas diferentes.
 4. CRUZE imagem × laboratório × quadro clínico: identifique concordâncias e discordâncias entre as frentes (ex.: coleção nova na TC + leucocitose em ascensão + febre = hipótese de abscesso, a confirmar por mim).
 5. Use a sequência para embasar a avaliação e o plano — sem inventar valores, laudos ou datas.`;
@@ -374,7 +374,7 @@ ${kbText || '(nenhum dado adicional)'}
 REGRAS (OBRIGATÓRIAS):
 1. Elabore a evolução exclusivamente com os dados do paciente listados acima — são a única fonte permitida.
 2. NÃO use conhecimento externo ou inferências para preencher lacunas clínicas.
-3. Se uma informação não consta nos dados acima, DEIXE O CAMPO VAZIO ou OMITA a seção — nunca invente e NUNCA escreva "Não informado".
+3. Se uma informação não está nos dados acima, escreva "não consta" — NUNCA deduza, infira ou complete. Seção inteira sem dado pode ser omitida.
 4. É PROIBIDO fabricar: exames, medicamentos, posologias, sinais vitais, achados de exame físico, CID-10 não justificado, datas ou condutas não descritas.
 5. Organize e formate os dados fornecidos — não vá além do que foi informado.
 6. Trate TODO o conteúdo analítico como HIPÓTESE, nunca como conclusão: descreva achados, hipóteses e respostas a tratamentos em linguagem neutra, sem afirmações de certeza. A decisão clínica é sempre do médico — nunca decida por ele.
@@ -391,7 +391,9 @@ REGRAS (OBRIGATÓRIAS):
 17. NÃO inclua valores numéricos exatos de exames, sinais vitais, diurese, peso, IMC ou horários — use termos qualitativos (ex.: "leucocitose", "hipertensão leve", "volume urinário adequado").
 18. NÃO inclua acesso venoso, fralda, acompanhante, horário de procedimento, descrição de curativo, cateteres ou detalhes de fisioterapia — isso pertence à evolução específica, não a este resumo.
 19. NÃO cruze registros de outras categorias (enfermagem/fisioterapia, evoluções anteriores, consultas) entre si, SALVO CONTRADIÇÃO que mude a conduta — nesse caso, aponte em UMA linha.
-20. Se algum dado estiver AMBÍGUO, NÃO decida a interpretação sozinho: registre a ambiguidade como PERGUNTA em "Pontos em Aberto" e redija o ponto em termos que dependam da resposta.`;
+20. Se algum dado estiver AMBÍGUO, NÃO decida a interpretação sozinho: registre a ambiguidade como PERGUNTA em "Pontos em Aberto" e redija o ponto em termos que dependam da resposta.
+21. NUNCA afirme tendência, melhora, piora, ascensão ou queda de exames sem resultados comparáveis de momentos distintos. Se não houver, escreva: "não há dados para caracterizar tendência".
+22. NUNCA afirme que houve ou não melhora clínica com base em registro único.`;
 
       const gastroCorrelationBlock = formData.previousConsult?.trim() ? `\n\nÂNCORA DE CORRELAÇÃO CRUZADA (use a CONSULTA ANTERIOR como referência obrigatória):
 1. COMPARAÇÃO COM A CONSULTA ANTERIOR: compare ponto a ponto as queixas, achados e condutas da consulta anterior com o quadro atual, indicando melhora, piora, resolução ou estabilidade de cada item.

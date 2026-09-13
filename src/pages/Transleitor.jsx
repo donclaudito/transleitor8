@@ -382,10 +382,10 @@ REGRAS (OBRIGATÓRIAS):
 8. NUNCA inclua nome, iniciais, CPF, número de prontuário, leito/sala ou qualquer dado que identifique o paciente. NUNCA cite data exata de internação ou de exames — use referências relativas (ex.: "no início da internação"). NUNCA mencione hospital ou cidade. Se qualquer detalhe puder permitir reconhecer o paciente, GENERALIZE o detalhe e AVISE no texto que o omitiu.
 9. CID-10: apresente mais de uma opção, cada uma com o que a DIFERENCIA das demais no quadro descrito, sem escolher uma e sem ordenar por probabilidade.
 10. Condutas: escreva "condutas possíveis", cada uma com o que depende (achado, exame ou resposta ainda pendente).
-11. Estruture a saída em DUAS PARTES: (1) FATOS OBJETIVOS — os dados fornecidos, organizados, sem interpretação; (2) PONTOS EM ABERTO — hipóteses em avaliação, ambiguidades dos dados (registradas como PERGUNTAS), o que não pôde ser avaliado e por quê, e pendências que condicionam as condutas possíveis.
+11. Estruture a saída em DUAS PARTES: (1) FATOS OBJETIVOS — os dados fornecidos, organizados, sem interpretação; (2) PONTOS EM ABERTO — o que não tem informação suficiente para avaliar, ambiguidades dos dados, o que não pôde ser avaliado e pendências que condicionam as condutas possíveis — cada ponto redigido como PERGUNTA.
 12. Se omitir qualquer informação por incerteza ou risco de identificação, DECLARE explicitamente no texto — omissão silenciosa é proibida.
 13. LIMITE DE SAÍDA: máximo 30 linhas no total. Se não couber, corte o menos relevante.
-14. "Pontos em Aberto": apenas os pontos que MUDAM a conduta — máximo 5.
+14. "Pontos em Aberto": apenas os pontos que MUDAM a conduta — máximo 5, cada um redigido como PERGUNTA.
 15. Liste dados AUSENTES somente quando a ausência muda uma decisão — NUNCA escreva listas de "não houve X, Y, Z".
 16. NÃO repita a mesma informação em seções diferentes — se já foi dito, não repita.
 17. NÃO inclua valores numéricos exatos de exames, sinais vitais, diurese, peso, IMC ou horários — use termos qualitativos (ex.: "leucocitose", "hipertensão leve", "volume urinário adequado").
@@ -430,7 +430,7 @@ Preenchimento de cada seção:
 - O — Objetivo: sinais vitais, exame físico e achados objetivos descritos, em termos qualitativos (sem valores numéricos exatos nem horários).
 - A — Avaliação: análise clínica em linguagem neutra, sem afirmações de certeza; ao final, apresente o CID-10 no formato <code><strong>CID-10 — opções:</strong> X00.0 — Nome da condição — diferencia: ...; Y00.0 — Nome da condição — diferencia: ...</code> — mais de uma opção, cada uma com o que a diferencia das demais no quadro, sem escolher uma e sem ordenar por probabilidade; substitua os exemplos pelos códigos, nomes e motivos reais. Se os dados não sustentarem nenhuma hipótese, escreva "CID-10: dados insuficientes".
 - P — Condutas Possíveis: análise da Prescrição Atual do paciente — liste os medicamentos vigentes em <strong>negrito</strong> com posologia, avalie pertinência ao quadro, sinalize ajustes necessários e potenciais interações/alertas de segurança; NÃO inclua medicamentos de uso contínuo (já descritos em HPP/Comorbidades) — apenas a prescrição aguda vigente, ajustes e novas condutas, cada uma com o que depende (achado, exame ou resposta ainda pendente).
-- Pontos em Aberto: o que não tem informação suficiente para avaliar, as ambiguidades dos dados (registradas como PERGUNTAS — você não decide a interpretação), o que não pôde ser avaliado e por quê, e as pendências que condicionam as condutas possíveis.
+- Pontos em Aberto: apenas o que muda a conduta, no formato de PERGUNTA (máximo 5): o que não tem informação suficiente para avaliar, ambiguidades dos dados (você não decide a interpretação), o que não pôde ser avaliado e as pendências que condicionam as condutas possíveis.
 As seções S e O sem dados correspondentes podem ser omitidas; a seção Pontos em Aberto é OBRIGATÓRIA.
 
 Use terminologia médica brasileira formal. Compare com a evolução anterior quando disponível e destaque mudanças clínicas relevantes.
@@ -453,7 +453,7 @@ Estruture a evolução clínica OBRIGATORIAMENTE nesta ordem exata. O CONTEÚDO 
 - Prescrição Atual: medicamentos vigentes em <strong>negrito</strong> com posologia, pertinência ao quadro clínico, ajustes necessários, interações medicamentosas e alertas de segurança, diferenciando claramente dos medicamentos de uso contínuo já descritos em seção própria.
 - Condutas possíveis: procedimentos realizados, interconsultas solicitadas, ajustes terapêuticos e demais encaminhamentos — cada possibilidade com o que depende (achado, exame ou resposta ainda pendente).
 - Plano Terapêutico: próximos passos apresentados como condutas possíveis, cada um com o que depende; NÃO inclua medicamentos de uso contínuo — apenas ajustes agudos da prescrição atual e novas condutas (os contínuos ficam somente na seção "Uso de Medicação Contínua").
-- Pontos em Aberto: o que não tem informação suficiente para avaliar, as ambiguidades dos dados (registradas como PERGUNTAS — você não decide a interpretação), o que não pôde ser avaliado e por quê, e as pendências que condicionam as condutas possíveis. OBRIGATÓRIA.
+- Pontos em Aberto: apenas o que muda a conduta, no formato de PERGUNTA (máximo 5): o que não tem informação suficiente para avaliar, ambiguidades dos dados (você não decide a interpretação), o que não pôde ser avaliado e as pendências que condicionam as condutas possíveis. OBRIGATÓRIA.
 As seções sem dados correspondentes podem ser omitidas — exceto Pontos em Aberto.
 
 MOLDE EXATO de saída (use apenas estes rótulos, nesta ordem; escreva o texto clínico já redigido após cada rótulo — substitua os exemplos do CID-10 pelos códigos, nomes e motivos reais):
@@ -489,7 +489,7 @@ Mantenha a MESMA sequência de seções abaixo, EXTREMAMENTE breve em cada campo
 - Prescrição Atual: medicamentos vigentes em <strong>negrito</strong> com posologia; sinalize apenas ajustes ou alertas de segurança relevantes, sem repetir os de uso contínuo.
 - Condutas possíveis: o que foi feito e o que pode ser feito, cada item com o que depende (telegráfico).
 - Plano Terapêutico: próximos passos como condutas possíveis, em tópicos curtos; sem medicamentos contínuos (estes ficam na seção própria).
-- Pontos em Aberto: o que não tem informação suficiente para avaliar, ambiguidades como PERGUNTAS curtas (você não decide a interpretação) e o que não pôde ser avaliado, com o motivo (ex.: "sem exame físico descrito"). OBRIGATÓRIA.
+- Pontos em Aberto: apenas o que muda a conduta, no formato de PERGUNTA curta, máximo 5 — inclui o que não pôde ser avaliado, com o motivo (ex.: "há exame físico descrito?"), e ambiguidades, que você não decide sozinho. OBRIGATÓRIA.
 As seções sem dados correspondentes podem ser omitidas — exceto Pontos em Aberto.
 
 MOLDE EXATO de saída (use apenas estes rótulos, nesta ordem; escreva o texto clínico já redigido após cada rótulo — substitua os exemplos do CID-10 pelos códigos, nomes e motivos reais):

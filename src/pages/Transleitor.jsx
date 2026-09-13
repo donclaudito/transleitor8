@@ -348,8 +348,6 @@ ANÁLISE SEQUENCIAL DOS EXAMES COMPLEMENTARES (OBRIGATÓRIA):
       // RAG: constrói a Base de Conhecimento APENAS com os campos preenchidos.
       // Campos ausentes são omitidos (não viram "—" para não virar dado ambíguo).
       const kbEntries = [
-        ['Paciente (iniciais)', formData.patientInitials?.trim()],
-        ['Leito', formData.bed?.trim()],
         ['Setor', formData.sector?.trim()],
         ['Comorbidades', formData.comorbidities?.trim()],
         ['Exames complementares', formData.labs?.trim()],
@@ -378,7 +376,13 @@ REGRAS (OBRIGATÓRIAS):
 2. NÃO use conhecimento externo ou inferências para preencher lacunas clínicas.
 3. Se uma informação não consta nos dados acima, DEIXE O CAMPO VAZIO ou OMITA a seção — nunca invente e NUNCA escreva "Não informado".
 4. É PROIBIDO fabricar: exames, medicamentos, posologias, sinais vitais, achados de exame físico, CID-10 não justificado, datas ou condutas não descritas.
-5. Organize e formate os dados fornecidos — não vá além do que foi informado.`;
+5. Organize e formate os dados fornecidos — não vá além do que foi informado.
+6. NÃO afirme nada como concluído: descreva achados, hipóteses e respostas a tratamentos em linguagem neutra, sem afirmações de certeza.
+7. PROIBIDO usar as palavras "sugerido", "provável" e "a confirmar" em qualquer parte do texto.
+8. NUNCA inclua nome, iniciais, CPF, número de prontuário, leito/sala, data exata de internação ou qualquer dado que identifique o paciente.
+9. CID-10: apresente mais de uma opção, cada uma com o motivo que a sustenta no quadro descrito, sem escolher uma e sem ordenar por probabilidade.
+10. Condutas: escreva "condutas possíveis", cada uma com o que depende (achado, exame ou resposta ainda pendente).
+11. Estruture a saída em DUAS PARTES: (1) FATOS OBJETIVOS — os dados fornecidos, organizados; (2) PONTOS EM ABERTO — o que não tem informação suficiente para avaliar, as ambiguidades dos dados (registradas como perguntas) e as pendências que condicionam as condutas possíveis.`;
 
       const gastroCorrelationBlock = formData.previousConsult?.trim() ? `\n\nÂNCORA DE CORRELAÇÃO CRUZADA (use a CONSULTA ANTERIOR como referência obrigatória):
 1. COMPARAÇÃO COM A CONSULTA ANTERIOR: compare ponto a ponto as queixas, achados e condutas da consulta anterior com o quadro atual, indicando melhora, piora, resolução ou estabilidade de cada item.
@@ -401,18 +405,24 @@ ${sectorHint ? `\nFoco de setor: ${sectorHint}` : ''}${consultorioLine ? `\n${co
 
 ${patientData}${correlationBlock}${clinicalContextRule}${examsSequenceRule}
 
-Formato obrigatório (use APENAS tags HTML, sem Markdown) — quatro seções, nesta ordem, cada uma com o título exato abaixo seguido dos parágrafos com o conteúdo clínico já redigido:
+Formato obrigatório (use APENAS tags HTML, sem Markdown) — DUAS PARTES, nesta ordem, cada uma com o título exato abaixo seguido dos parágrafos com o conteúdo clínico já redigido:
+
+PARTE 1 — FATOS OBJETIVOS (apenas os dados descritos, sem interpretação):
 <h2>S — Subjetivo</h2>
 <h2>O — Objetivo</h2>
+
+PARTE 2 — PONTOS EM ABERTO (análise como hipóteses e opções, nunca como conclusão):
 <h2>A — Avaliação</h2>
-<h2>P — Plano</h2>
+<h2>P — Condutas Possíveis</h2>
+<h2>Pontos em Aberto</h2>
 
 Preenchimento de cada seção:
-- S — Subjetivo: queixas, sintomas e relato do quadro atual.
+- S — Subjetivo: queixas, sintomas e relato do quadro atual, apenas como descritos.
 - O — Objetivo: sinais vitais, exame físico e achados objetivos descritos.
-- A — Avaliação: análise clínica; ao final, sugira o CID-10 mais provável no formato <code><strong>CID-10 sugerido:</strong> X00.0 — Nome resumido da condição</code> — substitua o exemplo pelo código e nome reais; se houver mais de uma hipótese, liste até 3 códigos por ordem de probabilidade.
-- P — Plano: análise da Prescrição Atual do paciente — liste os medicamentos vigentes em <strong>negrito</strong> com posologia, avalie pertinência ao quadro, sinalize ajustes necessários e potenciais interações/alertas de segurança; NÃO inclua medicamentos de uso contínuo (já descritos em HPP/Comorbidades) — apenas a prescrição aguda vigente, ajustes e novas condutas planejadas.
-Se uma seção não tiver dados correspondentes, omita-a por completo.
+- A — Avaliação: análise clínica em linguagem neutra, sem afirmações de certeza; ao final, apresente o CID-10 no formato <code><strong>CID-10 — opções:</strong> X00.0 — Nome da condição — motivo: ...; Y00.0 — Nome da condição — motivo: ...</code> — mais de uma opção, cada uma com o motivo que a sustenta no quadro, sem escolher uma e sem ordenar por probabilidade; substitua os exemplos pelos códigos, nomes e motivos reais. Se os dados não sustentarem nenhuma hipótese, escreva "CID-10: dados insuficientes".
+- P — Condutas Possíveis: análise da Prescrição Atual do paciente — liste os medicamentos vigentes em <strong>negrito</strong> com posologia, avalie pertinência ao quadro, sinalize ajustes necessários e potenciais interações/alertas de segurança; NÃO inclua medicamentos de uso contínuo (já descritos em HPP/Comorbidades) — apenas a prescrição aguda vigente, ajustes e novas condutas, cada uma com o que depende (achado, exame ou resposta ainda pendente).
+- Pontos em Aberto: o que não tem informação suficiente para avaliar, as ambiguidades dos dados (registradas como perguntas) e as pendências que condicionam as condutas possíveis.
+As seções S e O sem dados correspondentes podem ser omitidas; a seção Pontos em Aberto é OBRIGATÓRIA.
 
 Use terminologia médica brasileira formal. Compare com a evolução anterior quando disponível e destaque mudanças clínicas relevantes.
 Use <p> para parágrafos, <strong> para negrito, <ul>/<li> para listas, <br> para quebras. NÃO use Markdown (sem ##, **, -, \`\`\`).
@@ -425,27 +435,29 @@ ${sectorHint ? `\nFoco de setor: ${sectorHint}` : ''}${consultorioLine ? `\n${co
 ${patientData}${correlationBlock}${clinicalContextRule}${examsSequenceRule}
 
 Estruture a evolução clínica OBRIGATORIAMENTE nesta ordem exata. O CONTEÚDO de cada seção é:
-- Hipótese(s) Diagnóstica(s): hipóteses diagnósticas do quadro atual.
-- CID-10 sugerido: código mais provável; se houver mais de uma hipótese, até 3 códigos por ordem de probabilidade.
+- Hipótese(s) Diagnóstica(s): hipóteses do quadro atual, cada uma com o dado que a sustenta, sem ordenar por probabilidade.
+- CID-10 — opções: mais de uma opção de código, cada uma com o motivo que a sustenta no quadro, sem escolher uma e sem ordenar por probabilidade; se os dados não sustentarem nenhuma, escreva "dados insuficientes".
 - HPP (História Patológica Pregressa) / Comorbidades: comorbidades do paciente e seu impacto no quadro atual.
 - Uso de Medicação Contínua: cada medicamento de uso crônico em <strong>negrito</strong> com posologia e relação com o quadro atual (ex.: <strong>Losartana 50mg/dia</strong>, <strong>Metformina XR 1g/dia</strong>).
 - Alergias: alergias conhecidas; se houver alguma, inclua um alerta no formato: ⚠️ <strong>ALERTA:</strong> Paciente alérgico a [substância]. Atenção redobrada na prescrição.
 - Exames Complementares: análise CRONOLÓGICA — organize por data, identifique tendências ao longo do tempo e correlacione com o quadro clínico; não relate apenas o valor mais recente isolado.
 - Prescrição Atual: medicamentos vigentes em <strong>negrito</strong> com posologia, pertinência ao quadro clínico, ajustes necessários, interações medicamentosas e alertas de segurança, diferenciando claramente dos medicamentos de uso contínuo já descritos em seção própria.
-- Conduta: conduta médica adotada — procedimentos realizados, interconsultas solicitadas, ajustes terapêuticos.
-- Plano Terapêutico: plano de tratamento e próximos passos; NÃO inclua medicamentos de uso contínuo — apenas ajustes agudos da prescrição atual e novas condutas (os contínuos ficam somente na seção "Uso de Medicação Contínua").
-Se uma seção não tiver dados correspondentes, omita-a por completo.
+- Condutas possíveis: procedimentos realizados, interconsultas solicitadas, ajustes terapêuticos e demais encaminhamentos — cada possibilidade com o que depende (achado, exame ou resposta ainda pendente).
+- Plano Terapêutico: próximos passos apresentados como condutas possíveis, cada um com o que depende; NÃO inclua medicamentos de uso contínuo — apenas ajustes agudos da prescrição atual e novas condutas (os contínuos ficam somente na seção "Uso de Medicação Contínua").
+- Pontos em Aberto: o que não tem informação suficiente para avaliar, as ambiguidades dos dados (registradas como perguntas) e as pendências que condicionam as condutas possíveis. Esta seção é OBRIGATÓRIA.
+As seções sem dados correspondentes podem ser omitidas — exceto Pontos em Aberto.
 
-MOLDE EXATO de saída (use apenas estes rótulos, nesta ordem; escreva o texto clínico já redigido após cada rótulo — substitua o exemplo do CID-10 pelo código e nome reais):
+MOLDE EXATO de saída (use apenas estes rótulos, nesta ordem; escreva o texto clínico já redigido após cada rótulo — substitua os exemplos do CID-10 pelos códigos, nomes e motivos reais):
 <p><strong>Hipótese(s) Diagnóstica(s):</strong> </p>
-<code><strong>CID-10 sugerido:</strong> X00.0 — Nome resumido da condição</code>
+<code><strong>CID-10 — opções:</strong> X00.0 — Nome da condição — motivo: ...; Y00.0 — Nome da condição — motivo: ...</code>
 <p><strong>HPP (História Patológica Pregressa) / Comorbidades:</strong> </p>
 <p><strong>Uso de Medicação Contínua:</strong> </p>
 <p><strong>Alergias:</strong> </p>
 <p><strong>Exames Complementares:</strong> </p>
 <p><strong>Prescrição Atual:</strong> </p>
-<p><strong>Conduta:</strong> </p>
+<p><strong>Condutas possíveis:</strong> </p>
 <p><strong>Plano Terapêutico:</strong> </p>
+<p><strong>Pontos em Aberto:</strong> </p>
 
 Use terminologia médica brasileira formal. Compare com a evolução anterior quando disponível e destaque mudanças clínicas relevantes.
 Use <p> para parágrafos, <strong> para negrito, <ul>/<li> para listas dentro dos parágrafos, <br> para quebras. NÃO use <h2> ou cabeçalhos. Texto corrido, profissional, como uma evolução de prontuário real.
@@ -459,27 +471,29 @@ ${sectorHint ? `\nFoco de setor: ${sectorHint}` : ''}${consultorioLine ? `\n${co
 ${patientData}${correlationBlock}${clinicalContextRule}${examsSequenceRule}
 
 Mantenha a MESMA sequência de seções abaixo, EXTREMAMENTE breve em cada campo (máximo 1-2 linhas, frases curtas e diretas, sem floreios). O CONTEÚDO de cada seção é:
-- Hipótese(s) Diagnóstica(s): hipóteses do quadro atual.
-- CID-10 sugerido: código mais provável (até 3, por ordem de probabilidade).
+- Hipótese(s) Diagnóstica(s): hipóteses do quadro atual, cada uma com o dado que a sustenta, sem ordenar por probabilidade.
+- CID-10 — opções: mais de uma opção de código, cada uma com o motivo, sem escolher uma nem ordenar por probabilidade; se os dados não sustentarem nenhuma, escreva "dados insuficientes".
 - HPP/Comorbidades: apenas as comorbidades relevantes, separadas por vírgula.
 - Uso de Medicação Contínua: apenas nome + dose, um por linha, em <strong>negrito</strong>.
 - Alergias: apenas as substâncias; se nenhuma, escreva "Sem alergias conhecidas".
 - Exames Complementares: apenas alterações relevantes e TENDÊNCIAS cronológicas, sem valores detalhados.
 - Prescrição Atual: medicamentos vigentes em <strong>negrito</strong> com posologia; sinalize apenas ajustes ou alertas de segurança relevantes, sem repetir os de uso contínuo.
-- Conduta: apenas o que foi feito, telegráfico.
-- Plano Terapêutico: próximos passos em tópicos curtos; sem medicamentos contínuos (estes ficam na seção própria).
-Se uma seção não tiver dados correspondentes, omita-a por completo.
+- Condutas possíveis: o que foi feito e o que pode ser feito, cada item com o que depende (telegráfico).
+- Plano Terapêutico: próximos passos como condutas possíveis, em tópicos curtos; sem medicamentos contínuos (estes ficam na seção própria).
+- Pontos em Aberto: o que não tem informação suficiente para avaliar e ambiguidades, como perguntas curtas. Esta seção é OBRIGATÓRIA.
+As seções sem dados correspondentes podem ser omitidas — exceto Pontos em Aberto.
 
-MOLDE EXATO de saída (use apenas estes rótulos, nesta ordem; escreva o texto clínico já redigido após cada rótulo — substitua o exemplo do CID-10 pelo código e nome reais):
+MOLDE EXATO de saída (use apenas estes rótulos, nesta ordem; escreva o texto clínico já redigido após cada rótulo — substitua os exemplos do CID-10 pelos códigos, nomes e motivos reais):
 <p><strong>Hipótese(s) Diagnóstica(s):</strong> </p>
-<code><strong>CID-10 sugerido:</strong> X00.0 — Nome resumido</code>
+<code><strong>CID-10 — opções:</strong> X00.0 — Nome — motivo: ...; Y00.0 — Nome — motivo: ...</code>
 <p><strong>HPP/Comorbidades:</strong> </p>
 <p><strong>Uso de Medicação Contínua:</strong> </p>
 <p><strong>Alergias:</strong> </p>
 <p><strong>Exames Complementares:</strong> </p>
 <p><strong>Prescrição Atual:</strong> </p>
-<p><strong>Conduta:</strong> </p>
+<p><strong>Condutas possíveis:</strong> </p>
 <p><strong>Plano Terapêutico:</strong> </p>
+<p><strong>Pontos em Aberto:</strong> </p>
 
 Seja objetivo, sem repetir informações. Priorize velocidade de leitura.
 Use <p>, <strong>, <ul>/<li>, <br>. NÃO use <h2> nem Markdown (sem ##, **, -, \`\`\`).

@@ -29,7 +29,7 @@ const cidDe = (ev) => {
   while ((m = re.exec(html))) {
     if (!m[1].includes('CID-10')) continue;
     tmp.innerHTML = m[1];
-    cids.push(tmp.textContent.replace(/^CID-10 sugerido:\s*/i, '').replace(/\s+/g, ' ').trim());
+    cids.push(tmp.textContent.replace(/^CID-10[^:]*:\s*/i, '').replace(/\s+/g, ' ').trim());
   }
   return cids.join(' | ');
 };

@@ -285,10 +285,10 @@ REGRA CLÍNICA — NÃO PRESUMIR PÓS-OPERATÓRIO (OBRIGATÓRIA):
   const examsSequenceRule = `
 
 ANÁLISE SEQUENCIAL DOS EXAMES COMPLEMENTARES (OBRIGATÓRIA):
-1. NUNCA leia exames isoladamente: organize os resultados por data/ordem de coleta (dias anteriores + atuais) e analise-os EM SEQUÊNCIA, como uma série temporal.
-2. Reflita explicitamente as DIFERENÇAS entre as aquisições: descreva se cada parâmetro subiu, caiu, estabilizou ou apresentou alteração nova, citando o intervalo temporal quando houver (ex.: "PCR 180 → 120 → 60 mg/L, em queda progressiva"; "TC de hoje com coleção nova, ausente na de anteontem").
+1. NUNCA leia exames isoladamente: organize os resultados na ordem de coleta (sem citar datas exatas) e analise-os EM SEQUÊNCIA, como uma série temporal.
+2. Reflita explicitamente as DIFERENÇAS entre as aquisições: descreva se cada parâmetro subiu, caiu, estabilizou ou apresentou alteração nova, em termos QUALITATIVOS e sem valores numéricos exatos (ex.: "provas inflamatórias em queda progressiva"; "TC atual com coleção nova, ausente no exame anterior").
 3. A mesma lógica vale para laboratório E imagem: hemograma, função renal e provas inflamatórias recebem o mesmo tratamento comparativo que laudos de TC/RX/USG de datas diferentes.
-4. CRUZE imagem × laboratório × quadro clínico: identifique concordâncias e discordâncias entre as frentes (ex.: coleção nova na TC + leucocitose em ascensão + febre = provável abscesso).
+4. CRUZE imagem × laboratório × quadro clínico: identifique concordâncias e discordâncias entre as frentes (ex.: coleção nova na TC + leucocitose em ascensão + febre = hipótese de abscesso, a confirmar por mim).
 5. Use a sequência para embasar a avaliação e o plano — sem inventar valores, laudos ou datas.`;
 
   const simulateStream = (fullText, onChunk, onDone) => {
@@ -383,7 +383,14 @@ REGRAS (OBRIGATÓRIAS):
 9. CID-10: apresente mais de uma opção, cada uma com o que a DIFERENCIA das demais no quadro descrito, sem escolher uma e sem ordenar por probabilidade.
 10. Condutas: escreva "condutas possíveis", cada uma com o que depende (achado, exame ou resposta ainda pendente).
 11. Estruture a saída em TRÊS PARTES: (1) FATOS OBJETIVOS — os dados fornecidos, organizados, sem interpretação; (2) PONTOS EM ABERTO — hipóteses em avaliação, ambiguidades dos dados (registradas como perguntas) e pendências que condicionam as condutas possíveis; (3) O QUE VOCÊ NÃO SABE — o que não conseguiu avaliar e por quê.
-12. Se omitir qualquer informação por incerteza ou risco de identificação, DECLARE explicitamente no texto — omissão silenciosa é proibida.`;
+12. Se omitir qualquer informação por incerteza ou risco de identificação, DECLARE explicitamente no texto — omissão silenciosa é proibida.
+13. LIMITE DE SAÍDA: máximo 25 linhas no total. Se não couber, corte o menos relevante.
+14. "Pontos em Aberto": apenas os pontos que MUDAM a conduta — máximo 5.
+15. Liste dados AUSENTES somente quando a ausência muda uma decisão — NUNCA escreva listas de "não houve X, Y, Z".
+16. NÃO repita a mesma informação em seções diferentes — se já foi dito, não repita.
+17. NÃO inclua valores numéricos exatos de exames, sinais vitais, diurese, peso, IMC ou horários — use termos qualitativos (ex.: "leucocitose", "hipertensão leve", "volume urinário adequado").
+18. NÃO inclua acesso venoso, fralda, acompanhante, horário de procedimento, descrição de curativo, cateteres ou detalhes de fisioterapia — isso pertence à evolução específica, não a este resumo.
+19. NÃO cruze registros de enfermagem/fisioterapia com o registro médico, SALVO contradição que mude a conduta — nesse caso, aponte em UMA linha.`;
 
       const gastroCorrelationBlock = formData.previousConsult?.trim() ? `\n\nÂNCORA DE CORRELAÇÃO CRUZADA (use a CONSULTA ANTERIOR como referência obrigatória):
 1. COMPARAÇÃO COM A CONSULTA ANTERIOR: compare ponto a ponto as queixas, achados e condutas da consulta anterior com o quadro atual, indicando melhora, piora, resolução ou estabilidade de cada item.
@@ -396,8 +403,8 @@ REGRAS (OBRIGATÓRIAS):
         : (formData.previousEvolution?.trim() ? `\n\nÂNCORA DE CORRELAÇÃO CRUZADA (use TODAS as Evoluções Médicas Anteriores como referência obrigatória):
 1. ANÁLISE CRONOLÓGICA: ordene as evoluções anteriores por data/tempo e reconstrua a LINHA DO TEMPO clínica do paciente. Destaque a progressão dia a dia — melhora, piora ou estabilidade de sintomas, sinais vitais e estado geral entre as evoluções.
 2. Ao descrever a Descrição Clínica Atual, CONSIDERE OBRIGATORIAMENTE as últimas evoluções médicas — o quadro atual deve ser interpretado como continuação da tendência mais recente, não isoladamente. Se a última evolução já relatava melhora/piora de X, indique se a tendência se mantém, reverteu ou agravou.
-3. Cruze com a Evolução de Enfermagem: identifique divergências ou confirmações relevantes. Se houver divergência entre o relato médico anterior e a evolução de enfermagem, SINALE explicitamente no texto gerado (ex: "Divergência identificada: enfermagem relata febre às 02h, não mencionada na evolução médica anterior.").
-4. ANÁLISE CRONOLÓGICA DOS EXAMES: nos Exames Complementares, organize os resultados por data e identifique TENDÊNCIAS laboratoriais ao longo do tempo (ex: PCR caindo dia a dia, leucocitose melhorando, hemoglobina estável), citando os valores de comparação. Não relate apenas o valor isolado mais recente.
+3. Evolução de Enfermagem: cruze com o registro médico SOMENTE quando houver CONTRADIÇÃO que mude a conduta — nesse caso, aponte em UMA linha (ex.: "Contradição com registro de enfermagem: febre relatada pela enfermagem, ausente na evolução médica anterior."). Concordâncias e detalhes operacionais (curativo, acessos, fisioterapia) NÃO entram.
+4. ANÁLISE CRONOLÓGICA DOS EXAMES: nos Exames Complementares, organize os resultados na ordem de coleta (sem datas exatas) e identifique TENDÊNCIAS laboratoriais ao longo do tempo (ex: provas inflamatórias em queda, leucocitose melhorando, hemoglobina estável), em termos qualitativos, sem valores numéricos exatos. Não relate apenas o achado mais recente isolado.
 5. Correlacione com a Prescrição Atual para avaliar a resposta terapêutica no tempo.` : '');
 
       const soapPrompt = `Você é um assistente médico especialista em documentação clínica brasileira.
@@ -422,7 +429,7 @@ PARTE 3 — O QUE VOCÊ NÃO SABE (o que não conseguiu avaliar e por quê):
 
 Preenchimento de cada seção:
 - S — Subjetivo: queixas, sintomas e relato do quadro atual, apenas como descritos.
-- O — Objetivo: sinais vitais, exame físico e achados objetivos descritos.
+- O — Objetivo: sinais vitais, exame físico e achados objetivos descritos, em termos qualitativos (sem valores numéricos exatos nem horários).
 - A — Avaliação: análise clínica em linguagem neutra, sem afirmações de certeza; ao final, apresente o CID-10 no formato <code><strong>CID-10 — opções:</strong> X00.0 — Nome da condição — diferencia: ...; Y00.0 — Nome da condição — diferencia: ...</code> — mais de uma opção, cada uma com o que a diferencia das demais no quadro, sem escolher uma e sem ordenar por probabilidade; substitua os exemplos pelos códigos, nomes e motivos reais. Se os dados não sustentarem nenhuma hipótese, escreva "CID-10: dados insuficientes".
 - P — Condutas Possíveis: análise da Prescrição Atual do paciente — liste os medicamentos vigentes em <strong>negrito</strong> com posologia, avalie pertinência ao quadro, sinalize ajustes necessários e potenciais interações/alertas de segurança; NÃO inclua medicamentos de uso contínuo (já descritos em HPP/Comorbidades) — apenas a prescrição aguda vigente, ajustes e novas condutas, cada uma com o que depende (achado, exame ou resposta ainda pendente).
 - Pontos em Aberto: o que não tem informação suficiente para avaliar, as ambiguidades dos dados (registradas como perguntas) e as pendências que condicionam as condutas possíveis.
@@ -445,7 +452,7 @@ Estruture a evolução clínica OBRIGATORIAMENTE nesta ordem exata. O CONTEÚDO 
 - HPP (História Patológica Pregressa) / Comorbidades: comorbidades do paciente e seu impacto no quadro atual.
 - Uso de Medicação Contínua: cada medicamento de uso crônico em <strong>negrito</strong> com posologia e relação com o quadro atual (ex.: <strong>Losartana 50mg/dia</strong>, <strong>Metformina XR 1g/dia</strong>).
 - Alergias: alergias conhecidas; se houver alguma, inclua um alerta no formato: ⚠️ <strong>ALERTA:</strong> Paciente alérgico a [substância]. Atenção redobrada na prescrição.
-- Exames Complementares: análise CRONOLÓGICA — organize por data, identifique tendências ao longo do tempo e correlacione com o quadro clínico; não relate apenas o valor mais recente isolado.
+- Exames Complementares: análise CRONOLÓGICA — organize na ordem de coleta (sem datas exatas), identifique tendências ao longo do tempo em termos qualitativos (sem valores numéricos exatos) e correlacione com o quadro clínico; não relate apenas o achado mais recente isolado.
 - Prescrição Atual: medicamentos vigentes em <strong>negrito</strong> com posologia, pertinência ao quadro clínico, ajustes necessários, interações medicamentosas e alertas de segurança, diferenciando claramente dos medicamentos de uso contínuo já descritos em seção própria.
 - Condutas possíveis: procedimentos realizados, interconsultas solicitadas, ajustes terapêuticos e demais encaminhamentos — cada possibilidade com o que depende (achado, exame ou resposta ainda pendente).
 - Plano Terapêutico: próximos passos apresentados como condutas possíveis, cada um com o que depende; NÃO inclua medicamentos de uso contínuo — apenas ajustes agudos da prescrição atual e novas condutas (os contínuos ficam somente na seção "Uso de Medicação Contínua").
@@ -483,7 +490,7 @@ Mantenha a MESMA sequência de seções abaixo, EXTREMAMENTE breve em cada campo
 - HPP/Comorbidades: apenas as comorbidades relevantes, separadas por vírgula.
 - Uso de Medicação Contínua: apenas nome + dose, um por linha, em <strong>negrito</strong>.
 - Alergias: apenas as substâncias; se nenhuma, escreva "Sem alergias conhecidas".
-- Exames Complementares: apenas alterações relevantes e TENDÊNCIAS cronológicas, sem valores detalhados.
+- Exames Complementares: apenas alterações relevantes e TENDÊNCIAS cronológicas, sem valores numéricos exatos.
 - Prescrição Atual: medicamentos vigentes em <strong>negrito</strong> com posologia; sinalize apenas ajustes ou alertas de segurança relevantes, sem repetir os de uso contínuo.
 - Condutas possíveis: o que foi feito e o que pode ser feito, cada item com o que depende (telegráfico).
 - Plano Terapêutico: próximos passos como condutas possíveis, em tópicos curtos; sem medicamentos contínuos (estes ficam na seção própria).

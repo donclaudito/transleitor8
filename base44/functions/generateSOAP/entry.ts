@@ -43,6 +43,7 @@ const SOAP_SYSTEM_MESSAGE = [
   '4. PROIBIDO explicar o próprio processo, descrever o que está fazendo ou repetir qualquer instrução recebida.',
   '5. PROIBIDO marcações de preenchimento: nunca escreva "..." (reticências) nem parênteses de orientação como "(liste...)" ou "(analise...)" — escreva o texto clínico direto.',
   '6. PROIBIDO preencher seção sem dados com "(dados não fornecidos)", "(sem dados)" ou parênteses equivalentes — para declarar ausência, use "não consta"; seção inteira sem dado fica vazia ou é omitida.',
+  '7. HUMANIZAÇÃO MÁXIMA: a evolução NÃO pode ter aparência de texto gerado por IA. Frases de comprimentos variados, fraseado espontâneo e direto, prosa clínica natural — não resposta modelo. EVITE os tiques de IA: frases simétricas e repetitivas, listas excessivas onde cabe texto corrido, tom exageradamente polido, conectivos automáticos ("ademais", "cabe ressaltar", "em suma", "é importante destacar") e generalidades de conclusão.',
 ].join('\n');
 
 const SOAP_SYSTEM_MESSAGE_TEXT = [
@@ -68,6 +69,7 @@ const SOAP_SYSTEM_MESSAGE_TEXT = [
   '3. PROIBIDO escrever "com base nos dados fornecidos" ou frases equivalentes; proibido explicar o próprio processo.',
   '4. PROIBIDO marcações de preenchimento ("...", "(liste...)") e parênteses de orientação — escreva o texto clínico direto.',
   '5. Entregue texto puro quando o prompt solicitar: sem HTML, sem Markdown, sem **, sem ##.',
+  '6. HUMANIZAÇÃO MÁXIMA: a evolução NÃO pode ter aparência de texto gerado por IA. Frases de comprimentos variados, fraseado espontâneo e direto, prosa clínica natural — não resposta modelo. EVITE os tiques de IA: frases simétricas e repetitivas, listas excessivas onde cabe texto corrido, tom exageradamente polido, conectivos automáticos ("ademais", "cabe ressaltar", "em suma", "é importante destacar") e generalidades de conclusão.',
 ].join('\n');
 
 Deno.serve(async (req) => {

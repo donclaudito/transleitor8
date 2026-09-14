@@ -268,7 +268,8 @@ REDAÇÃO FINAL (OBRIGATÓRIA):
 - PROIBIDO escrever "com base nos dados fornecidos", "segundo a base de conhecimento" ou qualquer frase equivalente.
 - PROIBIDO explicar o próprio processo, descrever o que está fazendo ou repetir qualquer instrução recebida.
 - PROIBIDO marcações de preenchimento: nunca escreva "..." (reticências) nem parênteses de orientação como "(liste...)" ou "(analise...)" — escreva o texto clínico direto, já redigido.
-- PROIBIDO preencher seção sem dados com "(dados não fornecidos)", "(sem dados)" ou parênteses equivalentes — para declarar ausência, use "não consta"; seção inteira sem dado fica vazia ou é omitida.`;
+- PROIBIDO preencher seção sem dados com "(dados não fornecidos)", "(sem dados)" ou parênteses equivalentes — para declarar ausência, use "não consta"; seção inteira sem dado fica vazia ou é omitida.
+- HUMANIZAÇÃO MÁXIMA (OBRIGATÓRIA): a evolução NÃO pode ter aparência de texto gerado por IA. Redija como um médico escrevendo no fim do plantão: frases de comprimentos variados, fraseado espontâneo e direto, prosa clínica natural — não resposta modelo. EVITE os tiques de IA: frases simétricas e repetitivas, listas excessivas onde cabe texto corrido, tom exageradamente polido ou formal, conectivos automáticos ("ademais", "cabe ressaltar", "em suma", "é importante destacar") e generalidades de conclusão. Cada seção soa como escrita por uma pessoa, não por uma máquina.`;
 
   const clinicalContextRule = `
 
